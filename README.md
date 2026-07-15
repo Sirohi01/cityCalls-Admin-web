@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# citycalls-admin-web
 
-## Getting Started
+CityCalls admin panel — Next.js (App Router), TypeScript, Tailwind CSS. See [citycalls-docs](../docs) for architecture, API contracts, and UI specs. No shared code package exists between this repo and the backend or mobile apps — see `docs/manish/01-project-and-repository-setup.md` §2 for why.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
+cp .env.local.example .env.local   # point NEXT_PUBLIC_API_BASE_URL at your citycalls-api instance
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/lib/api/` — Axios client (Manish's adapter layer, per `docs/coordination/03-code-ownership.md`)
+- `src/lib/hooks/` — TanStack Query hooks Rohit's screens consume
+- `src/lib/types/`, `src/lib/validation/` — local types/Zod schemas mirroring `citycalls-api`'s contract, regenerated from the synced OpenAPI spec (`scripts/sync-contracts.sh`) once it exists
+- `src/tokens/` — this repo's own copy of design tokens/enum-label maps (`docs/rohit/02-design-system.md`)
+- `mocks/` — local mock JSON per `docs/coordination/05-mock-data-contract.md`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Status
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Functional skeleton: QueryClient provider, Axios client with token interceptor, login form wired to `citycalls-api`'s real `/auth/login` endpoint. UI/UX is a functional placeholder — visual design is Rohit's pass per `docs/rohit/02-design-system.md`.
