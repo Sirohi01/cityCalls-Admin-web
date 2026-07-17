@@ -1,107 +1,114 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { FormSheet } from '@/components/ui/FormSheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 
-const mockBrands = [
-  { id: 'BR-001', name: 'LG', category: 'Appliance, HVAC', active: true },
-  { id: 'BR-002', name: 'Samsung', category: 'Appliance, HVAC', active: true },
-];
+import { useBrands, Brand } from '@/lib/hooks/useBrands';
+import { useMasters, useCreateMaster, Master } from '@/lib/hooks/useMasters';
 
-const mockProductTypes = [
-  { id: 'PT-001', name: 'Split AC', category: 'HVAC', active: true },
-  { id: 'PT-002', name: 'Front Load Washing Machine', category: 'Appliance', active: true },
-];
+const addMasterSchema = z.object({
+  key: z.string().min(1, 'Key is required'),
+  label: z.string().min(1, 'Name is required'),
+});
+type AddMasterValues = z.infer<typeof addMasterSchema>;
 
-const mockModels = [
-  { id: 'MOD-001', brand: 'LG', productType: 'Split AC', name: 'Dual Inverter 1.5T', active: true },
-];
+function AddMasterEntryForm({ masterType, onClose }: { masterType: 'BRAND' | 'PRODUCT_TYPE'; onClose: () => void }) {
+  const createMaster = useCreateMaster();
+  const { register, handleSubmit, formState: { errors } } = useForm<AddMasterValues>({ resolver: zodResolver(addMasterSchema) });
 
-import { useBrands } from '@/lib/hooks/useBrands';
+  const onSubmit = (values: AddMasterValues) => {
+    createMaster.mutate({ masterType, ...values }, { onSuccess: onClose });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="System Key" placeholder="e.g. LG" error={errors.key?.message} {...register('key')} />
+      <AppFormField label="Display Name" placeholder="e.g. LG" error={errors.label?.message} {...register('label')} />
+      {createMaster.isError && <p className="text-sm text-destructive">Failed to create entry.</p>}
+      <Button type="submit" className="w-full" disabled={createMaster.isPending}>
+        {createMaster.isPending ? 'Adding...' : 'Add'}
+      </Button>
+    </form>
+  );
+}
 
 export default function BrandsPage() {
-  const [activeTab, setActiveTab] = useState('brands');
-  const { data: brandsData, isLoading } = useBrands();
-  
-  const brands = brandsData || [];
+  const { data: brandsData, isLoading: loadingBrands } = useBrands();
+  const { data: productTypes, isLoading: loadingProductTypes } = useMasters(['PRODUCT_TYPE']);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Brands & Product Types</h1>
-          <p className="text-muted-foreground">Manage the appliance catalog hierarchy.</p>
-        </div>
-        <Button>
-          {activeTab === 'brands' ? 'Add Brand' : activeTab === 'product-types' ? 'Add Product Type' : 'Add Model'}
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Brands & Product Types</h1>
+        <p className="text-muted-foreground">Manage the appliance catalog hierarchy.</p>
       </div>
 
-      <Tabs defaultValue="brands" className="w-full" onValueChange={setActiveTab}>
+      <Tabs defaultValue="brands" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="brands">Brands</TabsTrigger>
           <TabsTrigger value="product-types">Product Types</TabsTrigger>
-          <TabsTrigger value="models">Models</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="brands">
           <Card>
-            <CardContent className="pt-6">
-              <DataTable 
-                data={brands}
-                columns={[
-                  { key: 'name', header: 'Brand Name' },
-                  { key: 'category', header: 'Supported Categories' },
-                  { 
-                    key: 'active', 
-                    header: 'Status',
-                    render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />
-                  }
-                ]}
-              />
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex justify-end">
+                <FormSheet triggerLabel="Add Brand" title="Add Brand" description="Register a new appliance brand.">
+                  {(close) => <AddMasterEntryForm masterType="BRAND" onClose={close} />}
+                </FormSheet>
+              </div>
+              {loadingBrands ? (
+                <div className="text-center text-muted-foreground p-8">Loading brands...</div>
+              ) : (
+                <DataTable<Brand>
+                  data={brandsData || []}
+                  columns={[
+                    { key: 'name', header: 'Brand Name' },
+                    { key: 'key', header: 'System Key' },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      render: (item) => <StatusBadge label={item.status} category={item.status === 'Active' ? 'success' : 'default'} />,
+                    },
+                  ]}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="product-types">
           <Card>
-            <CardContent className="pt-6">
-              <DataTable 
-                data={mockProductTypes}
-                columns={[
-                  { key: 'name', header: 'Product Type' },
-                  { key: 'category', header: 'Category' },
-                  { 
-                    key: 'active', 
-                    header: 'Status',
-                    render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />
-                  }
-                ]}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="models">
-          <Card>
-            <CardContent className="pt-6">
-              <DataTable 
-                data={mockModels}
-                columns={[
-                  { key: 'name', header: 'Model Name' },
-                  { key: 'brand', header: 'Brand' },
-                  { key: 'productType', header: 'Product Type' },
-                  { 
-                    key: 'active', 
-                    header: 'Status',
-                    render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />
-                  }
-                ]}
-              />
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex justify-end">
+                <FormSheet triggerLabel="Add Product Type" title="Add Product Type" description="Register a new appliance/product type.">
+                  {(close) => <AddMasterEntryForm masterType="PRODUCT_TYPE" onClose={close} />}
+                </FormSheet>
+              </div>
+              {loadingProductTypes ? (
+                <div className="text-center text-muted-foreground p-8">Loading product types...</div>
+              ) : (
+                <DataTable<Master>
+                  data={productTypes || []}
+                  columns={[
+                    { key: 'label', header: 'Product Type' },
+                    { key: 'key', header: 'System Key' },
+                    {
+                      key: 'active',
+                      header: 'Status',
+                      render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+                    },
+                  ]}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

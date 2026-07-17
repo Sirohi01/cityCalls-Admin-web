@@ -1,15 +1,25 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient, ApiSuccessEnvelope } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
+import { AxiosError } from 'axios';
+
+export const CALL_TYPES = ['INITIAL', 'REQUIREMENT', 'PRE_SERVICE', 'VISIT_UPDATE', 'POST_SERVICE_FOLLOWUP', 'HAPPY_CALL'] as const;
+export const CALL_DIRECTIONS = ['INCOMING', 'OUTGOING'] as const;
 
 export interface Call {
-  id: string;
+  _id: string;
   number: string;
-  customerName: string;
-  mobile: string;
-  callType: string;
-  category?: { name: string };
-  callDuration: number;
-  callRecordingUrl?: string;
+  callType: (typeof CALL_TYPES)[number];
+  direction: (typeof CALL_DIRECTIONS)[number];
+  customerId?: string;
+  customerName?: string;
+  relatedLeadId?: string;
+  callerNumber: string;
+  callDate: string;
+  callTime: string;
+  priority: string;
+  notes?: string;
+  outcome?: string;
+  recordingUrl?: string;
   createdAt: string;
 }
 
@@ -20,5 +30,50 @@ export function useCalls() {
       const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls');
       return res.data.data;
     },
+  });
+}
+
+export function useCallsCount(params?: { direction?: (typeof CALL_DIRECTIONS)[number] }) {
+  return useQuery({
+    queryKey: ['calls', 'count', params],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls', { params: { ...params, limit: 1 } });
+      return res.data.meta?.total ?? 0;
+    },
+  });
+}
+
+export function useCall(id: string) {
+  return useQuery({
+    queryKey: ['call', id],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<Call>>(`/calls/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export interface CreateCallInput {
+  callType: (typeof CALL_TYPES)[number];
+  direction: (typeof CALL_DIRECTIONS)[number];
+  customerId?: string;
+  callerNumber: string;
+  customerName?: string;
+  callDate: string;
+  callTime: string;
+  priority?: string;
+  notes?: string;
+  details?: Record<string, unknown>;
+}
+
+export function useCreateCall() {
+  const queryClient = useQueryClient();
+  return useMutation<Call, AxiosError<ApiErrorEnvelope>, CreateCallInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Call>>('/calls', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calls'] }),
   });
 }

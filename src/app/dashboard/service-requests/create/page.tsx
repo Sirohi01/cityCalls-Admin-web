@@ -1,39 +1,62 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AppFormField } from '@/components/ui/AppFormField';
 
 import { useCreateServiceRequest } from '@/lib/hooks/useServiceRequests';
-import { useForm } from 'react-hook-form';
+import { useCustomers } from '@/lib/hooks/useCustomers';
+import { useCatalogServices } from '@/lib/hooks/useCatalogServices';
+
+interface FormValues {
+  customerId: string;
+  addressIndex: string;
+  serviceId: string;
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  symptoms: string;
+}
 
 export default function CreateServiceRequestPage() {
   const router = useRouter();
   const createReq = useCreateServiceRequest();
-  
-  // Dummy IDs we generated in the backend seed
-  const dummyCustomerId = '6a59ebb91008fc2cf004947e';
-  const dummyServiceId = '6a59ebb91008fc2cf0049484';
+  const { data: customers } = useCustomers();
+  const { data: services } = useCatalogServices();
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
+    defaultValues: { priority: 'NORMAL' },
+  });
 
-  const onSubmit = (data: any) => {
-    createReq.mutate({
-      customerId: dummyCustomerId,
-      serviceId: dummyServiceId,
-      source: 'CALL',
-      priority: data.priority === 'High' ? 'HIGH' : 'NORMAL',
-      symptoms: data.symptoms ? [data.symptoms] : [],
-      addressSnapshot: {
-        line1: '123 Main St',
-        city: 'Delhi',
-        state: 'Delhi',
-        pinCode: '110001'
+  const customerId = watch('customerId');
+  const selectedCustomer = customers?.find((c) => c._id === (customerId || selectedCustomerId));
+
+  const onSubmit = (data: FormValues) => {
+    const address = selectedCustomer?.addresses[Number(data.addressIndex)];
+    if (!selectedCustomer || !address) return;
+
+    createReq.mutate(
+      {
+        customerId: selectedCustomer._id,
+        serviceId: data.serviceId,
+        source: 'CALL',
+        priority: data.priority,
+        symptoms: data.symptoms ? [data.symptoms] : [],
+        addressSnapshot: {
+          line1: address.line1,
+          line2: address.line2,
+          landmark: address.landmark,
+          city: address.city,
+          state: address.state,
+          pinCode: address.pinCode,
+          country: address.country || 'India',
+        },
+      },
+      {
+        onSuccess: () => router.push('/dashboard/service-requests'),
       }
-    }, {
-      onSuccess: () => router.push('/dashboard/service-requests')
-    });
+    );
   };
 
   return (
@@ -48,49 +71,100 @@ export default function CreateServiceRequestPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
-        <CardHeader>
-          <CardTitle>Customer & Appliance Details</CardTitle>
-          <CardDescription>Select the customer and the appliance that needs service.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <AppFormField label="Select Customer" placeholder="Search customer by name or mobile..." />
-            <AppFormField label="Select Address" placeholder="Choose registered address..." />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6 pt-4 border-t">
-            <AppFormField label="Select Appliance" placeholder="E.g. LG Split AC" />
-            <AppFormField label="Service Type" placeholder="E.g. AC Repair / Installation" />
-          </div>
-        </CardContent>
-      </Card>
+          <CardHeader>
+            <CardTitle>Customer &amp; Address</CardTitle>
+            <CardDescription>Select the customer and the service address.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Select Customer</label>
+                <Controller
+                  control={control}
+                  name="customerId"
+                  rules={{ required: 'Select a customer' }}
+                  render={({ field }) => (
+                    <select
+                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        setSelectedCustomerId(e.target.value);
+                      }}
+                    >
+                      <option value="">Search customer...</option>
+                      {(customers || []).map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.name} ({c.contacts.find((ct) => ct.isPrimary)?.mobile ?? c.contacts[0]?.mobile})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.customerId && <p className="text-sm text-destructive">{errors.customerId.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Select Address</label>
+                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('addressIndex', { required: 'Select an address' })} disabled={!selectedCustomer}>
+                  <option value="">{selectedCustomer ? 'Choose registered address...' : 'Select a customer first'}</option>
+                  {(selectedCustomer?.addresses || []).map((addr, i) => (
+                    <option key={addr._id ?? i} value={i}>
+                      {addr.line1}, {addr.city} {addr.pinCode}
+                    </option>
+                  ))}
+                </select>
+                {errors.addressIndex && <p className="text-sm text-destructive">{errors.addressIndex.message}</p>}
+              </div>
+            </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Request Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <AppFormField label="Priority" placeholder="Low / Normal / High / Urgent" {...register('priority')} defaultValue="Normal" />
-            <AppFormField label="Preferred Schedule (Optional)" placeholder="Select date and time" />
-          </div>
+            <div className="grid grid-cols-2 gap-6 pt-4 border-t">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Service Type</label>
+                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('serviceId', { required: 'Select a service' })}>
+                  <option value="">Select a service...</option>
+                  {(services || []).map((s) => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
+                </select>
+                {errors.serviceId && <p className="text-sm text-destructive">{errors.serviceId.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Priority</label>
+                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('priority')}>
+                  <option value="LOW">Low</option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="HIGH">High</option>
+                  <option value="URGENT">Urgent</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Symptoms / Issue Description</label>
-            <textarea 
-              {...register('symptoms')}
-              className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Describe the issue reported by the customer..."
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end gap-2 bg-muted/50 p-6">
-          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit" disabled={createReq.isPending}>
-            {createReq.isPending ? 'Creating...' : 'Create Request'}
-          </Button>
-        </CardFooter>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Request Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">Symptoms / Issue Description</label>
+              <textarea
+                {...register('symptoms')}
+                className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Describe the issue reported by the customer..."
+              />
+            </div>
+            {createReq.isError && (
+              <p className="text-sm text-destructive">{createReq.error.response?.data?.message ?? 'Failed to create service request.'}</p>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2 bg-muted/50 p-6">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit" disabled={createReq.isPending}>
+              {createReq.isPending ? 'Creating...' : 'Create Request'}
+            </Button>
+          </CardFooter>
+        </Card>
       </form>
     </div>
   );

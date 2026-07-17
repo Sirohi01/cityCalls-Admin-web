@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
@@ -37,7 +36,7 @@ export default function ServiceRequestsPage() {
       ) : (
         <DataTable 
           data={tickets || []}
-          onRowClick={(item) => router.push(`/dashboard/service-requests/${item.id}`)}
+          onRowClick={(item) => router.push(`/dashboard/service-requests/${item._id}`)}
           columns={[
             { key: 'number', header: 'SR ID' },
             { 

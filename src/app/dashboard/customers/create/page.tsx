@@ -1,12 +1,43 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
+import { useCreateCustomer } from '@/lib/hooks/useCustomers';
+
+const createCustomerSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  mobile: z.string().min(10, 'Enter a valid mobile number'),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  customerType: z.enum(['INDIVIDUAL', 'BUSINESS']),
+  city: z.string().optional(),
+});
+type CreateCustomerValues = z.infer<typeof createCustomerSchema>;
 
 export default function CreateCustomerPage() {
   const router = useRouter();
+  const createCustomer = useCreateCustomer();
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateCustomerValues>({
+    resolver: zodResolver(createCustomerSchema),
+    defaultValues: { customerType: 'INDIVIDUAL' },
+  });
+
+  const onSubmit = (values: CreateCustomerValues) => {
+    createCustomer.mutate(
+      {
+        name: values.name,
+        customerType: values.customerType,
+        email: values.email || undefined,
+        contacts: [{ name: values.name, mobile: values.mobile, isPrimary: true }],
+        addresses: values.city ? [{ line1: values.city, city: values.city, state: values.city, pinCode: '000000', country: 'India', isDefault: true }] : [],
+      },
+      { onSuccess: () => router.push('/dashboard/customers') }
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -18,27 +49,40 @@ export default function CreateCustomerPage() {
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Details</CardTitle>
-          <CardDescription>Enter the primary contact information.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <AppFormField label="Full Name" placeholder="e.g. Ramesh Singh" />
-            <AppFormField label="Mobile Number" placeholder="e.g. 9876543210" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <AppFormField label="Email Address (Optional)" placeholder="e.g. ramesh@example.com" />
-            <AppFormField label="Customer Type" placeholder="Residential / Commercial" />
-          </div>
-          <AppFormField label="City" placeholder="e.g. Delhi" />
-        </CardContent>
-        <CardFooter className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button onClick={() => router.push('/dashboard/customers')}>Save Customer</Button>
-        </CardFooter>
-      </Card>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Details</CardTitle>
+            <CardDescription>Enter the primary contact information.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <AppFormField label="Full Name" placeholder="e.g. Ramesh Singh" error={errors.name?.message} {...register('name')} />
+              <AppFormField label="Mobile Number" placeholder="e.g. 9876543210" error={errors.mobile?.message} {...register('mobile')} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <AppFormField label="Email Address (Optional)" placeholder="e.g. ramesh@example.com" error={errors.email?.message} {...register('email')} />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Customer Type</label>
+                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
+                  <option value="INDIVIDUAL">Residential</option>
+                  <option value="BUSINESS">Commercial</option>
+                </select>
+              </div>
+            </div>
+            <AppFormField label="City (Optional)" placeholder="e.g. Delhi" {...register('city')} />
+            {createCustomer.isError && (
+              <p className="text-sm text-destructive">{createCustomer.error.response?.data?.message ?? 'Failed to create customer.'}</p>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="submit" disabled={createCustomer.isPending}>
+              {createCustomer.isPending ? 'Saving...' : 'Save Customer'}
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
     </div>
   );
 }

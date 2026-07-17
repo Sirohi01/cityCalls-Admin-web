@@ -6,6 +6,9 @@ export interface AuditLog {
   action: string;
   user: string;
   module: string;
+  entityType: string;
+  entityId: string;
+  reason?: string;
   createdAt: string;
 }
 

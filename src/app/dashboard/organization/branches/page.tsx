@@ -1,22 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { FormSheet } from '@/components/ui/FormSheet';
+import { useBranches, useCreateBranch, Branch } from '@/lib/hooks/useOrganization';
 
-const mockBranches = [
-  { id: 'B1', name: 'Delhi Main Branch', manager: 'Amit Kumar', status: 'ACTIVE' },
-  { id: 'B2', name: 'Mumbai North', manager: 'Priya Singh', status: 'ACTIVE' },
-  { id: 'B3', name: 'Bangalore East', manager: 'Ravi Teja', status: 'INACTIVE' },
-];
+const createBranchSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  code: z.string().min(2, 'Code is required').max(10),
+});
+type CreateBranchValues = z.infer<typeof createBranchSchema>;
 
-import { useBranches } from '@/lib/hooks/useOrganization';
+function AddBranchForm({ onClose }: { onClose: () => void }) {
+  const createBranch = useCreateBranch();
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateBranchValues>({
+    resolver: zodResolver(createBranchSchema),
+  });
+
+  const onSubmit = (values: CreateBranchValues) => {
+    createBranch.mutate(values, { onSuccess: onClose });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="Branch Name" placeholder="Delhi Central" error={errors.name?.message} {...register('name')} />
+      <AppFormField label="Branch Code" placeholder="DEL01" error={errors.code?.message} {...register('code')} />
+      {createBranch.isError && (
+        <p className="text-sm text-destructive">{createBranch.error.response?.data?.message ?? 'Failed to create branch.'}</p>
+      )}
+      <Button type="submit" className="w-full" disabled={createBranch.isPending}>
+        {createBranch.isPending ? 'Creating...' : 'Create Branch'}
+      </Button>
+    </form>
+  );
+}
 
 export default function BranchesPage() {
-  const { data: branches, isLoading } = useBranches();
-  
-  const data = branches || [];
+  const { data: branches, isLoading, isError } = useBranches();
 
   return (
     <div className="space-y-6">
@@ -25,27 +50,29 @@ export default function BranchesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Branches</h1>
           <p className="text-muted-foreground">Manage main organizational branches.</p>
         </div>
-        <Button>Add Branch</Button>
+        <FormSheet triggerLabel="Add Branch" title="Add Branch" description="Create a new branch.">
+          {(close) => <AddBranchForm onClose={close} />}
+        </FormSheet>
       </div>
 
-      <DataTable 
-        data={data}
-        columns={[
-          { key: 'id', header: 'Branch ID' },
-          { key: 'name', header: 'Branch Name' },
-          { key: 'manager', header: 'Branch Manager' },
-          { 
-            key: 'status', 
-            header: 'Status',
-            render: (item) => (
-              <StatusBadge 
-                label={item.status} 
-                category={item.status === 'ACTIVE' ? 'success' : 'default'} 
-              />
-            )
-          }
-        ]}
-      />
+      {isLoading ? (
+        <div className="flex justify-center p-8 text-muted-foreground">Loading branches...</div>
+      ) : isError ? (
+        <div className="flex justify-center p-8 text-destructive">Failed to load branches.</div>
+      ) : (
+        <DataTable<Branch>
+          data={branches || []}
+          columns={[
+            { key: 'code', header: 'Code' },
+            { key: 'name', header: 'Branch Name' },
+            {
+              key: 'active',
+              header: 'Status',
+              render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

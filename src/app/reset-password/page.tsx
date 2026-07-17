@@ -1,8 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { resetPasswordSchema, ResetPasswordFormValues } from '@/lib/validation/auth';
 import { useResetPassword } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,17 @@ import { AppFormField } from '@/components/ui/AppFormField';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') ?? '';
   const resetPassword = useResetPassword();
 
   const {
@@ -20,8 +31,7 @@ export default function ResetPasswordPage() {
   } = useForm<ResetPasswordFormValues>({ resolver: zodResolver(resetPasswordSchema) });
 
   const onSubmit = (values: ResetPasswordFormValues) => {
-    // Note: token would be parsed from URL params usually, using a placeholder string for now
-    resetPassword.mutate({ ...values, token: 'mock-token-from-url' }, {
+    resetPassword.mutate({ ...values, token }, {
       onSuccess: () => {
         router.push('/login');
       },
@@ -54,6 +64,12 @@ export default function ResetPasswordPage() {
               error={errors.confirmPassword?.message}
               {...register('confirmPassword')}
             />
+
+            {!token && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium border border-destructive/20">
+                This reset link is missing or invalid. Request a new one from the forgot-password page.
+              </div>
+            )}
 
             {resetPassword.isError && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium border border-destructive/20">

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -8,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PhoneCall } from 'lucide-react';
 
-import { useHappyCalls } from '@/lib/hooks/useHappyCalls';
+import { useHappyCalls, HappyCall } from '@/lib/hooks/useHappyCalls';
 
 export default function HappyCallsPage() {
   const { data: happyCalls, isLoading, isError } = useHappyCalls();
-
 
   return (
     <div className="space-y-6">
@@ -34,39 +32,29 @@ export default function HappyCallsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load happy calls.</div>
           ) : (
-            <DataTable 
+            <DataTable<HappyCall>
               data={happyCalls || []}
               columns={[
-                { key: 'id', header: 'Follow-up ID' },
                 { key: 'serviceRequestId', header: 'Service Request' },
-                { key: 'customerName', header: 'Customer' },
-                { key: 'serviceName', header: 'Service Type' },
-                { 
-                  key: 'completedAt', 
-                  header: 'Job Completed On',
-                  render: (item) => new Date(item.completedAt).toLocaleDateString()
-                },
-                { 
-                  key: 'status', 
+                { key: 'retryCount', header: 'Attempts' },
+                { key: 'createdAt', header: 'Scheduled On', render: (item) => new Date(item.createdAt).toLocaleDateString() },
+                {
+                  key: 'status',
                   header: 'Status',
-                  render: (item) => (
-                    <StatusBadge 
-                      label={item.status} 
-                      category={item.status === 'COMPLETED' ? 'success' : 'warning'} 
-                    />
-                  )
+                  render: (item) => <StatusBadge label={item.status} category={item.status === 'COMPLETED' ? 'success' : 'warning'} />,
                 },
                 {
                   key: 'action',
                   header: 'Action',
-                  render: (item) => item.status === 'PENDING' ? (
-                    <Button size="sm" variant="outline" className="gap-2" render={<Link href={`/dashboard/happy-calls/entry?ticket=${item.serviceRequestId}`} />}>
-                      <PhoneCall className="w-3 h-3" /> Log Call
-                    </Button>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Done</span>
-                  )
-                }
+                  render: (item) =>
+                    item.status === 'PENDING' ? (
+                      <Button size="sm" variant="outline" className="gap-2" render={<Link href={`/dashboard/happy-calls/entry?id=${item._id}`} />}>
+                        <PhoneCall className="w-3 h-3" /> Log Call
+                      </Button>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Done</span>
+                    ),
+                },
               ]}
             />
           )}

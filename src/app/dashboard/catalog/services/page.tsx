@@ -1,18 +1,19 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 
-import { useCatalogServices } from '@/lib/hooks/useCatalogServices';
+import { useCatalogServices, CatalogService } from '@/lib/hooks/useCatalogServices';
+import { useMasters } from '@/lib/hooks/useMasters';
 
 export default function ServicesPage() {
   const router = useRouter();
   const { data: services, isLoading, isError } = useCatalogServices();
-
+  const { data: categories } = useMasters(['SERVICE_CATEGORY']);
+  const categoryLabel = (id?: string) => categories?.find((c) => c._id === id)?.label ?? 'N/A';
 
   return (
     <div className="space-y-6">
@@ -31,26 +32,18 @@ export default function ServicesPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load services.</div>
       ) : (
-        <DataTable 
+        <DataTable<CatalogService>
           data={services || []}
+          onRowClick={(item) => router.push(`/dashboard/catalog/services/${item._id}`)}
           columns={[
             { key: 'name', header: 'Service Name' },
-            { 
-              key: 'categoryId', 
-              header: 'Category',
-              render: (item) => item.categoryId || 'N/A'
-            },
-            { key: 'basePrice', header: 'Base Price (₹)' },
-            { 
-              key: 'active', 
+            { key: 'categoryId', header: 'Category', render: (item) => categoryLabel(item.categoryId) },
+            { key: 'pricing', header: 'Base Price (₹)', render: (item) => (item.pricing?.basePrice ?? 0).toLocaleString('en-IN') },
+            {
+              key: 'active',
               header: 'Status',
-              render: (item) => (
-                <StatusBadge 
-                  label={item.active ? 'Active' : 'Inactive'} 
-                  category={item.active ? 'success' : 'default'} 
-                />
-              )
-            }
+              render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+            },
           ]}
         />
       )}

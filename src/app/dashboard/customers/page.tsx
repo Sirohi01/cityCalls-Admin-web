@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
@@ -33,7 +32,7 @@ export default function CustomersPage() {
       ) : (
         <DataTable 
           data={customers || []}
-          onRowClick={(item) => router.push(`/dashboard/customers/${item.id}`)}
+          onRowClick={(item) => router.push(`/dashboard/customers/${item._id}`)}
           columns={[
             { key: 'name', header: 'Name' },
             { 

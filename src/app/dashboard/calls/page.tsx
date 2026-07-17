@@ -1,18 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 
-import { useCalls } from '@/lib/hooks/useCalls';
+import { useCalls, Call } from '@/lib/hooks/useCalls';
 
 export default function CallsPage() {
   const router = useRouter();
   const { data: calls, isLoading, isError } = useCalls();
-
 
   return (
     <div className="space-y-6">
@@ -31,40 +29,27 @@ export default function CallsPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load calls.</div>
       ) : (
-        <DataTable 
+        <DataTable<Call>
           data={calls || []}
-          onRowClick={(item) => router.push(`/dashboard/calls/${item.id}`)}
+          onRowClick={(item) => router.push(`/dashboard/calls/${item._id}`)}
           columns={[
-            { key: 'mobile', header: 'Phone Number' },
-            { 
-              key: 'customerName', 
-              header: 'Customer',
-              render: (item) => item.customerName || 'Unknown'
-            },
-            { 
-              key: 'callType', 
+            { key: 'callerNumber', header: 'Phone Number' },
+            { key: 'customerName', header: 'Customer', render: (item) => item.customerName || 'Unknown' },
+            {
+              key: 'direction',
               header: 'Direction',
-              render: (item) => (
-                <StatusBadge 
-                  label={item.callType} 
-                  category={item.callType === 'INBOUND' ? 'info' : 'default'} 
-                />
-              )
+              render: (item) => <StatusBadge label={item.direction} category={item.direction === 'INCOMING' ? 'info' : 'default'} />,
             },
-            { 
-              key: 'category', 
-              header: 'Disposition',
+            {
+              key: 'callType',
+              header: 'Call Type',
               render: (item) => (
                 <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-800">
-                  {item.category?.name || 'Uncategorized'}
+                  {item.callType.replace(/_/g, ' ')}
                 </span>
-              )
+              ),
             },
-            { 
-              key: 'createdAt', 
-              header: 'Date & Time',
-              render: (item) => new Date(item.createdAt).toLocaleString()
-            },
+            { key: 'createdAt', header: 'Date & Time', render: (item) => new Date(item.createdAt).toLocaleString() },
           ]}
         />
       )}

@@ -2,18 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { BrainCircuit, Mic, MessageCircleHeart, Wand2 } from 'lucide-react';
+import { BrainCircuit, Mic, MessageCircleHeart, Power } from 'lucide-react';
 
-import { useAISettings, useUpdateAISettings, AISettings } from '@/lib/hooks/useAISettings';
+import { useAISettings, useUpdateAISettings } from '@/lib/hooks/useAISettings';
 
 export default function AISettingsPage() {
   const { data: settings, isLoading } = useAISettings();
   const updateSettings = useUpdateAISettings();
-
-  const handleToggle = (key: keyof AISettings) => (checked: boolean) => {
-    updateSettings.mutate({ [key]: checked });
-  };
-
+  const disabled = isLoading || updateSettings.isPending;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -25,19 +21,19 @@ export default function AISettingsPage() {
       </div>
 
       <div className="grid gap-6">
-        <Card>
+        <Card className="border-indigo-100 bg-indigo-50/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5 text-indigo-600" /> Auto Call Transcription
+            <CardTitle className="flex items-center gap-2 text-indigo-900">
+              <Power className="w-5 h-5 text-indigo-600" /> AI Features
             </CardTitle>
-            <CardDescription>Automatically transcribe recorded calls to text and store them in the call timeline.</CardDescription>
+            <CardDescription>Global kill switch — when off, no AI feature runs regardless of the toggles below.</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-700">Enable Transcription Engine</div>
-            <Switch 
-              checked={settings?.autoTranscriptionEnabled ?? true} 
-              onChange={(e) => handleToggle('autoTranscriptionEnabled')(e.target.checked)}
-              disabled={isLoading || updateSettings.isPending}
+            <div className="text-sm font-medium text-slate-700">Enable AI Features</div>
+            <Switch
+              checked={settings?.enabled ?? false}
+              onChange={(e) => updateSettings.mutate({ enabled: e.target.checked })}
+              disabled={disabled}
             />
           </CardContent>
         </Card>
@@ -45,16 +41,16 @@ export default function AISettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageCircleHeart className="w-5 h-5 text-pink-600" /> Sentiment Analysis
+              <Mic className="w-5 h-5 text-indigo-600" /> Call Summarization
             </CardTitle>
-            <CardDescription>Analyze customer sentiment (Happy, Neutral, Angry) during interactions and flag negative experiences.</CardDescription>
+            <CardDescription>Generate an AI summary of a call from its notes or a linked recording.</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-700">Enable Sentiment Tracking</div>
-            <Switch 
-              checked={settings?.sentimentTrackingEnabled ?? true} 
-              onChange={(e) => handleToggle('sentimentTrackingEnabled')(e.target.checked)}
-              disabled={isLoading || updateSettings.isPending}
+            <div className="text-sm font-medium text-slate-700">Enable Call Summarization</div>
+            <Switch
+              checked={settings?.featureFlags.CALL_SUMMARIZATION ?? false}
+              onChange={(e) => updateSettings.mutate({ featureFlags: { CALL_SUMMARIZATION: e.target.checked } })}
+              disabled={disabled}
             />
           </CardContent>
         </Card>
@@ -62,24 +58,16 @@ export default function AISettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-green-600" /> Smart Dispatch & Assignment
+              <MessageCircleHeart className="w-5 h-5 text-pink-600" /> Complaint Classification
             </CardTitle>
-            <CardDescription>Let AI suggest or auto-assign the best technician based on location, skill, and current workload.</CardDescription>
+            <CardDescription>Automatically classify complaint text into categories using AI.</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-between border-b pb-4 mb-4">
-            <div className="text-sm font-medium text-slate-700">Enable AI Suggestions on Dispatch Board</div>
-            <Switch 
-              checked={settings?.smartDispatchEnabled ?? true} 
-              onChange={(e) => handleToggle('smartDispatchEnabled')(e.target.checked)}
-              disabled={isLoading || updateSettings.isPending}
-            />
-          </CardContent>
           <CardContent className="flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-700">Fully Automated Auto-Assignment (Bypass Manual Dispatch)</div>
-            <Switch 
-              checked={settings?.autoAssignEnabled ?? false} 
-              onChange={(e) => handleToggle('autoAssignEnabled')(e.target.checked)}
-              disabled={isLoading || updateSettings.isPending}
+            <div className="text-sm font-medium text-slate-700">Enable Complaint Classification</div>
+            <Switch
+              checked={settings?.featureFlags.COMPLAINT_CLASSIFICATION ?? false}
+              onChange={(e) => updateSettings.mutate({ featureFlags: { COMPLAINT_CLASSIFICATION: e.target.checked } })}
+              disabled={disabled}
             />
           </CardContent>
         </Card>
@@ -87,24 +75,56 @@ export default function AISettingsPage() {
         <Card className="border-indigo-100 bg-indigo-50/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-indigo-900">
-              <BrainCircuit className="w-5 h-5 text-indigo-600" /> LLM Configuration
+              <BrainCircuit className="w-5 h-5 text-indigo-600" /> LLM Configuration & Usage Limits
             </CardTitle>
-            <CardDescription>Select the underlying AI model powering the intelligence features.</CardDescription>
+            <CardDescription>Select the underlying AI provider/model and set daily usage caps.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Primary Provider</label>
-                <select 
+                <label className="text-sm font-medium text-slate-700">Provider</label>
+                <select
                   className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={settings?.primaryProvider || 'openai'}
-                  onChange={(e) => updateSettings.mutate({ primaryProvider: e.target.value })}
-                  disabled={isLoading || updateSettings.isPending}
+                  value={settings?.provider ?? 'GEMINI'}
+                  onChange={(e) => updateSettings.mutate({ provider: e.target.value as 'GEMINI' | 'OPENAI' })}
+                  disabled={disabled}
                 >
-                  <option value="openai">OpenAI (GPT-4o)</option>
-                  <option value="anthropic">Anthropic (Claude 3.5)</option>
-                  <option value="google">Google (Gemini 1.5 Pro)</option>
+                  <option value="GEMINI">Google Gemini</option>
+                  <option value="OPENAI">OpenAI</option>
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Model</label>
+                <input
+                  type="text"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue={settings?.aiModel ?? ''}
+                  onBlur={(e) => e.target.value && updateSettings.mutate({ model: e.target.value })}
+                  disabled={disabled}
+                  placeholder="e.g. gemini-1.5-flash"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Max Requests / Day</label>
+                <input
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue={settings?.usageLimits.maxRequestsPerDay ?? 0}
+                  onBlur={(e) => updateSettings.mutate({ usageLimits: { maxRequestsPerDay: Number(e.target.value) } })}
+                  disabled={disabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Max Tokens / Day</label>
+                <input
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue={settings?.usageLimits.maxTokensPerDay ?? 0}
+                  onBlur={(e) => updateSettings.mutate({ usageLimits: { maxTokensPerDay: Number(e.target.value) } })}
+                  disabled={disabled}
+                />
               </div>
             </div>
           </CardContent>

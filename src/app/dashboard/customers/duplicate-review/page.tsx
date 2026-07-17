@@ -1,83 +1,77 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { useCustomerDuplicateCheck } from '@/lib/hooks/useCustomers';
 
-// Mock duplicate records
-const mockDuplicates = [
-  {
-    id: 'DUP-1',
-    matchType: 'Phone Number',
-    records: [
-      { id: 'CUST-101', name: 'Ramesh Singh', mobile: '9876543210', city: 'Delhi', created: '2026-01-10' },
-      { id: 'CUST-102', name: 'Ramesh S.', mobile: '9876543210', city: 'New Delhi', created: '2026-03-15' }
-    ]
-  },
-  {
-    id: 'DUP-2',
-    matchType: 'Email',
-    records: [
-      { id: 'CUST-201', name: 'Hotel Taj', email: 'admin@taj.com', city: 'Mumbai', created: '2026-02-12' },
-      { id: 'CUST-202', name: 'Taj Palace', email: 'admin@taj.com', city: 'Mumbai', created: '2026-05-20' }
-    ]
-  }
-];
-
+// The backend has no persisted "duplicate queue" — GET /customers/duplicates
+// checks a specific set of candidate fields (mobile/gstin/businessName/name)
+// against existing records on demand, per docs/04 M5. This is a manual
+// duplicate-checker tool, not an automatic review inbox.
 export default function DuplicateReviewPage() {
-  const [duplicates, setDuplicates] = useState(mockDuplicates);
+  const [searchParams, setSearchParams] = useState<{ mobile?: string; gstin?: string; businessName?: string; name?: string }>({});
+  const { data: matches, isLoading, isFetched } = useCustomerDuplicateCheck(searchParams);
 
-  const handleResolve = (dupId: string, action: 'merge' | 'dismiss') => {
-    // In a real app, this would call an API
-    setDuplicates((prev) => prev.filter(d => d.id !== dupId));
+  const onSubmit = (formData: FormData) => {
+    setSearchParams({
+      name: (formData.get('name') as string) || undefined,
+      mobile: (formData.get('mobile') as string) || undefined,
+      gstin: (formData.get('gstin') as string) || undefined,
+      businessName: (formData.get('businessName') as string) || undefined,
+    });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Duplicate Review</h1>
-        <p className="text-muted-foreground">Review and merge potential duplicate customer records.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Duplicate Check</h1>
+        <p className="text-muted-foreground">Check whether a name, mobile, GSTIN, or business name already matches an existing customer.</p>
       </div>
 
-      {duplicates.length === 0 ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>Search Criteria</CardTitle>
+          <CardDescription>Fill in any of the fields below — matches are checked against existing customers.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            action={(formData) => onSubmit(formData)}
+            className="grid md:grid-cols-2 gap-4"
+          >
+            <AppFormField name="name" label="Name" placeholder="e.g. Ramesh Singh" />
+            <AppFormField name="mobile" label="Mobile" placeholder="e.g. 9876543210" />
+            <AppFormField name="businessName" label="Business Name" placeholder="e.g. Hotel Taj" />
+            <AppFormField name="gstin" label="GSTIN" placeholder="e.g. 07AAACH1234M1Z1" />
+            <div className="md:col-span-2">
+              <Button type="submit">Check for Duplicates</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {isLoading && <div className="text-center text-muted-foreground p-8">Checking...</div>}
+
+      {isFetched && !isLoading && (
         <Card>
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            No potential duplicates found!
+          <CardContent className="pt-6">
+            {matches && matches.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {matches.map((m) => (
+                  <Link key={m._id} href={`/dashboard/customers/${m._id}`} className="rounded-lg border p-4 space-y-1 hover:border-primary/50 block">
+                    <div className="font-semibold text-base">{m.name}</div>
+                    {m.businessName && <div className="text-sm text-muted-foreground">{m.businessName}</div>}
+                    <div className="text-sm">Mobile: {m.contacts?.[0]?.mobile || 'N/A'}</div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground">No potential duplicates found for these criteria.</p>
+            )}
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-6">
-          {duplicates.map((dup) => (
-            <Card key={dup.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Potential Match: {dup.matchType}</CardTitle>
-                  <div className="space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleResolve(dup.id, 'dismiss')}>Dismiss</Button>
-                    <Button size="sm" onClick={() => handleResolve(dup.id, 'merge')}>Merge Records</Button>
-                  </div>
-                </div>
-                <CardDescription>Found {dup.records.length} matching records.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {dup.records.map((record, idx) => (
-                    <div key={record.id} className="rounded-lg border p-4 space-y-2 relative">
-                      {idx === 0 && <Badge variant="secondary" className="absolute top-2 right-2">Oldest</Badge>}
-                      <div className="font-semibold text-base">{record.name}</div>
-                      <div className="text-sm text-muted-foreground">ID: {record.id}</div>
-                      <div className="text-sm">Mobile: {(record as any).mobile || 'N/A'}</div>
-                      <div className="text-sm">Email: {(record as any).email || 'N/A'}</div>
-                      <div className="text-sm">City: {record.city}</div>
-                      <div className="text-xs text-muted-foreground pt-2">Created: {record.created}</div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       )}
     </div>
   );

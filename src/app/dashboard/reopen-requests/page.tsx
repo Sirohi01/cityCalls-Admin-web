@@ -1,33 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { AlertCircle, ExternalLink } from 'lucide-react';
 
-import { useReopenRequests } from '@/lib/hooks/useReopenRequests';
+import { useReopenRequests, ReopenRequest } from '@/lib/hooks/useReopenRequests';
 
 export default function ReopenRequestsPage() {
   const { data: reopenRequests, isLoading, isError } = useReopenRequests();
-
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Reopen Requests</h1>
-          <p className="text-muted-foreground">Review and manage tickets that customers want to reopen.</p>
+          <p className="text-muted-foreground">History of service requests reopened via customer feedback.</p>
         </div>
       </div>
 
       <Card className="border-orange-200">
         <CardHeader className="bg-orange-50/50">
           <CardTitle className="text-orange-800 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" /> Pending Reviews
+            <AlertCircle className="w-5 h-5" /> Reopened Tickets
           </CardTitle>
-          <CardDescription>Tickets flagged during happy calls or reported by customers.</CardDescription>
+          <CardDescription>
+            Reopening is applied immediately when a happy call marks an issue as unresolved — there is no separate approval step.
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           {isLoading ? (
@@ -35,47 +36,35 @@ export default function ReopenRequestsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load reopen requests.</div>
           ) : (
-            <DataTable 
+            <DataTable<ReopenRequest>
               data={reopenRequests || []}
               columns={[
-                { key: 'originalServiceRequestId', header: 'Service Request' },
+                { key: 'requestNumber', header: 'Service Request', render: (item) => item.requestNumber ?? item.originalServiceRequestId },
                 { key: 'customerName', header: 'Customer' },
-                { 
-                  key: 'reason', 
+                {
+                  key: 'reason',
                   header: 'Reopen Reason',
-                  render: (item) => <span className="text-sm font-medium text-slate-700">{item.reason}</span>
+                  render: (item) => <span className="text-sm font-medium text-slate-700">{item.reason}</span>,
                 },
-                { 
-                  key: 'reopenedAt', 
-                  header: 'Requested On',
-                  render: (item) => new Date(item.reopenedAt).toLocaleDateString()
+                {
+                  key: 'reopenedAt',
+                  header: 'Reopened On',
+                  render: (item) => new Date(item.reopenedAt).toLocaleDateString(),
                 },
-                { 
-                  key: 'status', 
+                {
+                  key: 'status',
                   header: 'Status',
-                  render: (item) => (
-                    <StatusBadge 
-                      label={item.status} 
-                      category={item.status === 'APPROVED' ? 'success' : 'error'} 
-                    />
-                  )
+                  render: (item) => <StatusBadge label={item.status} category="success" />,
                 },
                 {
                   key: 'actions',
-                  header: 'Decision',
-                  render: (item) => item.status === 'PENDING' ? (
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8 px-2" title="Approve & Send to Dispatch">
-                        <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                      </Button>
-                      <Button size="sm" variant="destructive" className="h-8 px-2" title="Reject Request">
-                        <XCircle className="w-4 h-4 mr-1" /> Reject
-                      </Button>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Reviewed</span>
-                  )
-                }
+                  header: '',
+                  render: (item) => (
+                    <Button size="sm" variant="outline" className="gap-2" render={<Link href={`/dashboard/service-requests/${item.originalServiceRequestId}`} />}>
+                      <ExternalLink className="w-3 h-3" /> View Service Request
+                    </Button>
+                  ),
+                },
               ]}
             />
           )}

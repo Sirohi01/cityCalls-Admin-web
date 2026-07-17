@@ -50,13 +50,27 @@ import {
   LogOut
 } from 'lucide-react';
 
-import { clearSession } from '@/lib/hooks/useAuth';
+import { clearSession, useMe } from '@/lib/hooks/useAuth';
 
-const navItems = [
+// module/action values here match citycalls-api's real RBAC vocabulary
+// exactly (src/modules/*/​*.routes.ts's requirePermission(module, action)
+// calls) — not a frontend-invented naming scheme. Cross-check against
+// docs/openapi/citycalls.yaml before adding a new item.
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  module?: string;
+  action?: string;
+  anyOf?: { module: string; action?: string }[];
+  alwaysVisible?: boolean;
+}
+
+const navItems: { group: string; items: NavItem[] }[] = [
   {
     group: 'Main',
     items: [
-      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
+      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, alwaysVisible: true },
     ],
   },
   {
@@ -77,14 +91,14 @@ const navItems = [
     group: 'Calls',
     items: [
       { title: 'Call Logs', url: '/dashboard/calls', icon: Phone, module: 'calls' },
-      { title: 'New Call', url: '/dashboard/calls/entry', icon: PhoneCall, module: 'calls' },
+      { title: 'New Call', url: '/dashboard/calls/entry', icon: PhoneCall, module: 'calls', action: 'create' },
     ],
   },
   {
     group: 'Leads',
     items: [
       { title: 'Pipeline', url: '/dashboard/leads', icon: Target, module: 'leads' },
-      { title: 'Bulk Import', url: '/dashboard/leads/import', icon: Upload, module: 'leads' },
+      { title: 'Bulk Import', url: '/dashboard/leads/import', icon: Upload, module: 'leads', action: 'import' },
     ],
   },
   {
@@ -104,22 +118,22 @@ const navItems = [
   {
     group: 'Operations',
     items: [
-      { title: 'Service Requests', url: '/dashboard/service-requests', icon: Ticket, module: 'service-requests' },
-      { title: 'Dispatch Board', url: '/dashboard/dispatch', icon: MapPin, module: 'service-requests' },
+      { title: 'Service Requests', url: '/dashboard/service-requests', icon: Ticket, module: 'serviceRequests' },
+      { title: 'Dispatch Board', url: '/dashboard/dispatch', icon: MapPin, module: 'serviceRequests', action: 'assign' },
     ],
   },
   {
     group: 'Quality Assurance',
     items: [
-      { title: 'Happy Calls', url: '/dashboard/happy-calls', icon: SmilePlus, module: 'happy-calls' },
-      { title: 'Reopen Requests', url: '/dashboard/reopen-requests', icon: RefreshCcw, module: 'reopen' },
+      { title: 'Happy Calls', url: '/dashboard/happy-calls', icon: SmilePlus, module: 'happyCalls' },
+      { title: 'Reopen Requests', url: '/dashboard/reopen-requests', icon: RefreshCcw, module: 'happyCalls' },
     ],
   },
   {
     group: 'Communications',
     items: [
-      { title: 'Notifications', url: '/dashboard/notifications', icon: Bell, module: 'notifications' },
-      { title: 'Templates', url: '/dashboard/notifications/templates', icon: MessageSquare, module: 'notifications' },
+      { title: 'Notifications', url: '/dashboard/notifications', icon: Bell, alwaysVisible: true },
+      { title: 'Templates', url: '/dashboard/notifications/templates', icon: MessageSquare, module: 'config', action: 'manageSettings' },
       { title: 'Campaigns', url: '/dashboard/marketing/campaigns', icon: Megaphone, module: 'marketing' },
     ],
   },
@@ -127,14 +141,25 @@ const navItems = [
     group: 'Analytics & Intelligence',
     items: [
       { title: 'Reports', url: '/dashboard/reports', icon: BarChart4, module: 'reports' },
-      { title: 'AI Settings', url: '/dashboard/ai-settings', icon: BrainCircuit, module: 'ai-settings' },
+      { title: 'AI Settings', url: '/dashboard/ai-settings', icon: BrainCircuit, module: 'ai', action: 'manageSettings' },
     ],
   },
   {
     group: 'System & Data',
     items: [
-      { title: 'Audit Logs', url: '/dashboard/audit-logs', icon: FileKey, module: 'audit' },
-      { title: 'Import/Export', url: '/dashboard/import-export', icon: Database, module: 'import-export' },
+      { title: 'Audit Logs', url: '/dashboard/audit-logs', icon: FileKey, module: 'config', action: 'manageSettings' },
+      {
+        title: 'Import/Export',
+        url: '/dashboard/import-export',
+        icon: Database,
+        anyOf: [
+          { module: 'customers', action: 'export' },
+          { module: 'leads', action: 'export' },
+          { module: 'serviceRequests', action: 'export' },
+          { module: 'calls', action: 'export' },
+          { module: 'finance', action: 'export' },
+        ],
+      },
     ],
   },
   {
@@ -148,7 +173,7 @@ const navItems = [
   {
     group: 'Configuration',
     items: [
-      { title: 'Masters', url: '/dashboard/masters', icon: Settings, module: 'masters' },
+      { title: 'Masters', url: '/dashboard/masters', icon: Settings, module: 'config' },
       { title: 'Roles & Users', url: '/dashboard/roles', icon: Users, module: 'users' },
     ],
   },
@@ -157,6 +182,7 @@ const navItems = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: me } = useMe();
 
   const handleLogout = () => {
     clearSession();
@@ -177,7 +203,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {group.items.map((item) => (
-                      <PermissionGate key={item.title} module={item.module}>
+                      <PermissionGate key={item.title} module={item.module} action={item.action} anyOf={item.anyOf} alwaysVisible={item.alwaysVisible}>
                         <SidebarMenuItem>
                           <SidebarMenuButton render={<Link href={item.url} />} isActive={pathname === item.url}>
                             <item.icon />
@@ -197,7 +223,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <header className="h-16 flex items-center gap-4 px-6 border-b bg-white sticky top-0 z-10">
             <SidebarTrigger />
             <div className="ml-auto flex items-center space-x-4">
-              <span className="text-sm font-medium">superadmin@citycalls.local</span>
+              <span className="text-sm font-medium">{me?.email ?? me?.name ?? me?.mobile ?? ''}</span>
               <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-600 transition-colors bg-slate-100 hover:bg-red-50 rounded-md" title="Logout">
                 <LogOut className="w-5 h-5" />
               </button>

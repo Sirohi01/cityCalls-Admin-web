@@ -1,21 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-
-const mockLeads = [
-  { id: 'LD-001', name: 'Ramesh Singh', mobile: '9876543210', stage: 'New', source: 'Website', amount: 5000, date: '2026-07-17' },
-  { id: 'LD-002', name: 'Hotel Taj', mobile: '9988776655', stage: 'Contacted', source: 'Referral', amount: 150000, date: '2026-07-16' },
-  { id: 'LD-003', name: 'Priya Sharma', mobile: '9123456789', stage: 'Qualified', source: 'Organic', amount: 12000, date: '2026-07-15' },
-];
+import { useLeads, Lead } from '@/lib/hooks/useLeads';
 
 export default function LeadsListPage() {
   const router = useRouter();
-  const [data] = useState(mockLeads);
+  const { data: leads, isLoading, isError } = useLeads();
 
   return (
     <div className="space-y-6">
@@ -34,31 +28,33 @@ export default function LeadsListPage() {
         </div>
       </div>
 
-      <DataTable 
-        data={data}
-        onRowClick={(item) => router.push(`/dashboard/leads/${item.id}`)}
-        columns={[
-          { key: 'name', header: 'Name' },
-          { key: 'mobile', header: 'Mobile' },
-          { key: 'source', header: 'Source' },
-          { 
-            key: 'stage', 
-            header: 'Stage',
-            render: (item) => (
-              <StatusBadge 
-                label={item.stage} 
-                category={item.stage === 'New' ? 'info' : item.stage === 'Qualified' ? 'success' : 'default'} 
-              />
-            )
-          },
-          { 
-            key: 'amount', 
-            header: 'Expected Value',
-            render: (item) => `₹${item.amount.toLocaleString()}`
-          },
-          { key: 'date', header: 'Created On' },
-        ]}
-      />
+      {isLoading ? (
+        <div className="flex justify-center p-8 text-muted-foreground">Loading leads...</div>
+      ) : isError ? (
+        <div className="flex justify-center p-8 text-destructive">Failed to load leads.</div>
+      ) : (
+        <DataTable<Lead>
+          data={leads || []}
+          onRowClick={(item) => router.push(`/dashboard/leads/${item._id}`)}
+          columns={[
+            { key: 'contactName', header: 'Name', render: (item) => item.contactName || 'Unnamed Lead' },
+            { key: 'contactMobile', header: 'Mobile', render: (item) => item.contactMobile || 'N/A' },
+            { key: 'source', header: 'Source' },
+            {
+              key: 'stage',
+              header: 'Stage',
+              render: (item) => (
+                <StatusBadge
+                  label={item.stage.replace(/_/g, ' ')}
+                  category={item.stage === 'NEW' ? 'info' : item.stage === 'CONVERTED' ? 'success' : 'default'}
+                />
+              ),
+            },
+            { key: 'priority', header: 'Priority' },
+            { key: 'createdAt', header: 'Created On', render: (item) => new Date(item.createdAt).toLocaleDateString() },
+          ]}
+        />
+      )}
     </div>
   );
 }

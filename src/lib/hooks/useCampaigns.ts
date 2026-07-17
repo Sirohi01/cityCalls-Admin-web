@@ -1,12 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient, ApiSuccessEnvelope } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
+import { AxiosError } from 'axios';
+
+export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'CANCELLED';
 
 export interface Campaign {
-  id: string;
+  _id: string;
   name: string;
-  targetAudience: string;
-  sentCount: number;
-  status: string;
+  channel: 'WHATSAPP' | 'EMAIL';
+  templateId: string;
+  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: 'INDIVIDUAL' | 'BUSINESS' };
+  scheduledAt?: string;
+  status: CampaignStatus;
+  stats: { sent: number; delivered: number; read: number; failed: number };
   createdAt: string;
 }
 
@@ -17,5 +23,35 @@ export function useCampaigns() {
       const res = await apiClient.get<ApiSuccessEnvelope<Campaign[]>>('/campaigns');
       return res.data.data;
     },
+  });
+}
+
+export interface CreateCampaignInput {
+  name: string;
+  channel: 'WHATSAPP' | 'EMAIL';
+  templateId: string;
+  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: 'INDIVIDUAL' | 'BUSINESS' };
+  scheduledAt?: string;
+}
+
+export function useCreateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<Campaign, AxiosError<ApiErrorEnvelope>, CreateCampaignInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Campaign>>('/campaigns', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
+  });
+}
+
+export function useSendCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<Campaign, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Campaign>>(`/campaigns/${id}/send`);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
   });
 }

@@ -4,6 +4,7 @@ import { apiClient, ApiSuccessEnvelope } from '../api/client';
 export interface ReopenRequest {
   id: string;
   originalServiceRequestId: string;
+  requestNumber?: string;
   customerName: string;
   reason: string;
   status: string;
@@ -14,7 +15,6 @@ export function useReopenRequests() {
   return useQuery({
     queryKey: ['reopenRequests'],
     queryFn: async () => {
-      // Trying to fetch from a generic endpoint, adjust if backend expects differently
       const res = await apiClient.get<ApiSuccessEnvelope<ReopenRequest[]>>('/reopen-requests');
       return res.data.data;
     },

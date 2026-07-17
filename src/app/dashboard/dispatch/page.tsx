@@ -9,33 +9,45 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { toast } from 'sonner';
 
 import { useServiceRequests, useAssignServiceRequest } from '@/lib/hooks/useServiceRequests';
-import { useUsers } from '@/lib/hooks/useUsers';
+import { useEmployees } from '@/lib/hooks/useEmployees';
+
+// Statuses where the job is still active (counts toward a technician's
+// current load) — mirrors the "not yet CLOSED/CANCELLED" idea without
+// hardcoding every one of the 37 statuses individually.
+const CLOSED_STATUSES = new Set(['CLOSED', 'CANCELLED']);
 
 export default function DispatchBoardPage() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
 
   const { data: allRequests, isLoading: loadingReqs } = useServiceRequests();
-  const { data: allUsers, isLoading: loadingUsers } = useUsers('TECHNICIAN');
+  const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const assignRequest = useAssignServiceRequest();
 
-  const unassignedRequests = allRequests?.filter(req => req.status === 'NEW' || req.status.includes('ASSIGNED') || req.status === 'OPEN') || [];
-  const availableTechnicians = allUsers || [];
+  const unassignedRequests = allRequests?.filter((req) => !req.assigneeId) || [];
+  // Technicians assign as EMPLOYEE (assigneeType), using the Employee
+  // record's own _id — not the linked User's _id (a real bug this replaces:
+  // the backend's AssigneeType enum has no 'USER' value at all).
+  const availableTechnicians = employees?.filter((e) => e.active) || [];
 
-  const handleAssign = (techId: string) => {
+  const loadFor = (employeeId: string) =>
+    (allRequests || []).filter((r) => r.assigneeId === employeeId && !CLOSED_STATUSES.has(r.status)).length;
+
+  const handleAssign = (employeeId: string) => {
     if (!selectedRequest) return;
-    
-    assignRequest.mutate({ id: selectedRequest, assigneeId: techId }, {
-      onSuccess: () => {
-        toast.success('Technician assigned successfully');
-        setSelectedRequest(null);
-      },
-      onError: (err) => {
-        toast.error(err.response?.data?.errors?.[0]?.message || 'Failed to assign technician');
+
+    assignRequest.mutate(
+      { id: selectedRequest, assigneeType: 'EMPLOYEE', assigneeId: employeeId },
+      {
+        onSuccess: () => {
+          toast.success('Technician assigned successfully');
+          setSelectedRequest(null);
+        },
+        onError: (err) => {
+          toast.error(err.response?.data?.errors?.[0]?.message || 'Failed to assign technician');
+        },
       }
-    });
+    );
   };
-
-
 
   return (
     <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
@@ -59,27 +71,34 @@ export default function DispatchBoardPage() {
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {unassignedRequests.map(req => (
-              <div 
-                key={req.id} 
-                onClick={() => setSelectedRequest(req.id)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedRequest === req.id ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50'}`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold text-slate-900">{req.number}</h4>
-                    <p className="text-sm font-medium">{req.customer?.name || 'Unknown'}</p>
+            {loadingReqs ? (
+              <div className="text-center text-muted-foreground p-8">Loading requests...</div>
+            ) : unassignedRequests.length === 0 ? (
+              <div className="text-center text-muted-foreground p-8">No unassigned requests.</div>
+            ) : (
+              unassignedRequests.map((req) => (
+                <div
+                  key={req._id}
+                  onClick={() => setSelectedRequest(req._id)}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedRequest === req._id ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50'}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-slate-900">{req.number}</h4>
+                      <p className="text-sm font-medium">{req.customer?.name || 'Unknown'}</p>
+                    </div>
+                    <Badge variant={req.priority === 'HIGH' || req.priority === 'URGENT' ? 'destructive' : 'secondary'}>{req.priority}</Badge>
                   </div>
-                  <Badge variant={req.priority === 'HIGH' ? 'destructive' : 'secondary'}>{req.priority}</Badge>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+                    <MapPin className="w-3 h-3" />
+                    {req.addressSnapshot ? `${req.addressSnapshot.city}, ${req.addressSnapshot.pinCode}` : 'No address on file'}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                    <Wrench className="w-3 h-3" /> Status: {req.status}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
-                  <MapPin className="w-3 h-3" /> Area missing
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                  <Wrench className="w-3 h-3" /> Service ID: {req.id}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -91,7 +110,7 @@ export default function DispatchBoardPage() {
                 <User className="w-5 h-5 text-slate-500" />
                 Available Technicians
               </CardTitle>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{availableTechnicians.length} Online</Badge>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{availableTechnicians.length} Active</Badge>
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 relative">
@@ -102,44 +121,52 @@ export default function DispatchBoardPage() {
                 </div>
               </div>
             )}
-            
-            {availableTechnicians.map(tech => (
-              <div key={tech.id} className="p-4 rounded-lg border border-slate-200 hover:border-slate-300 bg-white">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                      <User className="w-5 h-5 text-slate-600" />
+
+            {loadingEmployees ? (
+              <div className="text-center text-muted-foreground p-8">Loading technicians...</div>
+            ) : availableTechnicians.length === 0 ? (
+              <div className="text-center text-muted-foreground p-8">No active employees found. Add one from the Employees page.</div>
+            ) : (
+              availableTechnicians.map((tech) => (
+                <div key={tech._id} className="p-4 rounded-lg border border-slate-200 hover:border-slate-300 bg-white">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                        <User className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900">{tech.userId?.name ?? 'Unknown'}</h4>
+                        <p className="text-xs text-slate-500">{tech.userId?.mobile}</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90"
+                      onClick={() => handleAssign(tech._id)}
+                      disabled={!selectedRequest || assignRequest.isPending}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">
+                    <div>
+                      <span className="text-slate-500 block">Current Load</span>
+                      <span className="font-semibold text-slate-900">{loadFor(tech._id)} Active Jobs</span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900">{tech.name}</h4>
-                      <p className="text-xs text-slate-500">{tech.id}</p>
+                      <span className="text-slate-500 block">Daily Capacity</span>
+                      <span className="font-semibold text-slate-900">{tech.dailyCapacity}</span>
                     </div>
                   </div>
-                  <Button 
-                    size="sm" 
-                    className="bg-primary hover:bg-primary/90"
-                    onClick={() => handleAssign(tech.id)}
-                    disabled={!selectedRequest || assignRequest.isPending}
-                  >
-                    Assign
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">
-                  <div>
-                    <span className="text-slate-500 block">Current Load</span>
-                    <span className="font-semibold text-slate-900">0 Active Jobs</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block">Email</span>
-                    <span className="font-semibold text-slate-900">{tech.email}</span>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {(tech.skills || []).map((skill) => (
+                      <Badge key={skill} variant="secondary" className="text-[10px] bg-slate-100">{skill}</Badge>
+                    ))}
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-1">
-                  <Badge variant="secondary" className="text-[10px] bg-slate-100">Technician</Badge>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

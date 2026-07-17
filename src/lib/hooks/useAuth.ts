@@ -1,8 +1,8 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope, setAccessToken } from '../api/client';
-import { LoginResponse } from '../types/auth';
+import { LoginResponse, MeResponse } from '../types/auth';
 import { LoginFormValues, ForgotPasswordFormValues, ResetPasswordFormValues } from '../validation/auth';
 import { AxiosError } from 'axios';
 
@@ -40,28 +40,53 @@ export function clearSession(): void {
 }
 
 export function useForgotPassword() {
-  return useMutation<void, Error, ForgotPasswordFormValues>({
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, ForgotPasswordFormValues>({
     mutationFn: async (input) => {
-      // Placeholder: will be connected to real endpoint when ready
-      console.log('Mock API call: forgot-password', input);
-      return new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+      await apiClient.post('/auth/password/reset-request', input);
+    },
   });
 }
 
 export function useResetPassword() {
-  return useMutation<void, Error, ResetPasswordFormValues & { token: string }>({
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, ResetPasswordFormValues & { token: string }>({
     mutationFn: async (input) => {
-      // Placeholder
-      console.log('Mock API call: reset-password', input);
-      return new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+      await apiClient.post('/auth/password/reset', { token: input.token, newPassword: input.newPassword });
+    },
   });
 }
 
-export function usePermission(module: string, action: 'read' | 'write' | 'create' | 'delete' = 'read') {
-  // Mock permission check: assume the user has access to everything for now
-  // In a real scenario, this would read from a fetched user profile context
-  console.log(`Checking permission for ${module}:${action}`);
-  return true;
+// Fetched once per session (long staleTime — a role's permission set doesn't
+// change mid-session) and reused by every usePermission() call via the
+// TanStack Query cache, rather than each call site re-fetching independently.
+export function useMe() {
+  return useQuery<MeResponse, AxiosError<ApiErrorEnvelope>>({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<MeResponse>>('/auth/me');
+      return res.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+// Real permission check against the resolved grant set from GET /auth/me —
+// module.action, matching the backend's RBAC vocabulary exactly (view/
+// create/edit/manageSettings/viewFinancial/assign/export/import), not a
+// frontend-invented read/write/create/delete enum. Fails closed: while
+// loading or if the user has no grant for this module.action, access is
+// denied — never defaults to true.
+export function usePermission(module: string, action = 'view'): boolean {
+  const { data } = useMe();
+  if (!data) return false;
+  return Boolean(data.permissions?.[module]?.[action]);
+}
+
+// A user can act on ANY of the given {module, action} pairs — used for nav
+// items backed by more than one real permission check (e.g. Import/Export,
+// which is gated per-entity on the backend, not by one page-level permission).
+export function useAnyPermission(checks: { module: string; action?: string }[]): boolean {
+  const { data } = useMe();
+  if (!data) return false;
+  return checks.some((c) => Boolean(data.permissions?.[c.module]?.[c.action ?? 'view']));
 }

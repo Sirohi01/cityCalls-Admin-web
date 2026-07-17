@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold tracking-tight">Forgot Password</CardTitle>
           <CardDescription>
-            Enter your email or mobile number and we'll send you a link to reset your password.
+            Enter your email or mobile number and we&apos;ll send you a link to reset your password.
           </CardDescription>
         </CardHeader>
         

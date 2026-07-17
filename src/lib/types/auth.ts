@@ -38,3 +38,20 @@ export interface LoginResponse {
   refreshToken: string;
   user: AuthUser;
 }
+
+// GET /auth/me — resolved permission set for the current user, per
+// docs/manish/10-admin-functional-integration-plan.md §3.
+// permissions[module][action] = dataScope; absence of a key means no grant.
+export interface MeResponse {
+  _id: string;
+  name: string;
+  email?: string;
+  mobile: string;
+  role: Role;
+  status: 'ACTIVE' | 'INACTIVE';
+  branchId?: string;
+  subBranchId?: string;
+  teamId?: string;
+  vendorId?: string;
+  permissions: Record<string, Record<string, string>>;
+}

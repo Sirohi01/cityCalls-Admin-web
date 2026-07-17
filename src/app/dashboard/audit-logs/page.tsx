@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-import { useAuditLogs } from '@/lib/hooks/useAuditLogs';
+import { useAuditLogs, AuditLog } from '@/lib/hooks/useAuditLogs';
 
 export default function AuditLogsPage() {
   const { data: auditLogs, isLoading, isError } = useAuditLogs();
@@ -30,17 +29,17 @@ export default function AuditLogsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load audit logs.</div>
           ) : (
-            <DataTable 
+            <DataTable<AuditLog>
               data={auditLogs || []}
               columns={[
-                { 
-                  key: 'createdAt', 
+                {
+                  key: 'createdAt',
                   header: 'Timestamp',
                   render: (item) => new Date(item.createdAt).toLocaleString()
                 },
                 { key: 'user', header: 'User / Actor' },
-                { 
-                  key: 'action', 
+                {
+                  key: 'action',
                   header: 'Action',
                   render: (item) => (
                     <span className={`px-2 py-1 text-[10px] font-bold rounded-md ${
@@ -54,8 +53,9 @@ export default function AuditLogsPage() {
                   )
                 },
                 { key: 'module', header: 'Module' },
-                { key: 'target', header: 'Target ID' },
-                { key: 'details', header: 'Details' },
+                { key: 'entityType', header: 'Entity' },
+                { key: 'entityId', header: 'Entity ID', render: (item) => <span className="font-mono text-xs">{item.entityId}</span> },
+                { key: 'reason', header: 'Reason', render: (item) => item.reason ?? '—' },
               ]}
             />
           )}

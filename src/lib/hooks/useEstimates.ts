@@ -1,13 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient, ApiSuccessEnvelope } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
+import { AxiosError } from 'axios';
+
+export interface LineItem {
+  description: string;
+  partId?: string;
+  qty: number;
+  unitPrice: number;
+  taxRateId?: string;
+}
 
 export interface Estimate {
-  id: string;
+  _id: string;
   number: string;
-  serviceRequestId: string;
-  customerName: string;
-  grandTotal: number;
-  status: string;
+  serviceRequestId?: string;
+  customerId: string;
+  branchId: string;
+  items: LineItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  status: 'DRAFT' | 'SHARED' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED';
   createdAt: string;
 }
 
@@ -18,5 +31,24 @@ export function useEstimates() {
       const res = await apiClient.get<ApiSuccessEnvelope<Estimate[]>>('/estimates');
       return res.data.data;
     },
+  });
+}
+
+export interface CreateEstimateInput {
+  customerId: string;
+  branchId: string;
+  serviceRequestId?: string;
+  items: LineItem[];
+  discount?: number;
+}
+
+export function useCreateEstimate() {
+  const queryClient = useQueryClient();
+  return useMutation<Estimate, AxiosError<ApiErrorEnvelope>, CreateEstimateInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Estimate>>('/estimates', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
   });
 }
