@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: "CityCalls service management admin panel",
 };
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,10 +29,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Providers>
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster richColors position="top-right" />
+        </Providers>
       </body>
     </html>
   );
