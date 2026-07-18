@@ -51,28 +51,30 @@ function WorkingHoursEditor({ rows, onChange }: { rows: WorkingHoursRow[]; onCha
       <label className="text-sm font-medium">Working Hours</label>
       <div className="border rounded-md divide-y">
         {rows.map((row) => (
-          <div key={row.day} className="flex items-center gap-2 p-2 text-sm">
-            <span className="w-24 shrink-0">{DAY_NAMES[row.day]}</span>
-            <label className="flex items-center gap-1 text-xs shrink-0">
-              <input type="checkbox" checked={row.closed} onChange={(e) => updateRow(row.day, { closed: e.target.checked })} />
-              Closed
-            </label>
+          <div key={row.day} className="p-2 text-sm space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">{DAY_NAMES[row.day]}</span>
+              <label className="flex items-center gap-1.5 text-xs shrink-0">
+                <input type="checkbox" checked={row.closed} onChange={(e) => updateRow(row.day, { closed: e.target.checked })} />
+                Closed
+              </label>
+            </div>
             {!row.closed && (
-              <>
+              <div className="flex items-center gap-2">
                 <input
                   type="time"
-                  className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                  className="h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 text-sm"
                   value={row.openTime ?? ''}
                   onChange={(e) => updateRow(row.day, { openTime: e.target.value })}
                 />
-                <span className="text-muted-foreground">to</span>
+                <span className="text-muted-foreground text-xs shrink-0">to</span>
                 <input
                   type="time"
-                  className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                  className="h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 text-sm"
                   value={row.closeTime ?? ''}
                   onChange={(e) => updateRow(row.day, { closeTime: e.target.value })}
                 />
-              </>
+              </div>
             )}
           </div>
         ))}
