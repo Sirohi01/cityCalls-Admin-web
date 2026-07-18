@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, MapPin, Wrench } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { toast } from 'sonner';
 
 import { useServiceRequests, useAssignServiceRequest } from '@/lib/hooks/useServiceRequests';
 import { useEmployees } from '@/lib/hooks/useEmployees';
@@ -37,15 +36,7 @@ export default function DispatchBoardPage() {
 
     assignRequest.mutate(
       { id: selectedRequest, assigneeType: 'EMPLOYEE', assigneeId: employeeId },
-      {
-        onSuccess: () => {
-          toast.success('Technician assigned successfully');
-          setSelectedRequest(null);
-        },
-        onError: (err) => {
-          toast.error(err.response?.data?.errors?.[0]?.message || 'Failed to assign technician');
-        },
-      }
+      { onSuccess: () => setSelectedRequest(null) }
     );
   };
 

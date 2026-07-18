@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 
 // Local to this repo — no shared api-client package exists (multi-repo, per
 // docs/coordination/03-code-ownership.md). Base URL points at citycalls-api.
@@ -20,14 +21,27 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Every request through this one shared client gets a toast — success for
+// state-changing calls (POST/PUT/PATCH/DELETE, using the standard envelope's
+// `message`), error for any failed call (GET included) — without each of the
+// ~40 hook files needing its own toast.success/toast.error wiring. GET
+// requests don't toast on success (every list/detail fetch would spam one).
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config.method?.toLowerCase();
+    if (method && method !== 'get' && response.data?.message) {
+      toast.success(response.data.message);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
+    const message = error.response?.data?.message ?? error.message ?? 'Something went wrong. Please try again.';
+    toast.error(message);
     return Promise.reject(error);
   }
 );
