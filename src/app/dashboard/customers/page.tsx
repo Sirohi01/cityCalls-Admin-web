@@ -6,7 +6,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 
-import { useCustomers } from '@/lib/hooks/useCustomers';
+import { useCustomers, Customer } from '@/lib/hooks/useCustomers';
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -30,8 +30,11 @@ export default function CustomersPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load customers.</div>
       ) : (
-        <DataTable 
+        <>
+          <p className="text-sm text-muted-foreground">{customers?.length ?? 0} customers</p>
+          <DataTable<Customer>
           data={customers || []}
+          pageSize={10}
           onRowClick={(item) => router.push(`/dashboard/customers/${item._id}`)}
           columns={[
             { key: 'name', header: 'Name' },
@@ -46,13 +49,14 @@ export default function CustomersPage() {
               render: (item) => item.addresses?.[0]?.city || 'N/A'
             },
             { key: 'customerType', header: 'Type' },
-            { 
-              key: 'createdAt', 
+            {
+              key: 'createdAt',
               header: 'Created At',
               render: (item) => new Date(item.createdAt).toLocaleDateString()
             }
           ]}
-        />
+          />
+        </>
       )}
     </div>
   );

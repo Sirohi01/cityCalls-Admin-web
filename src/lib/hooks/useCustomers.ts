@@ -33,7 +33,7 @@ export function useCustomers() {
   return useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Customer[]>>('/customers');
+      const res = await apiClient.get<ApiSuccessEnvelope<Customer[]>>('/customers', { params: { limit: 100 } });
       return res.data.data;
     },
   });
