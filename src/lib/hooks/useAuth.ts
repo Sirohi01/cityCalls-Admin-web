@@ -76,7 +76,11 @@ export function useMe() {
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
-    retry: false,
+    // Fail fast (no retry) on a real 401 — the apiClient interceptor already
+    // redirects to /login for that case. Retry a couple of times on anything
+    // else (network blip, backend mid-restart) instead of getting stuck
+    // showing stale/fallback navbar data for the rest of the session.
+    retry: (failureCount, error) => error.response?.status !== 401 && failureCount < 2,
   });
 }
 

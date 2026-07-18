@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,23 +9,70 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
-import { useTeams, useCreateTeam, useBranches, Team } from '@/lib/hooks/useOrganization';
+import { Pencil } from 'lucide-react';
+import { useTeams, useCreateTeam, useUpdateTeam, useBranches, useSubBranches, Team } from '@/lib/hooks/useOrganization';
+import { useEmployees, Employee } from '@/lib/hooks/useEmployees';
 
-const createTeamSchema = z.object({
+const teamFormSchema = z.object({
   branchId: z.string().min(1, 'Select a branch'),
+  subBranchId: z.string().optional(),
   name: z.string().min(2, 'Name is required'),
 });
-type CreateTeamValues = z.infer<typeof createTeamSchema>;
+type TeamFormValues = z.infer<typeof teamFormSchema>;
+
+function MemberPicker({
+  branchId,
+  subBranchId,
+  employees,
+  memberIds,
+  onToggle,
+}: {
+  branchId: string;
+  subBranchId?: string;
+  employees: Employee[];
+  memberIds: string[];
+  onToggle: (userId: string) => void;
+}) {
+  if (!branchId) {
+    return <p className="text-xs text-muted-foreground">Select a branch to see available employees.</p>;
+  }
+  const scoped = employees.filter((e) => e.branchId === branchId && (!subBranchId || e.subBranchId === subBranchId));
+  if (scoped.length === 0) {
+    return <p className="text-xs text-muted-foreground">No employees found for this branch{subBranchId ? '/sub-branch' : ''} yet.</p>;
+  }
+  return (
+    <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+      {scoped.map((e) => (
+        <label key={e._id} className="flex items-center gap-2 text-sm py-0.5">
+          <input type="checkbox" className="w-4 h-4" checked={memberIds.includes(e.userId._id)} onChange={() => onToggle(e.userId._id)} />
+          {e.userId.name}
+        </label>
+      ))}
+    </div>
+  );
+}
 
 function AddTeamForm({ onClose }: { onClose: () => void }) {
   const createTeam = useCreateTeam();
   const { data: branches } = useBranches();
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateTeamValues>({
-    resolver: zodResolver(createTeamSchema),
+  const { data: employees } = useEmployees();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<TeamFormValues>({
+    resolver: zodResolver(teamFormSchema),
   });
+  const branchId = watch('branchId');
+  const subBranchId = watch('subBranchId');
+  const { data: subBranches } = useSubBranches(branchId || undefined);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
 
-  const onSubmit = (values: CreateTeamValues) => {
-    createTeam.mutate(values, { onSuccess: onClose });
+  const toggleMember = (userId: string) => {
+    setMemberIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
+  };
+
+  const onSubmit = (values: TeamFormValues) => {
+    createTeam.mutate(
+      { ...values, subBranchId: values.subBranchId || undefined, memberIds },
+      { onSuccess: onClose }
+    );
   };
 
   return (
@@ -39,7 +87,24 @@ function AddTeamForm({ onClose }: { onClose: () => void }) {
         </select>
         {errors.branchId && <p className="text-sm text-destructive">{errors.branchId.message}</p>}
       </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Sub-Branch (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={!branchId} {...register('subBranchId')}>
+          <option value="">{branchId ? 'Whole branch (no specific sub-branch)' : 'Select a branch first'}</option>
+          {(subBranches || []).map((sb) => (
+            <option key={sb._id} value={sb._id}>{sb.name}</option>
+          ))}
+        </select>
+      </div>
+
       <AppFormField label="Team Name" placeholder="AC Repair Team A" error={errors.name?.message} {...register('name')} />
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Members (Optional)</label>
+        <MemberPicker branchId={branchId} subBranchId={subBranchId} employees={employees || []} memberIds={memberIds} onToggle={toggleMember} />
+      </div>
+
       {createTeam.isError && (
         <p className="text-sm text-destructive">{createTeam.error.response?.data?.message ?? 'Failed to create team.'}</p>
       )}
@@ -50,8 +115,94 @@ function AddTeamForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+function EditTeamForm({ team, onClose }: { team: Team; onClose: () => void }) {
+  const updateTeam = useUpdateTeam();
+  const { data: branches } = useBranches();
+  const { data: employees } = useEmployees();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<TeamFormValues>({
+    resolver: zodResolver(teamFormSchema),
+    defaultValues: { branchId: team.branchId, subBranchId: team.subBranchId ?? '', name: team.name },
+  });
+  const branchId = watch('branchId');
+  const subBranchId = watch('subBranchId');
+  const { data: subBranches } = useSubBranches(branchId || undefined);
+  const [memberIds, setMemberIds] = useState<string[]>(team.memberIds ?? []);
+
+  const toggleMember = (userId: string) => {
+    setMemberIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
+  };
+
+  const onSubmit = (values: TeamFormValues) => {
+    updateTeam.mutate(
+      { id: team._id, ...values, subBranchId: values.subBranchId || undefined, memberIds },
+      { onSuccess: onClose }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Branch</label>
+        {/* key remounts this select once real branch options exist — registering
+            a value against a not-yet-rendered <option> (async data) never gets
+            picked up retroactively by the browser once the option later appears. */}
+        <select
+          key={branches ? 'branch-ready' : 'branch-loading'}
+          className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          {...register('branchId')}
+        >
+          <option value="">Select a branch...</option>
+          {(branches || []).map((b) => (
+            <option key={b._id} value={b._id}>{b.name}</option>
+          ))}
+        </select>
+        {errors.branchId && <p className="text-sm text-destructive">{errors.branchId.message}</p>}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Sub-Branch (Optional)</label>
+        <select
+          key={subBranches ? 'subbranch-ready' : 'subbranch-loading'}
+          className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          disabled={!branchId}
+          {...register('subBranchId')}
+        >
+          <option value="">{branchId ? 'Whole branch (no specific sub-branch)' : 'Select a branch first'}</option>
+          {(subBranches || []).map((sb) => (
+            <option key={sb._id} value={sb._id}>{sb.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <AppFormField label="Team Name" placeholder="AC Repair Team A" error={errors.name?.message} {...register('name')} />
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Members (Optional)</label>
+        <MemberPicker branchId={branchId} subBranchId={subBranchId} employees={employees || []} memberIds={memberIds} onToggle={toggleMember} />
+      </div>
+
+      {updateTeam.isError && (
+        <p className="text-sm text-destructive">{updateTeam.error.response?.data?.message ?? 'Failed to update team.'}</p>
+      )}
+      <Button type="submit" className="w-full" disabled={updateTeam.isPending}>
+        {updateTeam.isPending ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </form>
+  );
+}
+
 export default function TeamsPage() {
   const { data: teams, isLoading, isError } = useTeams();
+  const { data: branches } = useBranches();
+  const { data: subBranches } = useSubBranches();
+  const { data: employees } = useEmployees();
+
+  const branchName = (id: string) => branches?.find((b) => b._id === id)?.name ?? '—';
+  const subBranchName = (id?: string) => (id ? subBranches?.find((sb) => sb._id === id)?.name ?? '—' : '—');
+  const memberNames = (ids: string[]) =>
+    ids.length === 0
+      ? '—'
+      : ids.map((id) => employees?.find((e) => e.userId._id === id)?.userId.name ?? 'Unknown').join(', ');
 
   return (
     <div className="space-y-6">
@@ -77,11 +228,39 @@ export default function TeamsPage() {
             pageSize={10}
             columns={[
               { key: 'name', header: 'Team Name' },
-              { key: 'memberIds', header: 'Members', render: (item) => String(item.memberIds?.length ?? 0) },
+              { key: 'branchId', header: 'Branch', render: (item) => branchName(item.branchId) },
+              { key: 'subBranchId', header: 'Sub-Branch', render: (item) => subBranchName(item.subBranchId) },
+              {
+                key: 'memberIds',
+                header: 'Members',
+                render: (item) => (
+                  <span className="text-sm text-muted-foreground" title={memberNames(item.memberIds)}>
+                    {item.memberIds?.length ?? 0} member{item.memberIds?.length === 1 ? '' : 's'}
+                  </span>
+                ),
+              },
               {
                 key: 'active',
                 header: 'Status',
                 render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+              },
+              {
+                key: 'actions',
+                header: '',
+                render: (item) => (
+                  <FormSheet
+                    triggerLabel="Edit"
+                    title="Edit Team"
+                    description={`Update ${item.name}'s branch, sub-branch, or members.`}
+                    triggerElement={
+                      <Button size="sm" variant="ghost">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    }
+                  >
+                    {(close) => <EditTeamForm team={item} onClose={close} />}
+                  </FormSheet>
+                ),
               },
             ]}
           />

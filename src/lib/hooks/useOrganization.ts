@@ -98,7 +98,10 @@ export function useTeams() {
 
 export interface CreateTeamInput {
   branchId: string;
+  subBranchId?: string;
   name: string;
+  leadId?: string;
+  memberIds?: string[];
 }
 
 export function useCreateTeam() {
@@ -106,6 +109,26 @@ export function useCreateTeam() {
   return useMutation<Team, AxiosError<ApiErrorEnvelope>, CreateTeamInput>({
     mutationFn: async (input) => {
       const res = await apiClient.post<ApiSuccessEnvelope<Team>>('/teams', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] }),
+  });
+}
+
+export interface UpdateTeamInput {
+  id: string;
+  branchId?: string;
+  subBranchId?: string;
+  name?: string;
+  leadId?: string;
+  memberIds?: string[];
+}
+
+export function useUpdateTeam() {
+  const queryClient = useQueryClient();
+  return useMutation<Team, AxiosError<ApiErrorEnvelope>, UpdateTeamInput>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Team>>(`/teams/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] }),
