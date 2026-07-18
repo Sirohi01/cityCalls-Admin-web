@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Phone, Sparkles } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLead, useAddLeadNote, useConvertLead } from '@/lib/hooks/useLeads';
+import { useLead, useAddLeadNote, useConvertLead, useChangeLeadStage, LEAD_STAGES } from '@/lib/hooks/useLeads';
 import { useCalls } from '@/lib/hooks/useCalls';
 import { useClassifyComplaint } from '@/lib/hooks/useAISettings';
 
@@ -18,6 +18,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const { data: allCalls } = useCalls();
   const addNote = useAddLeadNote(id);
   const convertLead = useConvertLead(id);
+  const changeStage = useChangeLeadStage(id);
   const classifyComplaint = useClassifyComplaint();
   const [noteText, setNoteText] = useState('');
 
@@ -29,6 +30,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const handleAddNote = () => {
     if (!noteText.trim()) return;
     addNote.mutate({ text: noteText }, { onSuccess: () => setNoteText('') });
+  };
+
+  const handleStageChange = (toStage: string) => {
+    if (!toStage || toStage === lead.stage) return;
+    let lostReason: string | undefined;
+    if (toStage === 'LOST') {
+      lostReason = window.prompt('Why was this lead lost?') ?? undefined;
+      if (!lostReason) return;
+    }
+    changeStage.mutate({ toStage, lostReason });
   };
 
   const handleConvert = () => {
@@ -52,8 +63,21 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           <h1 className="text-3xl font-bold tracking-tight">Lead: {lead.contactName || lead.number}</h1>
           <p className="text-muted-foreground">{lead.number} • Created on {new Date(lead.createdAt).toLocaleDateString()}</p>
         </div>
-        <div className="ml-auto space-x-2">
+        <div className="ml-auto flex items-center gap-2">
           <StatusBadge label={lead.stage.replace(/_/g, ' ')} category={lead.stage === 'CONVERTED' ? 'success' : 'info'} />
+          {lead.stage !== 'CONVERTED' && (
+            <select
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              value=""
+              onChange={(e) => handleStageChange(e.target.value)}
+              disabled={changeStage.isPending}
+            >
+              <option value="">Move to stage...</option>
+              {LEAD_STAGES.filter((s) => s !== lead.stage).map((s) => (
+                <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          )}
           {lead.stage !== 'CONVERTED' && (
             <Button onClick={handleConvert} disabled={convertLead.isPending}>
               {convertLead.isPending ? 'Converting...' : 'Convert to Customer'}

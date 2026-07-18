@@ -6,7 +6,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 
-import { useServiceRequests } from '@/lib/hooks/useServiceRequests';
+import { useServiceRequests, stageForStatus } from '@/lib/hooks/useServiceRequests';
 
 export default function ServiceRequestsPage() {
   const router = useRouter();
@@ -47,33 +47,33 @@ export default function ServiceRequestsPage() {
               header: 'Customer',
               render: (item) => item.customer?.name || 'Unknown'
             },
-            { 
-              key: 'priority', 
+            {
+              key: 'priority',
               header: 'Priority',
               render: (item) => (
-                <span className={`text-xs font-semibold ${item.priority === 'HIGH' ? 'text-red-600' : item.priority === 'MEDIUM' ? 'text-amber-600' : 'text-green-600'}`}>
+                <span className={`text-xs font-semibold ${item.priority === 'URGENT' || item.priority === 'HIGH' ? 'text-red-600' : item.priority === 'NORMAL' ? 'text-amber-600' : 'text-green-600'}`}>
                   {item.priority}
                 </span>
               )
             },
-            { 
-              key: 'status', 
+            {
+              key: 'status',
               header: 'Status',
-              render: (item) => (
-                <StatusBadge 
-                  label={item.status} 
-                  category={
-                    item.status === 'NEW' ? 'error' : 
-                    item.status.includes('ASSIGNED') ? 'info' : 
-                    item.status.includes('IN_PROGRESS') ? 'warning' : 'default'
-                  } 
-                />
-              )
+              render: (item) => {
+                const stage = stageForStatus(item.status);
+                const category =
+                  item.status === 'CANCELLED' ? 'error' :
+                  stage === 'Open' ? 'error' :
+                  stage === 'Assigned' ? 'info' :
+                  stage === 'In Progress' ? 'warning' :
+                  stage === 'Resolved' ? 'success' : 'default';
+                return <StatusBadge label={item.status} category={category} />;
+              }
             },
-            { 
-              key: 'assignee', 
+            {
+              key: 'assignee',
               header: 'Assignee',
-              render: (item) => item.assignedToUser?.name || item.assignedToVendor?.name || 'Unassigned'
+              render: (item) => item.assignee?.name || 'Unassigned'
             },
             { 
               key: 'createdAt', 

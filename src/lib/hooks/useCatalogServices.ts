@@ -39,6 +39,7 @@ export interface CreateCatalogServiceInput {
   categoryId: string;
   pricing?: { basePrice?: number; visitingCharge?: number; inspectionCharge?: number; emergencyCharge?: number };
   warrantyPeriodDays?: number;
+  active?: boolean;
 }
 
 export function useCreateCatalogService() {

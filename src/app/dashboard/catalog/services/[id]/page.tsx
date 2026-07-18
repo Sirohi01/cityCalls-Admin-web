@@ -45,8 +45,16 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
           <p className="text-muted-foreground">Manage service configuration and pricing.</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
           <StatusBadge label={service.active ? 'Active' : 'Inactive'} category={service.active ? 'success' : 'default'} />
+          <Button
+            size="sm"
+            variant={service.active ? 'outline' : 'default'}
+            onClick={() => updateService.mutate({ active: !service.active })}
+            disabled={updateService.isPending}
+          >
+            {service.active ? 'Deactivate' : 'Activate'}
+          </Button>
         </div>
       </div>
 

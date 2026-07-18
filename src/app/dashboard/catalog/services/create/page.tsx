@@ -14,6 +14,7 @@ const createServiceSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   categoryId: z.string().min(1, 'Select a category'),
   basePrice: z.number().min(0),
+  active: z.boolean(),
 });
 type CreateServiceValues = z.infer<typeof createServiceSchema>;
 
@@ -21,11 +22,14 @@ export default function CreateServicePage() {
   const router = useRouter();
   const createService = useCreateCatalogService();
   const { data: categories } = useMasters(['SERVICE_CATEGORY']);
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateServiceValues>({ resolver: zodResolver(createServiceSchema) });
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateServiceValues>({
+    resolver: zodResolver(createServiceSchema),
+    defaultValues: { active: true },
+  });
 
   const onSubmit = (values: CreateServiceValues) => {
     createService.mutate(
-      { name: values.name, categoryId: values.categoryId, pricing: { basePrice: values.basePrice } },
+      { name: values.name, categoryId: values.categoryId, pricing: { basePrice: values.basePrice }, active: values.active },
       { onSuccess: () => router.push('/dashboard/catalog/services') }
     );
   };
@@ -59,6 +63,10 @@ export default function CreateServicePage() {
               </div>
               <AppFormField label="Base Price (₹)" type="number" placeholder="499" error={errors.basePrice?.message} {...register('basePrice', { valueAsNumber: true })} />
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="w-4 h-4" {...register('active')} />
+              Active (visible to customers immediately)
+            </label>
             {createService.isError && (
               <p className="text-sm text-destructive">{createService.error.response?.data?.message ?? 'Failed to create service.'}</p>
             )}

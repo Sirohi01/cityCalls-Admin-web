@@ -11,6 +11,41 @@ export interface ServiceRequestAddress {
   pinCode: string;
   country: string;
 }
+export const SERVICE_REQUEST_STAGES: Record<string, string[]> = {
+  Open: ['NEW', 'NEEDS_MANUAL_BRANCH_ASSIGNMENT'],
+  Assigned: [
+    'ASSIGNED_TO_BRANCH', 'ASSIGNED_TO_SUB_BRANCH', 'ASSIGNED_TO_TEAM', 'ASSIGNED_TO_EMPLOYEE',
+    'ASSIGNED_TO_VENDOR', 'OUTSOURCED', 'REASSIGNMENT_REQUIRED', 'ACCEPTED', 'APPOINTMENT_SCHEDULED',
+    'RESCHEDULED', 'CUSTOMER_UNAVAILABLE', 'TECHNICIAN_EN_ROUTE', 'TECHNICIAN_ARRIVED',
+  ],
+  'In Progress': [
+    'INSPECTION_STARTED', 'INSPECTION_COMPLETED', 'ESTIMATE_PENDING', 'ESTIMATE_SHARED',
+    'AWAITING_CUSTOMER_APPROVAL', 'ESTIMATE_APPROVED', 'ESTIMATE_REJECTED', 'PARTS_PENDING',
+    'WORK_STARTED', 'WORK_IN_PROGRESS', 'ON_HOLD',
+  ],
+  Resolved: [
+    'SERVICE_COMPLETED', 'CUSTOMER_CONFIRMATION_PENDING', 'PAYMENT_PENDING', 'PARTIALLY_PAID', 'PAID',
+    'FOLLOW_UP_PENDING', 'HAPPY_CALL_PENDING', 'CLOSED', 'REOPENED',
+  ],
+};
+export const SERVICE_REQUEST_STAGE_NAMES = Object.keys(SERVICE_REQUEST_STAGES);
+
+export function stageForStatus(status: string): string | null {
+  return SERVICE_REQUEST_STAGE_NAMES.find((stage) => SERVICE_REQUEST_STAGES[stage].includes(status)) ?? null;
+}
+
+export function stageIndexForStatus(status: string): number {
+  const idx = SERVICE_REQUEST_STAGE_NAMES.findIndex((stage) => SERVICE_REQUEST_STAGES[stage].includes(status));
+  return idx === -1 ? 0 : idx;
+}
+
+export interface ServiceRequestCustomerProduct {
+  brand?: string;
+  productType?: string;
+  modelNumber?: string;
+  purchaseDate?: string;
+  warrantyExpiresAt?: string;
+}
 
 export interface ServiceRequest {
   _id: string;
@@ -27,9 +62,34 @@ export interface ServiceRequest {
   assigneeType?: string;
   assigneeId?: string;
   isEscalated?: boolean;
-  customer?: { name: string };
-  assignedToUser?: { name: string };
-  assignedToVendor?: { name: string };
+  customer?: { name: string; mobile?: string } | null;
+  service?: { name: string } | null;
+  createdByName?: string | null;
+  customerProduct?: ServiceRequestCustomerProduct | null;
+  assignee?: { type: string; name: string } | null;
+}
+
+export interface AssignmentHistoryEntry {
+  _id: string;
+  fromAssigneeType?: string;
+  toAssigneeType?: string;
+  action: string;
+  reason?: string;
+  actorId?: { _id: string; name: string };
+  actorRole: string;
+  method: string;
+  timestamp: string;
+}
+
+export function useAssignmentHistory(id: string) {
+  return useQuery({
+    queryKey: ['service-request-assignment-history', id],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<AssignmentHistoryEntry[]>>(`/service-requests/${id}/assignment-history`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
 }
 
 interface ListParams {

@@ -9,9 +9,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 
-import { useCustomer, useAddCustomerAddress, useCustomerProducts, useAddCustomerProduct } from '@/lib/hooks/useCustomers';
+import {
+  useCustomer,
+  useAddCustomerAddress,
+  useUpdateCustomerAddress,
+  useDeleteCustomerAddress,
+  useCustomerProducts,
+  useAddCustomerProduct,
+  useUpdateCustomer,
+  useUpdateCustomerConsent,
+  Customer,
+  CustomerAddress,
+  ConsentState,
+} from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
 
 const addAddressSchema = z.object({
@@ -41,6 +53,119 @@ function AddAddressForm({ customerId, onClose }: { customerId: string; onClose: 
         {addAddress.isPending ? 'Adding...' : 'Add Address'}
       </Button>
     </form>
+  );
+}
+
+const editCustomerSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  businessName: z.string().optional(),
+  gstin: z.string().optional(),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  customerType: z.string().min(1, 'Select a customer type'),
+});
+type EditCustomerValues = z.infer<typeof editCustomerSchema>;
+
+function EditCustomerForm({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+  const updateCustomer = useUpdateCustomer();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
+  const { register, handleSubmit, formState: { errors } } = useForm<EditCustomerValues>({
+    resolver: zodResolver(editCustomerSchema),
+    defaultValues: {
+      name: customer.name,
+      businessName: customer.businessName ?? '',
+      gstin: customer.gstin ?? '',
+      email: customer.email ?? '',
+      customerType: customer.customerType,
+    },
+  });
+
+  const onSubmit = (values: EditCustomerValues) => {
+    updateCustomer.mutate(
+      { customerId: customer._id, ...values, email: values.email || undefined },
+      { onSuccess: onClose }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="Full Name" error={errors.name?.message} {...register('name')} />
+      <AppFormField label="Business Name (Optional)" {...register('businessName')} />
+      <AppFormField label="GSTIN (Optional)" {...register('gstin')} />
+      <AppFormField label="Email (Optional)" type="email" error={errors.email?.message} {...register('email')} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Customer Type</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
+          {customerTypes?.map((t) => <option key={t._id} value={t.key}>{t.label}</option>)}
+        </select>
+      </div>
+      {updateCustomer.isError && (
+        <p className="text-sm text-destructive">{updateCustomer.error.response?.data?.message ?? 'Failed to update customer.'}</p>
+      )}
+      <Button type="submit" className="w-full" disabled={updateCustomer.isPending}>
+        {updateCustomer.isPending ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </form>
+  );
+}
+
+function EditAddressForm({ customerId, address, onClose }: { customerId: string; address: CustomerAddress; onClose: () => void }) {
+  const updateAddress = useUpdateCustomerAddress();
+  const { register, handleSubmit, formState: { errors } } = useForm<AddAddressValues>({
+    resolver: zodResolver(addAddressSchema),
+    defaultValues: { line1: address.line1, city: address.city, state: address.state, pinCode: address.pinCode },
+  });
+
+  const onSubmit = (values: AddAddressValues) => {
+    if (!address._id) return;
+    updateAddress.mutate({ ...values, customerId, addressId: address._id }, { onSuccess: onClose });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="Address Line 1" error={errors.line1?.message} {...register('line1')} />
+      <AppFormField label="City" error={errors.city?.message} {...register('city')} />
+      <AppFormField label="State" error={errors.state?.message} {...register('state')} />
+      <AppFormField label="Pin Code" error={errors.pinCode?.message} {...register('pinCode')} />
+      {updateAddress.isError && <p className="text-sm text-destructive">Failed to update address.</p>}
+      <Button type="submit" className="w-full" disabled={updateAddress.isPending}>
+        {updateAddress.isPending ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </form>
+  );
+}
+
+const CONSENT_CHANNELS: { key: 'whatsapp' | 'email' | 'sms'; label: string }[] = [
+  { key: 'whatsapp', label: 'WhatsApp' },
+  { key: 'email', label: 'Email' },
+  { key: 'sms', label: 'SMS' },
+];
+
+function ConsentPanel({ customerId, consent }: { customerId: string; consent?: Customer['consent'] }) {
+  const updateConsent = useUpdateCustomerConsent();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Marketing Consent</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {CONSENT_CHANNELS.map(({ key, label }) => (
+          <div key={key} className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <select
+              className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+              value={consent?.[key] ?? 'NOT_ASKED'}
+              disabled={updateConsent.isPending}
+              onChange={(e) => updateConsent.mutate({ customerId, channel: key, state: e.target.value as ConsentState })}
+            >
+              <option value="GRANTED">Granted</option>
+              <option value="REVOKED">Revoked</option>
+              <option value="NOT_ASKED">Not Asked</option>
+            </select>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -97,6 +222,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const { data: customer, isLoading, isError } = useCustomer(id);
   const { data: products } = useCustomerProducts(id);
   const { data: masters } = useMasters(['BRAND', 'PRODUCT_TYPE', 'CUSTOMER_TYPE']);
+  const deleteAddress = useDeleteCustomerAddress();
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading customer details...</div>;
   if (isError || !customer) return <div className="p-8 text-center text-destructive">Failed to load customer details.</div>;
@@ -114,9 +240,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <h1 className="text-3xl font-bold tracking-tight">{customer.name}</h1>
           <p className="text-muted-foreground">ID: {customer._id}</p>
         </div>
+        <div className="ml-auto">
+          <FormSheet
+            triggerLabel="Edit Customer"
+            title="Edit Customer"
+            description={`Update ${customer.name}'s profile.`}
+            triggerElement={<Button variant="outline"><Pencil className="w-4 h-4 mr-2" />Edit Customer</Button>}
+          >
+            {(close) => <EditCustomerForm customer={customer} onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Profile Overview</CardTitle>
@@ -135,6 +272,9 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </CardContent>
         </Card>
 
+        <ConsentPanel customerId={id} consent={customer.consent} />
+        </div>
+
         <div className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -145,9 +285,35 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             </CardHeader>
             <CardContent className="space-y-4">
               {customer.addresses?.map((addr, idx) => (
-                <div key={addr._id ?? idx} className="rounded-md border p-4 text-sm">
-                  <p className="font-medium">Address {idx + 1}{addr.isDefault ? ' (Default)' : ''}</p>
-                  <p className="text-muted-foreground">{[addr.line1, addr.city, addr.state, addr.pinCode].filter(Boolean).join(', ')}</p>
+                <div key={addr._id ?? idx} className="rounded-md border p-4 text-sm flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">Address {idx + 1}{addr.isDefault ? ' (Default)' : ''}</p>
+                    <p className="text-muted-foreground">{[addr.line1, addr.city, addr.state, addr.pinCode].filter(Boolean).join(', ')}</p>
+                  </div>
+                  {addr._id && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <FormSheet
+                        triggerLabel="Edit"
+                        title="Edit Address"
+                        description={`Update address for ${customer.name}.`}
+                        triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
+                      >
+                        {(close) => <EditAddressForm customerId={id} address={addr} onClose={close} />}
+                      </FormSheet>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (window.confirm('Remove this address?')) {
+                            deleteAddress.mutate({ customerId: id, addressId: addr._id! });
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
               {(!customer.addresses || customer.addresses.length === 0) && (

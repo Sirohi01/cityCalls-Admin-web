@@ -15,6 +15,8 @@ export interface CustomerAddress {
   isDefault?: boolean;
 }
 
+export type ConsentState = 'GRANTED' | 'REVOKED' | 'NOT_ASKED';
+
 export interface Customer {
   _id: string;
   name: string;
@@ -28,6 +30,7 @@ export interface Customer {
   tags?: string[];
   notes?: string[];
   blacklisted?: boolean;
+  consent?: { whatsapp: ConsentState; email: ConsentState; sms: ConsentState };
 }
 
 export function useCustomers(params?: { tag?: string }) {
@@ -82,8 +85,6 @@ export function useLookupCustomerByMobile() {
   });
 }
 
-export type ConsentState = 'GRANTED' | 'REVOKED' | 'NOT_ASKED';
-
 export interface CreateCustomerInput {
   customerType: string;
   name: string;
@@ -118,6 +119,69 @@ export function useAddCustomerAddress() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export interface UpdateCustomerInput {
+  customerId: string;
+  customerType?: string;
+  name?: string;
+  businessName?: string;
+  gstin?: string;
+  email?: string;
+}
+
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, UpdateCustomerInput>({
+    mutationFn: async ({ customerId, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Customer>>(`/customers/${customerId}`, input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export function useUpdateCustomerAddress() {
+  const queryClient = useQueryClient();
+  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, Partial<CustomerAddress> & { customerId: string; addressId: string }>({
+    mutationFn: async ({ customerId, addressId, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Customer>>(`/customers/${customerId}/addresses/${addressId}`, input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export function useDeleteCustomerAddress() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, { customerId: string; addressId: string }>({
+    mutationFn: async ({ customerId, addressId }) => {
+      await apiClient.delete(`/customers/${customerId}/addresses/${addressId}`);
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+export function useUpdateCustomerConsent() {
+  const queryClient = useQueryClient();
+  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, { customerId: string; channel: 'whatsapp' | 'email' | 'sms'; state: ConsentState; reason?: string }>({
+    mutationFn: async ({ customerId, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Customer>>(`/customers/${customerId}/consent`, input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
     },
   });
 }
