@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, FileText } from 'lucide-react';
 
-import { useEstimates, useCreateEstimate, Estimate, LineItem } from '@/lib/hooks/useEstimates';
+import { useEstimates, useCreateEstimate, useShareEstimate, useConvertEstimate, Estimate, LineItem } from '@/lib/hooks/useEstimates';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 import { useBranches } from '@/lib/hooks/useOrganization';
 import { useServiceRequests } from '@/lib/hooks/useServiceRequests';
@@ -150,6 +150,9 @@ export default function EstimatesPage() {
   const { data: estimates, isLoading, isError } = useEstimates();
   const { data: customers } = useCustomers();
   const customerName = (id: string) => customers?.find((c) => c._id === id)?.name ?? 'Unknown';
+  const shareEstimate = useShareEstimate();
+  const convertEstimate = useConvertEstimate();
+  const anyActionPending = shareEstimate.isPending || convertEstimate.isPending;
 
   return (
     <div className="space-y-6">
@@ -194,6 +197,27 @@ export default function EstimatesPage() {
                       ),
                     },
                     { key: 'createdAt', header: 'Date', render: (item) => new Date(item.createdAt).toLocaleDateString() },
+                    {
+                      key: 'actions',
+                      header: '',
+                      render: (item) => (
+                        <div className="flex items-center gap-1">
+                          {item.status === 'DRAFT' && (
+                            <Button size="sm" variant="outline" disabled={anyActionPending} onClick={() => shareEstimate.mutate({ id: item._id, channels: ['WHATSAPP'] })}>
+                              Share
+                            </Button>
+                          )}
+                          {item.status === 'SHARED' && (
+                            <span className="text-xs text-muted-foreground">Awaiting customer approval</span>
+                          )}
+                          {item.status === 'APPROVED' && (
+                            <Button size="sm" disabled={anyActionPending} onClick={() => convertEstimate.mutate(item._id)}>
+                              Convert to Invoice
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
                   ]}
                 />
                 </>

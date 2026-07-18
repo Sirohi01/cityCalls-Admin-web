@@ -9,6 +9,7 @@ export interface Master {
   label: string;
   active: boolean;
   sortOrder?: number;
+  parentId?: string;
 }
 
 export function useMasters(types: string[]) {
@@ -30,6 +31,8 @@ export interface CreateMasterInput {
   masterType: string;
   key: string;
   label: string;
+  parentId?: string;
+  sortOrder?: number;
 }
 
 export function useCreateMaster() {
@@ -37,6 +40,26 @@ export function useCreateMaster() {
   return useMutation<Master, AxiosError<ApiErrorEnvelope>, CreateMasterInput>({
     mutationFn: async ({ masterType, ...input }) => {
       const res = await apiClient.post<ApiSuccessEnvelope<Master>>(`/masters/${masterType}`, input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['masters'] }),
+  });
+}
+
+export interface UpdateMasterInput {
+  masterType: string;
+  id: string;
+  label?: string;
+  parentId?: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export function useUpdateMaster() {
+  const queryClient = useQueryClient();
+  return useMutation<Master, AxiosError<ApiErrorEnvelope>, UpdateMasterInput>({
+    mutationFn: async ({ masterType, id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Master>>(`/masters/${masterType}/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['masters'] }),

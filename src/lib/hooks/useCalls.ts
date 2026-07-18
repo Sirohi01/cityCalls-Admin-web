@@ -79,3 +79,24 @@ export function useCreateCall() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calls'] }),
   });
 }
+
+export interface UpdateCallInput {
+  id: string;
+  outcome?: string;
+  notes?: string;
+  assignedTo?: string;
+}
+
+export function useUpdateCall() {
+  const queryClient = useQueryClient();
+  return useMutation<Call, AxiosError<ApiErrorEnvelope>, UpdateCallInput>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Call>>(`/calls/${id}`, input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['calls'] });
+      queryClient.invalidateQueries({ queryKey: ['call', variables.id] });
+    },
+  });
+}

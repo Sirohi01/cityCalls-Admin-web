@@ -9,24 +9,57 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
-import { useSubBranches, useCreateSubBranch, useBranches, SubBranch } from '@/lib/hooks/useOrganization';
+import { Pencil } from 'lucide-react';
+import { useSubBranches, useCreateSubBranch, useUpdateSubBranch, useBranches, SubBranch } from '@/lib/hooks/useOrganization';
+import { useUsers } from '@/lib/hooks/useUsers';
 
-const createSubBranchSchema = z.object({
+const subBranchFormSchema = z.object({
   branchId: z.string().min(1, 'Select a branch'),
   name: z.string().min(2, 'Name is required'),
   code: z.string().min(2, 'Code is required').max(10),
+  pinCodes: z.string().optional(),
+  managerId: z.string().optional(),
+  active: z.boolean(),
 });
-type CreateSubBranchValues = z.infer<typeof createSubBranchSchema>;
+type SubBranchFormValues = z.infer<typeof subBranchFormSchema>;
 
-function AddSubBranchForm({ onClose }: { onClose: () => void }) {
+function splitList(value?: string): string[] {
+  return (value ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+}
+
+function SubBranchForm({ subBranch, onClose }: { subBranch?: SubBranch; onClose: () => void }) {
+  const isEdit = !!subBranch;
   const createSubBranch = useCreateSubBranch();
+  const updateSubBranch = useUpdateSubBranch();
+  const mutation = isEdit ? updateSubBranch : createSubBranch;
   const { data: branches } = useBranches();
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateSubBranchValues>({
-    resolver: zodResolver(createSubBranchSchema),
+  const { data: users } = useUsers();
+  const { register, handleSubmit, formState: { errors } } = useForm<SubBranchFormValues>({
+    resolver: zodResolver(subBranchFormSchema),
+    defaultValues: {
+      branchId: subBranch?.branchId ?? '',
+      name: subBranch?.name ?? '',
+      code: subBranch?.code ?? '',
+      pinCodes: subBranch?.coverage?.pinCodes?.join(', ') ?? '',
+      managerId: subBranch?.managerId ?? '',
+      active: subBranch?.active ?? true,
+    },
   });
 
-  const onSubmit = (values: CreateSubBranchValues) => {
-    createSubBranch.mutate(values, { onSuccess: onClose });
+  const onSubmit = (values: SubBranchFormValues) => {
+    const payload = {
+      branchId: values.branchId,
+      name: values.name,
+      code: values.code,
+      coverage: { pinCodes: splitList(values.pinCodes) },
+      managerId: values.managerId || undefined,
+      active: values.active,
+    };
+    if (isEdit && subBranch) {
+      updateSubBranch.mutate({ id: subBranch._id, ...payload }, { onSuccess: onClose });
+    } else {
+      createSubBranch.mutate(payload, { onSuccess: onClose });
+    }
   };
 
   return (
@@ -43,11 +76,26 @@ function AddSubBranchForm({ onClose }: { onClose: () => void }) {
       </div>
       <AppFormField label="Sub-Branch Name" placeholder="South Delhi Hub" error={errors.name?.message} {...register('name')} />
       <AppFormField label="Sub-Branch Code" placeholder="DEL01-S" error={errors.code?.message} {...register('code')} />
-      {createSubBranch.isError && (
-        <p className="text-sm text-destructive">{createSubBranch.error.response?.data?.message ?? 'Failed to create sub-branch.'}</p>
+      <AppFormField label="Coverage Pincodes (comma-separated)" placeholder="110001, 110002" {...register('pinCodes')} />
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Manager (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('managerId')}>
+          <option value="">Unassigned</option>
+          {(users || []).map((u) => <option key={u._id} value={u._id}>{u.name} ({u.role.replace(/_/g, ' ')})</option>)}
+        </select>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" className="w-4 h-4" {...register('active')} />
+        Active
+      </label>
+
+      {mutation.isError && (
+        <p className="text-sm text-destructive">{mutation.error.response?.data?.message ?? `Failed to ${isEdit ? 'update' : 'create'} sub-branch.`}</p>
       )}
-      <Button type="submit" className="w-full" disabled={createSubBranch.isPending}>
-        {createSubBranch.isPending ? 'Creating...' : 'Create Sub-Branch'}
+      <Button type="submit" className="w-full" disabled={mutation.isPending}>
+        {mutation.isPending ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Sub-Branch'}
       </Button>
     </form>
   );
@@ -67,7 +115,7 @@ export default function SubBranchesPage() {
           <p className="text-muted-foreground">Manage sub-branches under main branches.</p>
         </div>
         <FormSheet triggerLabel="Add Sub-Branch" title="Add Sub-Branch" description="Create a new sub-branch under a parent branch.">
-          {(close) => <AddSubBranchForm onClose={close} />}
+          {(close) => <SubBranchForm onClose={close} />}
         </FormSheet>
       </div>
 
@@ -103,6 +151,20 @@ export default function SubBranchesPage() {
                 key: 'active',
                 header: 'Status',
                 render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+              },
+              {
+                key: 'actions',
+                header: '',
+                render: (item) => (
+                  <FormSheet
+                    triggerLabel="Edit"
+                    title="Edit Sub-Branch"
+                    description={`Update ${item.name}.`}
+                    triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
+                  >
+                    {(close) => <SubBranchForm subBranch={item} onClose={close} />}
+                  </FormSheet>
+                ),
               },
             ]}
           />

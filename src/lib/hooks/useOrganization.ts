@@ -2,12 +2,31 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
 import { AxiosError } from 'axios';
 
+export interface WorkingHoursRow {
+  day: number;
+  openTime?: string;
+  closeTime?: string;
+  closed: boolean;
+}
+
+export interface RegisteredAddress {
+  line1: string;
+  city: string;
+  state: string;
+  pinCode: string;
+}
+
 export interface Branch {
   _id: string;
   name: string;
   code: string;
   coverage?: { pinCodes: string[]; cities: string[]; states: string[] };
+  serviceCategoryIds?: string[];
+  workingHours?: WorkingHoursRow[];
+  holidays?: string[];
   managerId?: string;
+  registeredAddress?: RegisteredAddress;
+  gstin?: string;
   active: boolean;
   createdAt: string;
 }
@@ -17,6 +36,7 @@ export interface SubBranch {
   branchId: string;
   name: string;
   code: string;
+  coverage?: { pinCodes: string[] };
   managerId?: string;
   active: boolean;
   createdAt: string;
@@ -43,16 +63,36 @@ export function useBranches() {
   });
 }
 
-export interface CreateBranchInput {
-  name: string;
-  code: string;
+export interface BranchInput {
+  name?: string;
+  code?: string;
+  coverage?: { pinCodes: string[]; cities: string[]; states: string[] };
+  serviceCategoryIds?: string[];
+  workingHours?: WorkingHoursRow[];
+  holidays?: string[];
+  managerId?: string;
+  registeredAddress?: RegisteredAddress;
+  gstin?: string;
+  active?: boolean;
 }
+export type CreateBranchInput = BranchInput & { name: string; code: string };
 
 export function useCreateBranch() {
   const queryClient = useQueryClient();
   return useMutation<Branch, AxiosError<ApiErrorEnvelope>, CreateBranchInput>({
     mutationFn: async (input) => {
       const res = await apiClient.post<ApiSuccessEnvelope<Branch>>('/branches', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
+  });
+}
+
+export function useUpdateBranch() {
+  const queryClient = useQueryClient();
+  return useMutation<Branch, AxiosError<ApiErrorEnvelope>, BranchInput & { id: string }>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Branch>>(`/branches/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
@@ -69,17 +109,32 @@ export function useSubBranches(branchId?: string) {
   });
 }
 
-export interface CreateSubBranchInput {
-  branchId: string;
-  name: string;
-  code: string;
+export interface SubBranchInput {
+  branchId?: string;
+  name?: string;
+  code?: string;
+  coverage?: { pinCodes: string[] };
+  managerId?: string;
+  active?: boolean;
 }
+export type CreateSubBranchInput = SubBranchInput & { branchId: string; name: string; code: string };
 
 export function useCreateSubBranch() {
   const queryClient = useQueryClient();
   return useMutation<SubBranch, AxiosError<ApiErrorEnvelope>, CreateSubBranchInput>({
     mutationFn: async (input) => {
       const res = await apiClient.post<ApiSuccessEnvelope<SubBranch>>('/sub-branches', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-branches'] }),
+  });
+}
+
+export function useUpdateSubBranch() {
+  const queryClient = useQueryClient();
+  return useMutation<SubBranch, AxiosError<ApiErrorEnvelope>, SubBranchInput & { id: string }>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<SubBranch>>(`/sub-branches/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-branches'] }),

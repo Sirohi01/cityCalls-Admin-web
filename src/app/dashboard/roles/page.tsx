@@ -22,7 +22,8 @@ import {
   DataScope,
   DATA_SCOPES,
 } from '@/lib/hooks/useRoles';
-import { useBranches } from '@/lib/hooks/useOrganization';
+import { useBranches, useSubBranches, useTeams } from '@/lib/hooks/useOrganization';
+import { useVendors } from '@/lib/hooks/useVendors';
 import { useMe } from '@/lib/hooks/useAuth';
 
 function AddUserForm({ close }: { close: () => void }) {
@@ -73,13 +74,35 @@ function AddUserForm({ close }: { close: () => void }) {
 function EditUserForm({ user, close }: { user: User; close: () => void }) {
   const updateUser = useUpdateUser();
   const { data: branches } = useBranches();
-  const { register, handleSubmit } = useForm<Omit<UpdateUserInput, 'id'>>({
-    defaultValues: { name: user.name, email: user.email ?? '', role: user.role, branchId: user.branchId ?? '', status: user.status },
+  const { data: vendors } = useVendors();
+  const { register, handleSubmit, watch } = useForm<Omit<UpdateUserInput, 'id'>>({
+    defaultValues: {
+      name: user.name,
+      email: user.email ?? '',
+      role: user.role,
+      branchId: user.branchId ?? '',
+      subBranchId: user.subBranchId ?? '',
+      teamId: user.teamId ?? '',
+      vendorId: user.vendorId ?? '',
+      status: user.status,
+    },
   });
+  const branchId = watch('branchId');
+  const { data: subBranches } = useSubBranches(branchId || undefined);
+  const { data: teams } = useTeams();
+  const branchTeams = teams?.filter((t) => t.branchId === branchId) ?? [];
 
   const onSubmit = (values: Omit<UpdateUserInput, 'id'>) => {
     updateUser.mutate(
-      { id: user._id, ...values, branchId: values.branchId || undefined, email: values.email || undefined },
+      {
+        id: user._id,
+        ...values,
+        branchId: values.branchId || undefined,
+        subBranchId: values.subBranchId || undefined,
+        teamId: values.teamId || undefined,
+        vendorId: values.vendorId || undefined,
+        email: values.email || undefined,
+      },
       { onSuccess: () => close() }
     );
   };
@@ -102,6 +125,30 @@ function EditUserForm({ user, close }: { user: User; close: () => void }) {
         <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('branchId')}>
           <option value="">Unassigned</option>
           {(branches || []).map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Sub-Branch (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={!branchId} {...register('subBranchId')}>
+          <option value="">None</option>
+          {(subBranches || []).map((sb) => <option key={sb._id} value={sb._id}>{sb.name}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Team (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={!branchId} {...register('teamId')}>
+          <option value="">None</option>
+          {branchTeams.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Vendor (Optional — for vendor-affiliated staff)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('vendorId')}>
+          <option value="">None</option>
+          {(vendors || []).map((v) => <option key={v._id} value={v._id}>{v.companyName}</option>)}
         </select>
       </div>
 

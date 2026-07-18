@@ -9,8 +9,9 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Pencil } from 'lucide-react';
 
-import { useMasters, useCreateMaster, Master } from '@/lib/hooks/useMasters';
+import { useMasters, useCreateMaster, useUpdateMaster, Master } from '@/lib/hooks/useMasters';
 
 const MASTER_TYPES = ['SERVICE_CATEGORY', 'BRAND', 'PRODUCT_TYPE', 'SYMPTOM', 'DEFECT', 'SOLUTION', 'PART', 'UNIT', 'TAX_RATE', 'PRIORITY', 'LEAD_SOURCE', 'CALL_TYPE', 'APPOINTMENT_SLOT', 'PAYMENT_METHOD', 'CUSTOMER_TYPE'];
 
@@ -36,18 +37,20 @@ const createMasterSchema = z.object({
   masterType: z.string().min(1, 'Select a master type'),
   key: z.string().min(1, 'Key is required'),
   label: z.string().min(1, 'Label is required'),
+  parentId: z.string().optional(),
+  sortOrder: z.number().optional(),
 });
 type CreateMasterValues = z.infer<typeof createMasterSchema>;
 
-function AddMasterForm({ defaultType, onClose }: { defaultType: string; onClose: () => void }) {
+function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string; siblings: Master[]; onClose: () => void }) {
   const createMaster = useCreateMaster();
   const { register, handleSubmit, formState: { errors } } = useForm<CreateMasterValues>({
     resolver: zodResolver(createMasterSchema),
-    defaultValues: { masterType: defaultType },
+    defaultValues: { masterType: defaultType, sortOrder: 0 },
   });
 
   const onSubmit = (values: CreateMasterValues) => {
-    createMaster.mutate(values, { onSuccess: onClose });
+    createMaster.mutate({ ...values, parentId: values.parentId || undefined }, { onSuccess: onClose });
   };
 
   return (
@@ -61,6 +64,14 @@ function AddMasterForm({ defaultType, onClose }: { defaultType: string; onClose:
       </div>
       <AppFormField label="System Key" placeholder="e.g. AC_LEAK" error={errors.key?.message} {...register('key')} />
       <AppFormField label="Display Label" placeholder="e.g. AC Gas Leak" error={errors.label?.message} {...register('label')} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Parent Entry (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('parentId')}>
+          <option value="">None</option>
+          {siblings.map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
+        </select>
+      </div>
+      <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
       {createMaster.isError && <p className="text-sm text-destructive">{createMaster.error.response?.data?.message ?? 'Failed to create master.'}</p>}
       <Button type="submit" className="w-full" disabled={createMaster.isPending}>
         {createMaster.isPending ? 'Creating...' : 'Add Master'}
@@ -69,9 +80,51 @@ function AddMasterForm({ defaultType, onClose }: { defaultType: string; onClose:
   );
 }
 
+const editMasterSchema = z.object({
+  label: z.string().min(1, 'Label is required'),
+  parentId: z.string().optional(),
+  sortOrder: z.number().optional(),
+});
+type EditMasterValues = z.infer<typeof editMasterSchema>;
+
+function EditMasterForm({ master, siblings, onClose }: { master: Master; siblings: Master[]; onClose: () => void }) {
+  const updateMaster = useUpdateMaster();
+  const { register, handleSubmit, formState: { errors } } = useForm<EditMasterValues>({
+    resolver: zodResolver(editMasterSchema),
+    defaultValues: { label: master.label, parentId: master.parentId ?? '', sortOrder: master.sortOrder ?? 0 },
+  });
+
+  const onSubmit = (values: EditMasterValues) => {
+    updateMaster.mutate(
+      { masterType: master.masterType, id: master._id, ...values, parentId: values.parentId || undefined },
+      { onSuccess: onClose }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="System Key" value={master.key} disabled readOnly />
+      <AppFormField label="Display Label" error={errors.label?.message} {...register('label')} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Parent Entry (Optional)</label>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('parentId')}>
+          <option value="">None</option>
+          {siblings.filter((s) => s._id !== master._id).map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
+        </select>
+      </div>
+      <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
+      {updateMaster.isError && <p className="text-sm text-destructive">{updateMaster.error.response?.data?.message ?? 'Failed to update master.'}</p>}
+      <Button type="submit" className="w-full" disabled={updateMaster.isPending}>
+        {updateMaster.isPending ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </form>
+  );
+}
+
 export default function MastersPage() {
   const [selectedType, setSelectedType] = useState('SERVICE_CATEGORY');
   const { data: masters, isLoading, isError } = useMasters([selectedType]);
+  const updateMaster = useUpdateMaster();
 
   return (
     <div className="space-y-6">
@@ -81,7 +134,7 @@ export default function MastersPage() {
           <p className="text-muted-foreground">Manage system master lists — pick a type below to see only that list.</p>
         </div>
         <FormSheet triggerLabel="Add Master" title="Add Master Entry" description="Create a new master-list entry.">
-          {(close) => <AddMasterForm defaultType={selectedType} onClose={close} />}
+          {(close) => <AddMasterForm defaultType={selectedType} siblings={masters || []} onClose={close} />}
         </FormSheet>
       </div>
 
@@ -122,6 +175,30 @@ export default function MastersPage() {
               key: 'active',
               header: 'Status',
               render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+            },
+            {
+              key: 'actions',
+              header: '',
+              render: (item) => (
+                <div className="flex items-center gap-1">
+                  <FormSheet
+                    triggerLabel="Edit"
+                    title="Edit Master Entry"
+                    description={`Update ${item.label}.`}
+                    triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
+                  >
+                    {(close) => <EditMasterForm master={item} siblings={masters || []} onClose={close} />}
+                  </FormSheet>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={updateMaster.isPending}
+                    onClick={() => updateMaster.mutate({ masterType: item.masterType, id: item._id, active: !item.active })}
+                  >
+                    {item.active ? 'Deactivate' : 'Activate'}
+                  </Button>
+                </div>
+              ),
             },
           ]}
         />

@@ -52,3 +52,47 @@ export function useCreateEstimate() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
   });
 }
+
+export function useShareEstimate() {
+  const queryClient = useQueryClient();
+  return useMutation<Estimate, AxiosError<ApiErrorEnvelope>, { id: string; channels: string[] }>({
+    mutationFn: async ({ id, channels }) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Estimate>>(`/estimates/${id}/share`, { channels });
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
+  });
+}
+
+export function useApproveEstimate() {
+  const queryClient = useQueryClient();
+  return useMutation<Estimate, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Estimate>>(`/estimates/${id}/approve`);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
+  });
+}
+
+export function useRejectEstimate() {
+  const queryClient = useQueryClient();
+  return useMutation<Estimate, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Estimate>>(`/estimates/${id}/reject`);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
+  });
+}
+
+export function useConvertEstimate() {
+  const queryClient = useQueryClient();
+  return useMutation<unknown, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.post(`/estimates/${id}/convert`);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['estimates'] }),
+  });
+}

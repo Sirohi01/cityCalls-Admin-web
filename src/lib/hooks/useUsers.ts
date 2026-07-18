@@ -25,6 +25,9 @@ export interface User {
   mobile: string;
   status: 'ACTIVE' | 'INACTIVE';
   branchId?: string;
+  subBranchId?: string;
+  teamId?: string;
+  vendorId?: string;
   createdBy?: UserActor | null;
   updatedBy?: UserActor | null;
   createdAt: string;
@@ -67,6 +70,9 @@ export interface UpdateUserInput {
   email?: string;
   role?: string;
   branchId?: string;
+  subBranchId?: string;
+  teamId?: string;
+  vendorId?: string;
   status?: 'ACTIVE' | 'INACTIVE';
 }
 

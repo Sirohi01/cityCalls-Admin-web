@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,20 +13,40 @@ import { FormSheet } from '@/components/ui/FormSheet';
 
 import { useVendors, useCreateVendor, Vendor } from '@/lib/hooks/useVendors';
 
+function splitList(value?: string): string[] {
+  return (value ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+}
+
 const createVendorSchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
   contactName: z.string().min(1, 'Contact name is required'),
   contactMobile: z.string().min(10, 'Enter a valid mobile number'),
+  pinCodes: z.string().optional(),
+  gst: z.string().optional(),
+  pan: z.string().optional(),
+  commissionModel: z.enum(['FIXED', 'SERVICE_WISE']),
+  commissionRate: z.number().min(0).max(100).optional(),
 });
 type CreateVendorValues = z.infer<typeof createVendorSchema>;
 
 function OnboardVendorForm({ onClose }: { onClose: () => void }) {
   const createVendor = useCreateVendor();
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateVendorValues>({ resolver: zodResolver(createVendorSchema) });
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateVendorValues>({
+    resolver: zodResolver(createVendorSchema),
+    defaultValues: { commissionModel: 'FIXED' },
+  });
 
   const onSubmit = (values: CreateVendorValues) => {
     createVendor.mutate(
-      { companyName: values.companyName, contactPersons: [{ name: values.contactName, mobile: values.contactMobile }] },
+      {
+        companyName: values.companyName,
+        contactPersons: [{ name: values.contactName, mobile: values.contactMobile }],
+        serviceAreas: { pinCodes: splitList(values.pinCodes) },
+        gst: values.gst || undefined,
+        pan: values.pan || undefined,
+        commissionModel: values.commissionModel,
+        commissionRate: values.commissionRate,
+      },
       { onSuccess: onClose }
     );
   };
@@ -35,6 +56,21 @@ function OnboardVendorForm({ onClose }: { onClose: () => void }) {
       <AppFormField label="Company / Agency Name" error={errors.companyName?.message} {...register('companyName')} />
       <AppFormField label="Primary Contact Name" error={errors.contactName?.message} {...register('contactName')} />
       <AppFormField label="Primary Contact Mobile" error={errors.contactMobile?.message} {...register('contactMobile')} />
+      <AppFormField label="Service Area Pincodes (comma-separated)" placeholder="110001, 110002" {...register('pinCodes')} />
+      <div className="grid grid-cols-2 gap-4">
+        <AppFormField label="GST (Optional)" {...register('gst')} />
+        <AppFormField label="PAN (Optional)" {...register('pan')} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Commission Model</label>
+          <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('commissionModel')}>
+            <option value="FIXED">Fixed</option>
+            <option value="SERVICE_WISE">Service-wise</option>
+          </select>
+        </div>
+        <AppFormField label="Commission Rate (%)" type="number" {...register('commissionRate', { valueAsNumber: true })} />
+      </div>
       {createVendor.isError && <p className="text-sm text-destructive">{createVendor.error.response?.data?.message ?? 'Failed to onboard vendor.'}</p>}
       <Button type="submit" className="w-full" disabled={createVendor.isPending}>
         {createVendor.isPending ? 'Onboarding...' : 'Onboard Vendor'}
@@ -44,6 +80,7 @@ function OnboardVendorForm({ onClose }: { onClose: () => void }) {
 }
 
 export default function VendorsPage() {
+  const router = useRouter();
   const { data: vendors, isLoading, isError } = useVendors();
 
   return (
@@ -73,6 +110,7 @@ export default function VendorsPage() {
             <DataTable<Vendor>
               data={vendors || []}
               pageSize={10}
+              onRowClick={(item) => router.push(`/dashboard/vendors/${item._id}`)}
               columns={[
                 { key: 'companyName', header: 'Agency Name' },
                 { key: 'contactPersons', header: 'Primary Contact', render: (item) => item.contactPersons?.[0]?.name || 'N/A' },

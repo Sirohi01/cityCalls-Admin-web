@@ -50,3 +50,27 @@ export function useCreateEmployee() {
     },
   });
 }
+
+export interface UpdateEmployeeInput {
+  id: string;
+  branchId?: string;
+  subBranchId?: string;
+  teamId?: string;
+  skills?: string[];
+  certifications?: string[];
+  dailyCapacity?: number;
+  active?: boolean;
+}
+
+export function useUpdateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation<Employee, AxiosError<ApiErrorEnvelope>, UpdateEmployeeInput>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Employee>>(`/employees/${id}`, input);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}

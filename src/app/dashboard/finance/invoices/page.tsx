@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { IndianRupee } from 'lucide-react';
 
-import { useInvoices, useRecordPayment, useShareInvoice, Invoice } from '@/lib/hooks/useInvoices';
+import { useInvoices, useRecordPayment, useShareInvoice, useCancelInvoice, usePaymentHistory, Invoice } from '@/lib/hooks/useInvoices';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 
 export default function InvoicesPage() {
@@ -17,9 +17,11 @@ export default function InvoicesPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const recordPayment = useRecordPayment();
   const shareInvoice = useShareInvoice();
+  const cancelInvoice = useCancelInvoice();
 
   const data = invoices || [];
   const selectedInvoice = data.find(i => i._id === selectedInvoiceId) || data[0];
+  const { data: payments } = usePaymentHistory(selectedInvoice?._id ?? '');
   const customerName = (id?: string) => customers?.find((c) => c._id === id)?.name ?? 'Unknown';
   const outstanding = (inv: Invoice) => inv.total - inv.amountPaid;
 
@@ -31,6 +33,13 @@ export default function InvoicesPage() {
   const handleShare = () => {
     if (!selectedInvoice) return;
     shareInvoice.mutate({ invoiceId: selectedInvoice._id, channels: ['EMAIL', 'WHATSAPP'] });
+  };
+
+  const handleCancel = () => {
+    if (!selectedInvoice) return;
+    const reason = window.prompt('Reason for cancelling this invoice?');
+    if (!reason) return;
+    cancelInvoice.mutate({ invoiceId: selectedInvoice._id, reason });
   };
 
   return (
@@ -128,8 +137,39 @@ export default function InvoicesPage() {
                         </div>
                         {recordPayment.isError && <p className="text-sm text-destructive mt-2">Failed to record payment.</p>}
                         {shareInvoice.isSuccess && <p className="text-sm text-green-600 mt-2">Invoice shared.</p>}
+                        {selectedInvoice.amountPaid === 0 && (
+                          <Button variant="destructive" className="w-full mt-2" onClick={handleCancel} disabled={cancelInvoice.isPending}>
+                            {cancelInvoice.isPending ? 'Cancelling...' : 'Cancel Invoice'}
+                          </Button>
+                        )}
+                        {cancelInvoice.isError && <p className="text-sm text-destructive mt-2">{cancelInvoice.error.response?.data?.message ?? 'Failed to cancel invoice.'}</p>}
                       </div>
                     )}
+                    {selectedInvoice.status === 'CANCELLED' && (
+                      <div className="border-t pt-4 mt-4 text-sm text-destructive">This invoice has been cancelled.</div>
+                    )}
+
+                    <div className="border-t pt-6 mt-6">
+                      <h4 className="font-semibold mb-4">Payment History</h4>
+                      {(payments || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(payments || []).map((p) => (
+                            <div key={p._id} className="flex items-center justify-between text-sm border-b pb-2">
+                              <div>
+                                <p className="font-medium">{p.number}</p>
+                                <p className="text-xs text-muted-foreground">{p.method.replace(/_/g, ' ')}{p.reference ? ` · ${p.reference}` : ''}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">₹{p.amount.toLocaleString('en-IN')}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">Select an invoice from the list to view details.</div>

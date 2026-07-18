@@ -50,3 +50,34 @@ export function useShareInvoice() {
     },
   });
 }
+
+export function useCancelInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation<Invoice, AxiosError<ApiErrorEnvelope>, { invoiceId: string; reason: string }>({
+    mutationFn: async ({ invoiceId, reason }) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Invoice>>(`/invoices/${invoiceId}/cancel`, { reason });
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+  });
+}
+
+export interface PaymentReceipt {
+  _id: string;
+  number: string;
+  amount: number;
+  method: string;
+  reference?: string;
+  createdAt: string;
+}
+
+export function usePaymentHistory(invoiceId: string) {
+  return useQuery({
+    queryKey: ['invoice-payments', invoiceId],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<PaymentReceipt[]>>(`/invoices/${invoiceId}/payments`);
+      return res.data.data;
+    },
+    enabled: !!invoiceId,
+  });
+}

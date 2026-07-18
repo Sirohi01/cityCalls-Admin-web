@@ -15,7 +15,10 @@ const createCustomerSchema = z.object({
   mobile: z.string().min(10, 'Enter a valid mobile number'),
   email: z.string().email('Enter a valid email').optional().or(z.literal('')),
   customerType: z.string().min(1, 'Select a customer type'),
+  addressLine1: z.string().optional(),
   city: z.string().optional(),
+  state: z.string().optional(),
+  pinCode: z.string().optional(),
 });
 type CreateCustomerValues = z.infer<typeof createCustomerSchema>;
 
@@ -29,13 +32,16 @@ export default function CreateCustomerPage() {
   });
 
   const onSubmit = (values: CreateCustomerValues) => {
+    const hasAddress = values.addressLine1 && values.city && values.state && values.pinCode;
     createCustomer.mutate(
       {
         name: values.name,
         customerType: values.customerType,
         email: values.email || undefined,
         contacts: [{ name: values.name, mobile: values.mobile, isPrimary: true }],
-        addresses: values.city ? [{ line1: values.city, city: values.city, state: values.city, pinCode: '000000', country: 'India', isDefault: true }] : [],
+        addresses: hasAddress
+          ? [{ line1: values.addressLine1!, city: values.city!, state: values.state!, pinCode: values.pinCode!, country: 'India', isDefault: true }]
+          : [],
       },
       { onSuccess: () => router.push('/dashboard/customers') }
     );
@@ -73,7 +79,16 @@ export default function CreateCustomerPage() {
                 </select>
               </div>
             </div>
-            <AppFormField label="City (Optional)" placeholder="e.g. Delhi" {...register('city')} />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Address (Optional)</label>
+              <p className="text-xs text-muted-foreground">Fill in all four fields to save an address, or leave all blank.</p>
+            </div>
+            <AppFormField label="Address Line 1" placeholder="e.g. House No. 12, Sector 5" {...register('addressLine1')} />
+            <div className="grid grid-cols-3 gap-4">
+              <AppFormField label="City" placeholder="e.g. Delhi" {...register('city')} />
+              <AppFormField label="State" placeholder="e.g. Delhi" {...register('state')} />
+              <AppFormField label="Pin Code" placeholder="e.g. 110001" {...register('pinCode')} />
+            </div>
             {createCustomer.isError && (
               <p className="text-sm text-destructive">{createCustomer.error.response?.data?.message ?? 'Failed to create customer.'}</p>
             )}
