@@ -187,7 +187,7 @@ export function AdminSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {navItems.map((group) => (
-          <SidebarGroup key={group.group}>
+          <SidebarGroup key={group.group} className="py-0">
             <SidebarGroupLabel className="text-white font-semibold">{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
