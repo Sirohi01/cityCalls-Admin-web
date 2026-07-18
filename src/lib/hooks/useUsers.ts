@@ -12,6 +12,11 @@ export const STAFF_ROLES = [
   'VENDOR_MANAGER', 'VENDOR_TECHNICIAN', 'OUTSOURCED_PARTNER',
 ] as const;
 
+export interface UserActor {
+  id: string;
+  name: string;
+}
+
 export interface User {
   _id: string;
   name: string;
@@ -20,6 +25,10 @@ export interface User {
   mobile: string;
   status: 'ACTIVE' | 'INACTIVE';
   branchId?: string;
+  createdBy?: UserActor | null;
+  updatedBy?: UserActor | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function useUsers(role?: string) {
@@ -46,6 +55,26 @@ export function useCreateUser() {
   return useMutation<User, AxiosError<ApiErrorEnvelope>, CreateUserInput>({
     mutationFn: async (input) => {
       const res = await apiClient.post<ApiSuccessEnvelope<User>>('/users', input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export interface UpdateUserInput {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  branchId?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation<User, AxiosError<ApiErrorEnvelope>, UpdateUserInput>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<User>>(`/users/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
