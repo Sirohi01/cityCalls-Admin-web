@@ -10,7 +10,7 @@ import { useLogin } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,15 +39,19 @@ export default function LoginPage() {
       />
       <div className="absolute inset-0 hidden bg-gradient-to-r from-slate-950/85 via-slate-950/30 to-transparent sm:block" />
 
+      {/* Decorative depth behind the card — subtle, brand-tinted glow */}
+      <div className="pointer-events-none absolute left-[10%] top-1/2 h-[28rem] w-[28rem] -translate-y-1/2 rounded-full bg-lime-500/10 blur-[100px]" />
+      <div className="pointer-events-none absolute left-[25%] top-[15%] h-64 w-64 rounded-full bg-indigo-500/10 blur-[90px]" />
+
       {/* Wordmark — mix-blend-lighten drops the logo's black backing plate so
           only the green/white text shows against whatever's behind it. */}
       <img
         src="/citycallslogo.jpeg"
         alt="CityCalls"
-        className="absolute left-6 top-6 h-16 w-40 mix-blend-lighten object-cover object-center lg:left-12 lg:top-10"
+        className="absolute left-6 top-6 h-16 w-40 mix-blend-lighten object-cover object-center drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] lg:left-12 lg:top-10"
       />
 
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl">
+      <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl duration-500">
         <div className="mb-8 space-y-1.5">
           <h2 className="text-2xl font-bold tracking-tight text-white">Welcome back</h2>
           <p className="text-sm text-slate-400">Sign in to your admin console to continue.</p>
@@ -112,7 +116,8 @@ export default function LoginPage() {
           </label>
 
           {login.isError && (
-            <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm font-medium text-red-400">
+            <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm font-medium text-red-400">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {login.error.response?.data?.message ?? 'Login failed. Please try again.'}
             </div>
           )}
