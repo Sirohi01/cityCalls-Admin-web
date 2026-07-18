@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -59,9 +59,13 @@ export function DataTable<T extends object>({
 
   // Reset to page 1 whenever the underlying data set changes (e.g. a filter
   // or type switch) so the user doesn't land on a now out-of-range page.
-  useEffect(() => {
+  // Adjusting state during render (not in an effect) per React's guidance on
+  // resetting state when a prop changes — avoids an extra render pass.
+  const [prevData, setPrevData] = useState(data);
+  if (data !== prevData) {
+    setPrevData(data);
     setPage(1);
-  }, [data]);
+  }
 
   const totalPages = pageSize ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
   const currentPage = Math.min(page, totalPages);
