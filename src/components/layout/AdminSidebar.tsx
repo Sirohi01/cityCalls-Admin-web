@@ -16,11 +16,11 @@ import {
   SidebarHeader,
 } from '@/components/ui/sidebar';
 import { PermissionGate } from '@/components/ui/PermissionGate';
-import { 
-  LayoutDashboard, 
-  Settings, 
-  Users, 
-  Building2, 
+import {
+  LayoutDashboard,
+  Settings,
+  Users,
+  Building2,
   Network,
   Users2,
   UserSquare2,
@@ -180,8 +180,8 @@ export function AdminSidebar() {
 
   return (
     <Sidebar className="border-r bg-white">
-      <SidebarHeader className="h-12 flex items-center px-4 border-b">
-        <img src="/logo.png" alt="CityCalls Logo" className="h-8 object-contain" />
+      <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b bg-[#000]">
+        <img src="/logo.png" alt="CityCalls Logo" className="h-10 w-auto object-contain" />
       </SidebarHeader>
       <SidebarContent>
         {navItems.map((group) => (
