@@ -4,11 +4,12 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Phone } from 'lucide-react';
+import { ArrowLeft, Phone, Sparkles } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLead, useAddLeadNote, useConvertLead } from '@/lib/hooks/useLeads';
 import { useCalls } from '@/lib/hooks/useCalls';
+import { useClassifyComplaint } from '@/lib/hooks/useAISettings';
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const { data: allCalls } = useCalls();
   const addNote = useAddLeadNote(id);
   const convertLead = useConvertLead(id);
+  const classifyComplaint = useClassifyComplaint();
   const [noteText, setNoteText] = useState('');
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading lead details...</div>;
@@ -83,6 +85,40 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   </>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Requirement</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                {lead.requirement || 'No requirement text recorded for this lead.'}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => classifyComplaint.mutate({ text: lead.requirement || '' })}
+                disabled={!lead.requirement || classifyComplaint.isPending}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                {classifyComplaint.isPending ? 'Classifying...' : 'Suggest Category with AI'}
+              </Button>
+              {classifyComplaint.data && classifyComplaint.data.aiAvailable && (
+                <p className="text-sm font-medium text-indigo-700 bg-indigo-50 rounded-md px-3 py-2">
+                  Suggested category: {classifyComplaint.data.category}
+                </p>
+              )}
+              {classifyComplaint.data && !classifyComplaint.data.aiAvailable && (
+                <p className="text-sm text-amber-600">
+                  {classifyComplaint.data.reason === 'DISABLED' && 'AI classification is disabled — enable it in AI Settings.'}
+                  {classifyComplaint.data.reason === 'PROVIDER_NOT_CONFIGURED' && 'AI provider is not configured on the server.'}
+                  {classifyComplaint.data.reason === 'AI_LIMIT_REACHED' && 'Daily AI usage limit reached — try again tomorrow.'}
+                  {classifyComplaint.data.reason === 'FAILED' && 'AI classification failed. Try again later.'}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
