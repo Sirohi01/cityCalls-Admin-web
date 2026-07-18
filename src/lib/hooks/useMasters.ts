@@ -15,7 +15,11 @@ export function useMasters(types: string[]) {
   return useQuery({
     queryKey: ['masters', types],
     queryFn: async () => {
-      const responses = await Promise.all(types.map((type) => apiClient.get<ApiSuccessEnvelope<Master[]>>(`/masters/${type}`)));
+      // limit=100 — the backend defaults to 20/page, which silently truncated
+      // types with more entries (e.g. BRAND/PART at 25) below what was seeded.
+      const responses = await Promise.all(
+        types.map((type) => apiClient.get<ApiSuccessEnvelope<Master[]>>(`/masters/${type}`, { params: { limit: 100 } }))
+      );
       return responses.flatMap((res) => res.data.data);
     },
     enabled: types.length > 0,

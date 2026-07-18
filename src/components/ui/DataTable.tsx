@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 
 export interface Column<T> {
   key: string;
@@ -19,6 +20,9 @@ export interface DataTableProps<T> {
   columns: Column<T>[];
   emptyMessage?: string;
   onRowClick?: (item: T) => void;
+  // Opt-in client-side pagination — slices the already-fetched `data` array.
+  // Omit for existing callers to keep today's "render everything" behavior.
+  pageSize?: number;
 }
 
 // `T extends object` (not `Record<string, unknown>`) deliberately — a plain
@@ -48,8 +52,21 @@ export function DataTable<T extends object>({
   data,
   columns,
   emptyMessage = "No results found.",
-  onRowClick
+  onRowClick,
+  pageSize,
 }: DataTableProps<T>) {
+  const [page, setPage] = useState(1);
+
+  // Reset to page 1 whenever the underlying data set changes (e.g. a filter
+  // or type switch) so the user doesn't land on a now out-of-range page.
+  useEffect(() => {
+    setPage(1);
+  }, [data]);
+
+  const totalPages = pageSize ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
+  const currentPage = Math.min(page, totalPages);
+  const pageData = pageSize ? data.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data;
+
   return (
     <div className="rounded-md border bg-white">
       <Table>
@@ -61,14 +78,14 @@ export function DataTable<T extends object>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length === 0 ? (
+          {pageData.length === 0 ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            data.map((item, i) => (
+            pageData.map((item, i) => (
               <TableRow
                 key={rowKey(item, i)}
                 onClick={() => onRowClick && onRowClick(item)}
@@ -84,6 +101,22 @@ export function DataTable<T extends object>({
           )}
         </TableBody>
       </Table>
+      {pageSize && data.length > 0 && (
+        <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+          <span>
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, data.length)} of {data.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
+              Previous
+            </Button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
