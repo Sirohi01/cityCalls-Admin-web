@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserCircle } from 'lucide-react';
 import { clearSession, useMe } from '@/lib/hooks/useAuth';
 
 export function AdminNavbar() {
@@ -16,13 +16,33 @@ export function AdminNavbar() {
   };
 
   return (
-    <header className="h-12 flex items-center gap-4 px-6 border-b bg-white sticky top-0 z-10">
-      <SidebarTrigger />
-      <div className="ml-auto flex items-center space-x-4">
-        <span className="text-sm font-medium">{me?.email ?? me?.name ?? me?.mobile ?? ''}</span>
-        <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-600 transition-colors bg-slate-100 hover:bg-red-50 rounded-md" title="Logout">
-          <LogOut className="w-5 h-5" />
-        </button>
+    <header className="h-12 flex items-center gap-4 px-6 border-b border-white/10 bg-black text-white sticky top-0 z-10">
+      <SidebarTrigger className="text-white hover:bg-gray-800" />
+      <div className="ml-auto flex items-center">
+        <div className="relative group">
+          <button className="flex items-center gap-2 p-1.5 text-white hover:bg-gray-800 transition-colors rounded-md">
+            <UserCircle className="w-6 h-6" />
+            <span className="text-sm font-medium pr-1">{me?.name || me?.email?.split('@')[0] || 'Admin'}</span>
+          </button>
+          
+          <div className="absolute top-full right-0 pt-1 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="bg-[#111] border border-white/10 rounded-md shadow-xl py-1">
+              <div className="px-4 py-3 border-b border-white/10 mb-2">
+                <p className="text-sm text-white font-medium truncate">{me?.name || 'Administrator'}</p>
+                <p className="text-xs text-gray-400 truncate mt-0.5">{me?.email || me?.mobile}</p>
+              </div>
+              <div className="px-2 pb-1">
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+                >
+                  <span>Logout</span>
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   );

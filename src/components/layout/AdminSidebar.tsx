@@ -179,20 +179,25 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="border-r bg-white">
-      <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b bg-[#000]">
+    <Sidebar className="border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-black text-white">
+      <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b border-gray-50 bg-black">
         <img src="/logo.png" alt="CityCalls Logo" className="h-10 w-auto object-contain" />
       </SidebarHeader>
       <SidebarContent>
         {navItems.map((group) => (
           <SidebarGroup key={group.group}>
-            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-white font-semibold">{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
                   <PermissionGate key={item.title} module={item.module} action={item.action} anyOf={item.anyOf} alwaysVisible={item.alwaysVisible}>
                     <SidebarMenuItem>
-                      <SidebarMenuButton render={<Link href={item.url} />} isActive={pathname === item.url}>
+                      <SidebarMenuButton
+                        render={<Link href={item.url} />}
+                        isActive={pathname === item.url}
+                        className="text-white hover:bg-gray-800 hover:text-white data-[active]:bg-[#8cc63f] data-[active]:text-black transition-colors"
+                        style={{ color: pathname === item.url ? '#000' : '#fff' }}
+                      >
                         <item.icon />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
