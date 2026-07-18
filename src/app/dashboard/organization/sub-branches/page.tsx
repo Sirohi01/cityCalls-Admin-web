@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -53,8 +54,9 @@ function AddSubBranchForm({ onClose }: { onClose: () => void }) {
 }
 
 export default function SubBranchesPage() {
-  const { data: subBranches, isLoading, isError } = useSubBranches();
   const { data: branches } = useBranches();
+  const [branchFilter, setBranchFilter] = useState('');
+  const { data: subBranches, isLoading, isError } = useSubBranches(branchFilter || undefined);
   const branchName = (id: string) => branches?.find((b) => b._id === id)?.name ?? id;
 
   return (
@@ -69,24 +71,42 @@ export default function SubBranchesPage() {
         </FormSheet>
       </div>
 
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-slate-700">Filter by Parent Branch:</label>
+        <select
+          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          value={branchFilter}
+          onChange={(e) => setBranchFilter(e.target.value)}
+        >
+          <option value="">All Branches</option>
+          {(branches || []).map((b) => (
+            <option key={b._id} value={b._id}>{b.name}</option>
+          ))}
+        </select>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading sub-branches...</div>
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load sub-branches.</div>
       ) : (
-        <DataTable<SubBranch>
-          data={subBranches || []}
-          columns={[
-            { key: 'code', header: 'Code' },
-            { key: 'branchId', header: 'Parent Branch', render: (item) => branchName(item.branchId) },
-            { key: 'name', header: 'Sub-Branch Name' },
-            {
-              key: 'active',
-              header: 'Status',
-              render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
-            },
-          ]}
-        />
+        <>
+          <p className="text-sm text-muted-foreground">{subBranches?.length ?? 0} sub-branches</p>
+          <DataTable<SubBranch>
+            data={subBranches || []}
+            pageSize={10}
+            columns={[
+              { key: 'code', header: 'Code' },
+              { key: 'branchId', header: 'Parent Branch', render: (item) => branchName(item.branchId) },
+              { key: 'name', header: 'Sub-Branch Name' },
+              {
+                key: 'active',
+                header: 'Status',
+                render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+              },
+            ]}
+          />
+        </>
       )}
     </div>
   );

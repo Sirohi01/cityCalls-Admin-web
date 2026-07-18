@@ -37,7 +37,7 @@ export function useBranches() {
   return useQuery({
     queryKey: ['branches'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Branch[]>>('/branches');
+      const res = await apiClient.get<ApiSuccessEnvelope<Branch[]>>('/branches', { params: { limit: 100 } });
       return res.data.data;
     },
   });
@@ -59,11 +59,11 @@ export function useCreateBranch() {
   });
 }
 
-export function useSubBranches() {
+export function useSubBranches(branchId?: string) {
   return useQuery({
-    queryKey: ['sub-branches'],
+    queryKey: ['sub-branches', branchId],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<SubBranch[]>>('/sub-branches');
+      const res = await apiClient.get<ApiSuccessEnvelope<SubBranch[]>>('/sub-branches', { params: { limit: 100, branchId } });
       return res.data.data;
     },
   });
@@ -90,7 +90,7 @@ export function useTeams() {
   return useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Team[]>>('/teams');
+      const res = await apiClient.get<ApiSuccessEnvelope<Team[]>>('/teams', { params: { limit: 100 } });
       return res.data.data;
     },
   });

@@ -60,18 +60,32 @@ export default function BranchesPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load branches.</div>
       ) : (
-        <DataTable<Branch>
-          data={branches || []}
-          columns={[
-            { key: 'code', header: 'Code' },
-            { key: 'name', header: 'Branch Name' },
-            {
-              key: 'active',
-              header: 'Status',
-              render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
-            },
-          ]}
-        />
+        <>
+          <p className="text-sm text-muted-foreground">{branches?.length ?? 0} branches</p>
+          <DataTable<Branch>
+            data={branches || []}
+            pageSize={10}
+            columns={[
+              { key: 'code', header: 'Code' },
+              { key: 'name', header: 'Branch Name' },
+              {
+                key: 'coverage',
+                header: 'Coverage',
+                render: (item) => (
+                  <span className="text-xs text-muted-foreground">
+                    {item.coverage?.cities?.length ? item.coverage.cities.join(', ') : '—'}
+                    {item.coverage?.pinCodes?.length ? ` (${item.coverage.pinCodes.length} pincodes)` : ''}
+                  </span>
+                ),
+              },
+              {
+                key: 'active',
+                header: 'Status',
+                render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+              },
+            ]}
+          />
+        </>
       )}
     </div>
   );

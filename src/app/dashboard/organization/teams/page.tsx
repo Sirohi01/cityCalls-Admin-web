@@ -70,18 +70,22 @@ export default function TeamsPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load teams.</div>
       ) : (
-        <DataTable<Team>
-          data={teams || []}
-          columns={[
-            { key: 'name', header: 'Team Name' },
-            { key: 'memberIds', header: 'Members', render: (item) => String(item.memberIds?.length ?? 0) },
-            {
-              key: 'active',
-              header: 'Status',
-              render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
-            },
-          ]}
-        />
+        <>
+          <p className="text-sm text-muted-foreground">{teams?.length ?? 0} teams</p>
+          <DataTable<Team>
+            data={teams || []}
+            pageSize={10}
+            columns={[
+              { key: 'name', header: 'Team Name' },
+              { key: 'memberIds', header: 'Members', render: (item) => String(item.memberIds?.length ?? 0) },
+              {
+                key: 'active',
+                header: 'Status',
+                render: (item) => <StatusBadge label={item.active ? 'ACTIVE' : 'INACTIVE'} category={item.active ? 'success' : 'default'} />,
+              },
+            ]}
+          />
+        </>
       )}
     </div>
   );
