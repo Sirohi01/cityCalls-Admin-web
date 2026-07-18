@@ -127,7 +127,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-0.5 text-sm [text-shadow:_0_0_15px_#fff,_0_0_20px_#fff,_0_0_20px_#fff]">Call Management</h3>
-                    <p className="text-xs font-medium text-gray-800 leading-relaxed [text-shadow:_0_0_8px_#fff,_0_0_8px_#fff,_0_0_8px_#fff,_0_0_8px_#fff]">Track calls, assign technicians and close tickets faster.</p>
+                    <p className="text-xs font-medium text-gray-800 leading-relaxed ">Track calls, assign technicians and close tickets faster.</p>
                   </div>
                 </div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-0.5 text-sm [text-shadow:_0_0_15px_#fff,_0_0_20px_#fff,_0_0_20px_#fff]">Customer Management</h3>
-                    <p className="text-xs font-medium text-gray-800 leading-relaxed [text-shadow:_0_0_8px_#fff,_0_0_8px_#fff,_0_0_8px_#fff,_0_0_8px_#fff]">Keep customer details, history and interactions organized.</p>
+                    <p className="text-xs font-medium text-gray-800 leading-relaxed ">Keep customer details, history and interactions organized.</p>
                   </div>
                 </div>
 
