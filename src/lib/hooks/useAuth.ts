@@ -15,8 +15,11 @@ const REFRESH_TOKEN_KEY = 'citycalls_refresh_token';
 // to match the previous always-persistent behavior when the box isn't touched.
 export function useLogin() {
   return useMutation<LoginResponse, AxiosError<ApiErrorEnvelope>, LoginFormValues & { rememberMe?: boolean }>({
-    mutationFn: async ({ rememberMe: _rememberMe, ...input }) => {
-      const res = await apiClient.post<ApiSuccessEnvelope<LoginResponse>>('/auth/login', input);
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<LoginResponse>>('/auth/login', {
+        identifier: input.identifier,
+        password: input.password,
+      });
       return res.data.data;
     },
     onSuccess: (data, variables) => {
