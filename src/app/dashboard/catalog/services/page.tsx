@@ -32,8 +32,11 @@ export default function ServicesPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load services.</div>
       ) : (
+        <>
+        <p className="text-sm text-muted-foreground">{services?.length ?? 0} services</p>
         <DataTable<CatalogService>
           data={services || []}
+          pageSize={10}
           onRowClick={(item) => router.push(`/dashboard/catalog/services/${item._id}`)}
           columns={[
             { key: 'name', header: 'Service Name' },
@@ -46,6 +49,7 @@ export default function ServicesPage() {
             },
           ]}
         />
+        </>
       )}
     </div>
   );

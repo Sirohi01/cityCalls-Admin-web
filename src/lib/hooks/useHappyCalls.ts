@@ -18,7 +18,7 @@ export function useHappyCalls() {
   return useQuery({
     queryKey: ['happyCalls'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<HappyCall[]>>('/happy-calls');
+      const res = await apiClient.get<ApiSuccessEnvelope<HappyCall[]>>('/happy-calls', { params: { limit: 100 } });
       return res.data.data;
     },
   });

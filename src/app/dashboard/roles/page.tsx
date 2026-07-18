@@ -94,8 +94,11 @@ export default function RolesAndUsersPage() {
               {usersLoading ? (
                 <div className="flex justify-center p-8 text-muted-foreground">Loading users...</div>
               ) : (
+                <>
+                <p className="text-sm text-muted-foreground mb-2">{users?.length ?? 0} users</p>
                 <DataTable<User>
                   data={users || []}
+                  pageSize={10}
                   columns={[
                     { key: 'name', header: 'Full Name' },
                     { key: 'email', header: 'Email Address', render: (item) => item.email ?? '—' },
@@ -111,6 +114,7 @@ export default function RolesAndUsersPage() {
                     },
                   ]}
                 />
+                </>
               )}
             </CardContent>
           </Card>
@@ -135,8 +139,11 @@ export default function RolesAndUsersPage() {
               {rolesLoading ? (
                 <div className="flex justify-center p-8 text-muted-foreground">Loading roles...</div>
               ) : (
+                <>
+                <p className="text-sm text-muted-foreground mb-2">{roles?.length ?? 0} roles</p>
                 <DataTable<Role>
                   data={roles || []}
+                  pageSize={10}
                   columns={[
                     { key: 'name', header: 'Role Name' },
                     {
@@ -146,6 +153,7 @@ export default function RolesAndUsersPage() {
                     },
                   ]}
                 />
+                </>
               )}
             </CardContent>
           </Card>

@@ -89,8 +89,11 @@ export default function EmployeesPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load employees.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{employees?.length ?? 0} employees</p>
             <DataTable<Employee>
               data={employees || []}
+              pageSize={10}
               columns={[
                 { key: 'userId.name', header: 'Name', render: (item) => item.userId?.name ?? '—' },
                 { key: 'userId.email', header: 'Email', render: (item) => item.userId?.email ?? '—' },
@@ -103,6 +106,7 @@ export default function EmployeesPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

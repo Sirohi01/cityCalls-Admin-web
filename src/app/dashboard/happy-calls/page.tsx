@@ -32,8 +32,11 @@ export default function HappyCallsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load happy calls.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{happyCalls?.length ?? 0} happy calls</p>
             <DataTable<HappyCall>
               data={happyCalls || []}
+              pageSize={10}
               columns={[
                 { key: 'serviceRequestId', header: 'Service Request' },
                 { key: 'retryCount', header: 'Attempts' },
@@ -57,6 +60,7 @@ export default function HappyCallsPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

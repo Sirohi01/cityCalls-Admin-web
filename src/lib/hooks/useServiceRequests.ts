@@ -57,7 +57,7 @@ export function useServiceRequests(params?: ListParams) {
   return useQuery({
     queryKey: ['service-requests', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<ServiceRequest[]>>('/service-requests', { params });
+      const res = await apiClient.get<ApiSuccessEnvelope<ServiceRequest[]>>('/service-requests', { params: { limit: 100, ...params } });
       return res.data.data;
     },
   });

@@ -34,8 +34,11 @@ export default function ServiceRequestsPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load service requests.</div>
       ) : (
-        <DataTable 
+        <>
+        <p className="text-sm text-muted-foreground">{tickets?.length ?? 0} service requests</p>
+        <DataTable
           data={tickets || []}
+          pageSize={10}
           onRowClick={(item) => router.push(`/dashboard/service-requests/${item._id}`)}
           columns={[
             { key: 'number', header: 'SR ID' },
@@ -79,6 +82,7 @@ export default function ServiceRequestsPage() {
             },
           ]}
         />
+        </>
       )}
     </div>
   );

@@ -36,8 +36,11 @@ export default function ReopenRequestsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load reopen requests.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{reopenRequests?.length ?? 0} reopened tickets</p>
             <DataTable<ReopenRequest>
               data={reopenRequests || []}
+              pageSize={10}
               columns={[
                 { key: 'requestNumber', header: 'Service Request', render: (item) => item.requestNumber ?? item.originalServiceRequestId },
                 { key: 'customerName', header: 'Customer' },
@@ -67,6 +70,7 @@ export default function ReopenRequestsPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

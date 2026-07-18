@@ -27,7 +27,7 @@ export function useCalls() {
   return useQuery({
     queryKey: ['calls'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls');
+      const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls', { params: { limit: 100 } });
       return res.data.data;
     },
   });

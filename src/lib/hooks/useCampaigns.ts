@@ -20,7 +20,7 @@ export function useCampaigns() {
   return useQuery({
     queryKey: ['campaigns'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Campaign[]>>('/campaigns');
+      const res = await apiClient.get<ApiSuccessEnvelope<Campaign[]>>('/campaigns', { params: { limit: 100 } });
       return res.data.data;
     },
   });

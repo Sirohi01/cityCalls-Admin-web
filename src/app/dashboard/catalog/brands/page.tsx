@@ -70,6 +70,7 @@ export default function BrandsPage() {
               ) : (
                 <DataTable<Brand>
                   data={brandsData || []}
+                  pageSize={10}
                   columns={[
                     { key: 'name', header: 'Brand Name' },
                     { key: 'key', header: 'System Key' },
@@ -98,6 +99,7 @@ export default function BrandsPage() {
               ) : (
                 <DataTable<Master>
                   data={productTypes || []}
+                  pageSize={10}
                   columns={[
                     { key: 'label', header: 'Product Type' },
                     { key: 'key', header: 'System Key' },

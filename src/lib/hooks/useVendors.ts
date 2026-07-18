@@ -17,7 +17,7 @@ export function useVendors() {
   return useQuery({
     queryKey: ['vendors'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Vendor[]>>('/vendors');
+      const res = await apiClient.get<ApiSuccessEnvelope<Vendor[]>>('/vendors', { params: { limit: 100 } });
       return res.data.data;
     },
   });

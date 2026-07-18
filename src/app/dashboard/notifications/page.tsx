@@ -67,8 +67,11 @@ export default function NotificationsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load notifications.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{items.length} notifications</p>
             <DataTable<Notification>
               data={items}
+              pageSize={10}
               columns={[
                 {
                   key: 'channel',
@@ -106,6 +109,7 @@ export default function NotificationsPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

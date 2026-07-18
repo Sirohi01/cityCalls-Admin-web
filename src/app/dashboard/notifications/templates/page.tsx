@@ -97,8 +97,11 @@ export default function TemplatesPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load templates.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{data.length} templates</p>
             <DataTable<NotificationTemplate>
               data={data}
+              pageSize={10}
               columns={[
                 { key: 'triggerKey', header: 'Trigger' },
                 {
@@ -127,6 +130,7 @@ export default function TemplatesPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

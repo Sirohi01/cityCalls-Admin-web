@@ -28,7 +28,7 @@ export function useEstimates() {
   return useQuery({
     queryKey: ['estimates'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Estimate[]>>('/estimates');
+      const res = await apiClient.get<ApiSuccessEnvelope<Estimate[]>>('/estimates', { params: { limit: 100 } });
       return res.data.data;
     },
   });

@@ -15,7 +15,7 @@ export function useReopenRequests() {
   return useQuery({
     queryKey: ['reopenRequests'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<ReopenRequest[]>>('/reopen-requests');
+      const res = await apiClient.get<ApiSuccessEnvelope<ReopenRequest[]>>('/reopen-requests', { params: { limit: 100 } });
       return res.data.data;
     },
   });

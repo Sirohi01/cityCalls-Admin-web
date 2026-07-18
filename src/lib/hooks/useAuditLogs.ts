@@ -16,7 +16,7 @@ export function useAuditLogs() {
   return useQuery({
     queryKey: ['auditLogs'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<AuditLog[]>>('/audit/logs');
+      const res = await apiClient.get<ApiSuccessEnvelope<AuditLog[]>>('/audit/logs', { params: { limit: 100 } });
       return res.data.data;
     },
   });

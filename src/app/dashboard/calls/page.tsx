@@ -29,8 +29,11 @@ export default function CallsPage() {
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load calls.</div>
       ) : (
+        <>
+        <p className="text-sm text-muted-foreground">{calls?.length ?? 0} calls</p>
         <DataTable<Call>
           data={calls || []}
+          pageSize={10}
           onRowClick={(item) => router.push(`/dashboard/calls/${item._id}`)}
           columns={[
             { key: 'callerNumber', header: 'Phone Number' },
@@ -52,6 +55,7 @@ export default function CallsPage() {
             { key: 'createdAt', header: 'Date & Time', render: (item) => new Date(item.createdAt).toLocaleString() },
           ]}
         />
+        </>
       )}
     </div>
   );

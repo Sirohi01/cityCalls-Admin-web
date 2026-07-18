@@ -26,8 +26,7 @@ export function useUsers(role?: string) {
   return useQuery({
     queryKey: ['users', role],
     queryFn: async () => {
-      const url = role ? `/users?role=${role}` : '/users';
-      const res = await apiClient.get<ApiSuccessEnvelope<User[]>>(url);
+      const res = await apiClient.get<ApiSuccessEnvelope<User[]>>('/users', { params: { role, limit: 100 } });
       return res.data.data;
     },
   });

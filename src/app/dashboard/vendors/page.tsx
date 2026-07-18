@@ -68,8 +68,11 @@ export default function VendorsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load vendors.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{vendors?.length ?? 0} vendors</p>
             <DataTable<Vendor>
               data={vendors || []}
+              pageSize={10}
               columns={[
                 { key: 'companyName', header: 'Agency Name' },
                 { key: 'contactPersons', header: 'Primary Contact', render: (item) => item.contactPersons?.[0]?.name || 'N/A' },
@@ -87,6 +90,7 @@ export default function VendorsPage() {
                 },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

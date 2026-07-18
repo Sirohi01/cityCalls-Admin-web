@@ -17,7 +17,7 @@ export function useCatalogServices() {
   return useQuery({
     queryKey: ['catalogServices'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<CatalogService[]>>('/services');
+      const res = await apiClient.get<ApiSuccessEnvelope<CatalogService[]>>('/services', { params: { limit: 100 } });
       return res.data.data;
     },
   });

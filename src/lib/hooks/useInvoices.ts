@@ -18,7 +18,7 @@ export function useInvoices() {
   return useQuery({
     queryKey: ['invoices'],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Invoice[]>>('/invoices');
+      const res = await apiClient.get<ApiSuccessEnvelope<Invoice[]>>('/invoices', { params: { limit: 100 } });
       return res.data.data;
     },
   });

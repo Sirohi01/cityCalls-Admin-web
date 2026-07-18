@@ -59,8 +59,11 @@ export default function InvoicesPage() {
               ) : isError ? (
                 <div className="flex justify-center p-8 text-destructive">Failed to load invoices.</div>
               ) : (
+                <>
+                <p className="text-sm text-muted-foreground mb-2">{data.length} invoices</p>
                 <DataTable<Invoice>
                   data={data}
+                  pageSize={10}
                   onRowClick={(item) => setSelectedInvoiceId(item._id)}
                   columns={[
                     { key: 'number', header: 'Invoice ID' },
@@ -74,6 +77,7 @@ export default function InvoicesPage() {
                     { key: 'createdAt', header: 'Invoice Date', render: (item) => new Date(item.createdAt).toLocaleDateString() },
                   ]}
                 />
+                </>
               )}
             </CardContent>
           </Card>

@@ -161,8 +161,11 @@ export default function CampaignsPage() {
               ) : isError ? (
                 <div className="flex justify-center p-8 text-destructive">Failed to load campaigns.</div>
               ) : (
+                <>
+                <p className="text-sm text-muted-foreground mb-2">{campaigns?.length ?? 0} campaigns</p>
                 <DataTable<Campaign>
                   data={campaigns || []}
+                  pageSize={10}
                   columns={[
                     { key: 'name', header: 'Campaign Name' },
                     { key: 'audience', header: 'Audience', render: (item) => <span className="text-sm">{audienceSummary(item)}</span> },
@@ -201,6 +204,7 @@ export default function CampaignsPage() {
                     },
                   ]}
                 />
+                </>
               )}
             </CardContent>
           </Card>

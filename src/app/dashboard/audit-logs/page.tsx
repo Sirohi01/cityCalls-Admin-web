@@ -29,8 +29,11 @@ export default function AuditLogsPage() {
           ) : isError ? (
             <div className="flex justify-center p-8 text-destructive">Failed to load audit logs.</div>
           ) : (
+            <>
+            <p className="text-sm text-muted-foreground mb-2">{auditLogs?.length ?? 0} entries</p>
             <DataTable<AuditLog>
               data={auditLogs || []}
+              pageSize={10}
               columns={[
                 {
                   key: 'createdAt',
@@ -58,6 +61,7 @@ export default function AuditLogsPage() {
                 { key: 'reason', header: 'Reason', render: (item) => item.reason ?? '—' },
               ]}
             />
+            </>
           )}
         </CardContent>
       </Card>

@@ -177,8 +177,11 @@ export default function EstimatesPage() {
               ) : isError ? (
                 <div className="flex justify-center p-8 text-destructive">Failed to load estimates.</div>
               ) : (
+                <>
+                <p className="text-sm text-muted-foreground mb-2">{estimates?.length ?? 0} estimates</p>
                 <DataTable<Estimate>
                   data={estimates || []}
+                  pageSize={10}
                   columns={[
                     { key: 'number', header: 'Estimate ID' },
                     { key: 'customerId', header: 'Customer', render: (item) => customerName(item.customerId) },
@@ -193,6 +196,7 @@ export default function EstimatesPage() {
                     { key: 'createdAt', header: 'Date', render: (item) => new Date(item.createdAt).toLocaleDateString() },
                   ]}
                 />
+                </>
               )}
             </CardContent>
           </Card>
