@@ -33,6 +33,7 @@ import {
   Upload,
   Ticket,
   MapPin,
+  Clock,
   Briefcase,
   Store,
   Receipt,
@@ -81,6 +82,7 @@ const navItems: { group: string; items: NavItem[] }[] = [
     items: [
       { title: 'Services', url: '/dashboard/catalog/services', icon: Wrench, module: 'catalog' },
       { title: 'Brands & Models', url: '/dashboard/catalog/brands', icon: Tags, module: 'catalog' },
+      { title: 'Service Area Waitlist', url: '/dashboard/customers/waitlist', icon: Clock, module: 'customers' },
     ],
   },
   {

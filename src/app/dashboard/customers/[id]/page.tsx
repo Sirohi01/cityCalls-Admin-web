@@ -23,11 +23,11 @@ const addAddressSchema = z.object({
 type AddAddressValues = z.infer<typeof addAddressSchema>;
 
 function AddAddressForm({ customerId, onClose }: { customerId: string; onClose: () => void }) {
-  const addAddress = useAddCustomerAddress(customerId);
+  const addAddress = useAddCustomerAddress();
   const { register, handleSubmit, formState: { errors } } = useForm<AddAddressValues>({ resolver: zodResolver(addAddressSchema) });
 
   const onSubmit = (values: AddAddressValues) => {
-    addAddress.mutate({ ...values, country: 'India' }, { onSuccess: onClose });
+    addAddress.mutate({ ...values, country: 'India', customerId }, { onSuccess: onClose });
   };
 
   return (
@@ -53,14 +53,14 @@ const addProductSchema = z.object({
 type AddProductValues = z.infer<typeof addProductSchema>;
 
 function AddApplianceForm({ customerId, onClose }: { customerId: string; onClose: () => void }) {
-  const addProduct = useAddCustomerProduct(customerId);
+  const addProduct = useAddCustomerProduct();
   const { data: masters } = useMasters(['BRAND', 'PRODUCT_TYPE']);
   const brands = masters?.filter((m) => m.masterType === 'BRAND') || [];
   const productTypes = masters?.filter((m) => m.masterType === 'PRODUCT_TYPE') || [];
   const { register, handleSubmit, formState: { errors } } = useForm<AddProductValues>({ resolver: zodResolver(addProductSchema) });
 
   const onSubmit = (values: AddProductValues) => {
-    addProduct.mutate(values, { onSuccess: onClose });
+    addProduct.mutate({ ...values, customerId }, { onSuccess: onClose });
   };
 
   return (
@@ -96,12 +96,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const { data: customer, isLoading, isError } = useCustomer(id);
   const { data: products } = useCustomerProducts(id);
-  const { data: masters } = useMasters(['BRAND', 'PRODUCT_TYPE']);
+  const { data: masters } = useMasters(['BRAND', 'PRODUCT_TYPE', 'CUSTOMER_TYPE']);
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading customer details...</div>;
   if (isError || !customer) return <div className="p-8 text-center text-destructive">Failed to load customer details.</div>;
 
   const masterLabel = (masterId: string) => masters?.find((m) => m._id === masterId)?.label ?? masterId;
+  const customerTypeLabel = (key: string) => masters?.find((m) => m.masterType === 'CUSTOMER_TYPE' && m.key === key)?.label ?? key;
 
   return (
     <div className="space-y-6">
@@ -129,7 +130,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               <span className="text-muted-foreground">Email:</span>
               <span className="font-medium">{customer.email || 'N/A'}</span>
               <span className="text-muted-foreground">Type:</span>
-              <span className="font-medium">{customer.customerType}</span>
+              <span className="font-medium">{customerTypeLabel(customer.customerType)}</span>
             </div>
           </CardContent>
         </Card>

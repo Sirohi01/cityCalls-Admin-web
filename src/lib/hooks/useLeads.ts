@@ -114,7 +114,7 @@ export function useAddLeadNote(id: string) {
 
 export interface ConvertLeadInput {
   convertTo: 'CUSTOMER' | 'SERVICE_REQUEST';
-  customerType?: 'INDIVIDUAL' | 'BUSINESS';
+  customerType?: string;
   name?: string;
   addresses?: { line1: string; city: string; state: string; pinCode: string; country?: string }[];
   serviceId?: string;

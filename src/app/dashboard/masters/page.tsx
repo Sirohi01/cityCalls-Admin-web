@@ -12,7 +12,7 @@ import { FormSheet } from '@/components/ui/FormSheet';
 
 import { useMasters, useCreateMaster, Master } from '@/lib/hooks/useMasters';
 
-const MASTER_TYPES = ['SERVICE_CATEGORY', 'BRAND', 'PRODUCT_TYPE', 'SYMPTOM', 'DEFECT', 'SOLUTION', 'PART', 'UNIT', 'TAX_RATE', 'PRIORITY', 'LEAD_SOURCE', 'CALL_TYPE', 'APPOINTMENT_SLOT', 'PAYMENT_METHOD'];
+const MASTER_TYPES = ['SERVICE_CATEGORY', 'BRAND', 'PRODUCT_TYPE', 'SYMPTOM', 'DEFECT', 'SOLUTION', 'PART', 'UNIT', 'TAX_RATE', 'PRIORITY', 'LEAD_SOURCE', 'CALL_TYPE', 'APPOINTMENT_SLOT', 'PAYMENT_METHOD', 'CUSTOMER_TYPE'];
 
 const MASTER_TYPE_LABELS: Record<string, string> = {
   SERVICE_CATEGORY: 'Service Categories',
@@ -29,6 +29,7 @@ const MASTER_TYPE_LABELS: Record<string, string> = {
   CALL_TYPE: 'Call Types',
   APPOINTMENT_SLOT: 'Appointment Slots',
   PAYMENT_METHOD: 'Payment Methods',
+  CUSTOMER_TYPE: 'Customer Types',
 };
 
 const createMasterSchema = z.object({

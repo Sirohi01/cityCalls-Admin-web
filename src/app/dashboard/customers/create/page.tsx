@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { useCreateCustomer } from '@/lib/hooks/useCustomers';
+import { useMasters } from '@/lib/hooks/useMasters';
 
 const createCustomerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   mobile: z.string().min(10, 'Enter a valid mobile number'),
   email: z.string().email('Enter a valid email').optional().or(z.literal('')),
-  customerType: z.enum(['INDIVIDUAL', 'BUSINESS']),
+  customerType: z.string().min(1, 'Select a customer type'),
   city: z.string().optional(),
 });
 type CreateCustomerValues = z.infer<typeof createCustomerSchema>;
@@ -21,9 +22,10 @@ type CreateCustomerValues = z.infer<typeof createCustomerSchema>;
 export default function CreateCustomerPage() {
   const router = useRouter();
   const createCustomer = useCreateCustomer();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const { register, handleSubmit, formState: { errors } } = useForm<CreateCustomerValues>({
     resolver: zodResolver(createCustomerSchema),
-    defaultValues: { customerType: 'INDIVIDUAL' },
+    defaultValues: { customerType: 'RESIDENTIAL' },
   });
 
   const onSubmit = (values: CreateCustomerValues) => {
@@ -65,8 +67,9 @@ export default function CreateCustomerPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Customer Type</label>
                 <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
-                  <option value="INDIVIDUAL">Residential</option>
-                  <option value="BUSINESS">Commercial</option>
+                  {customerTypes?.map((t) => (
+                    <option key={t._id} value={t.key}>{t.label}</option>
+                  ))}
                 </select>
               </div>
             </div>

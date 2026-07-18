@@ -4,6 +4,8 @@ import { AxiosError } from 'axios';
 
 export const CALL_TYPES = ['INITIAL', 'REQUIREMENT', 'PRE_SERVICE', 'VISIT_UPDATE', 'POST_SERVICE_FOLLOWUP', 'HAPPY_CALL'] as const;
 export const CALL_DIRECTIONS = ['INCOMING', 'OUTGOING'] as const;
+export type CallType = (typeof CALL_TYPES)[number];
+export type CallDirection = (typeof CALL_DIRECTIONS)[number];
 
 export interface Call {
   _id: string;

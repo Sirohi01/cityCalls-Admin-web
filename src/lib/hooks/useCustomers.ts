@@ -21,19 +21,20 @@ export interface Customer {
   businessName?: string;
   email?: string;
   gstin?: string;
-  customerType: 'INDIVIDUAL' | 'BUSINESS';
+  customerType: string;
   createdAt: string;
   contacts: { name?: string; mobile: string; isPrimary: boolean }[];
   addresses: CustomerAddress[];
   tags?: string[];
+  notes?: string[];
   blacklisted?: boolean;
 }
 
-export function useCustomers() {
+export function useCustomers(params?: { tag?: string }) {
   return useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Customer[]>>('/customers', { params: { limit: 100 } });
+      const res = await apiClient.get<ApiSuccessEnvelope<Customer[]>>('/customers', { params: { limit: 100, ...params } });
       return res.data.data;
     },
   });
@@ -56,11 +57,6 @@ export interface CustomerDuplicate {
   businessName?: string;
   contacts: { mobile: string }[];
 }
-
-// GET /customers/duplicates?mobile=&gstin=&businessName=&name= — matches
-// against whichever fields are provided. Used to check a specific new
-// customer against existing records, not a standalone "review queue"
-// (the backend has no persisted duplicate-review model).
 export function useCustomerDuplicateCheck(params: { mobile?: string; gstin?: string; businessName?: string; name?: string }) {
   const hasAnyParam = Boolean(params.mobile || params.gstin || params.businessName || params.name);
   return useQuery({
@@ -73,8 +69,23 @@ export function useCustomerDuplicateCheck(params: { mobile?: string; gstin?: str
   });
 }
 
+// On-demand version of the same /customers/duplicates lookup, as a mutation
+// rather than a query — the call-intake wizard needs an onSuccess callback
+// to decide the next step, which TanStack Query v5's useQuery no longer
+// supports directly.
+export function useLookupCustomerByMobile() {
+  return useMutation<CustomerDuplicate[], AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (mobile) => {
+      const res = await apiClient.get<ApiSuccessEnvelope<CustomerDuplicate[]>>('/customers/duplicates', { params: { mobile } });
+      return res.data.data;
+    },
+  });
+}
+
+export type ConsentState = 'GRANTED' | 'REVOKED' | 'NOT_ASKED';
+
 export interface CreateCustomerInput {
-  customerType: 'INDIVIDUAL' | 'BUSINESS';
+  customerType: string;
   name: string;
   businessName?: string;
   gstin?: string;
@@ -82,6 +93,8 @@ export interface CreateCustomerInput {
   contacts: { name?: string; mobile: string; isPrimary: boolean }[];
   addresses?: CustomerAddress[];
   tags?: string[];
+  notes?: string[];
+  consent?: { whatsapp?: ConsentState; email?: ConsentState; sms?: ConsentState };
 }
 
 export function useCreateCustomer() {
@@ -95,15 +108,15 @@ export function useCreateCustomer() {
   });
 }
 
-export function useAddCustomerAddress(customerId: string) {
+export function useAddCustomerAddress() {
   const queryClient = useQueryClient();
-  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, CustomerAddress>({
-    mutationFn: async (input) => {
+  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, CustomerAddress & { customerId: string }>({
+    mutationFn: async ({ customerId, ...input }) => {
       const res = await apiClient.post<ApiSuccessEnvelope<Customer>>(`/customers/${customerId}/addresses`, input);
       return res.data.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.customerId] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });
@@ -136,15 +149,16 @@ export interface AddCustomerProductInput {
   productTypeId: string;
   modelNumber?: string;
   serialNumber?: string;
+  purchaseDate?: string;
 }
 
-export function useAddCustomerProduct(customerId: string) {
+export function useAddCustomerProduct() {
   const queryClient = useQueryClient();
-  return useMutation<CustomerProduct, AxiosError<ApiErrorEnvelope>, AddCustomerProductInput>({
-    mutationFn: async (input) => {
+  return useMutation<CustomerProduct, AxiosError<ApiErrorEnvelope>, AddCustomerProductInput & { customerId: string }>({
+    mutationFn: async ({ customerId, ...input }) => {
       const res = await apiClient.post<ApiSuccessEnvelope<CustomerProduct>>(`/customers/${customerId}/products`, input);
       return res.data.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer-products', customerId] }),
+    onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: ['customer-products', variables.customerId] }),
   });
 }

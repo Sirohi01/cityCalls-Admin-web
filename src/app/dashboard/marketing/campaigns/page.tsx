@@ -11,6 +11,7 @@ import { Megaphone, Users, Send } from 'lucide-react';
 
 import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign } from '@/lib/hooks/useCampaigns';
 import { useNotificationTemplates } from '@/lib/hooks/useNotificationTemplates';
+import { useMasters, Master } from '@/lib/hooks/useMasters';
 
 interface CampaignFormValues {
   name: string;
@@ -18,21 +19,25 @@ interface CampaignFormValues {
   templateId: string;
   tags: string;
   segments: string;
-  customerType: '' | 'INDIVIDUAL' | 'BUSINESS';
+  customerType: string;
   scheduledAt: string;
 }
 
-function audienceSummary(campaign: Campaign) {
+function audienceSummary(campaign: Campaign, customerTypes?: Master[]) {
   const parts: string[] = [];
   if (campaign.audienceFilter.tags?.length) parts.push(`tags: ${campaign.audienceFilter.tags.join(', ')}`);
   if (campaign.audienceFilter.segments?.length) parts.push(`segments: ${campaign.audienceFilter.segments.join(', ')}`);
-  if (campaign.audienceFilter.customerType) parts.push(campaign.audienceFilter.customerType);
+  if (campaign.audienceFilter.customerType) {
+    const label = customerTypes?.find((t) => t.key === campaign.audienceFilter.customerType)?.label ?? campaign.audienceFilter.customerType;
+    parts.push(label);
+  }
   return parts.length ? parts.join(' · ') : 'All customers';
 }
 
 function CreateCampaignForm() {
   const createCampaign = useCreateCampaign();
   const { data: templates } = useNotificationTemplates();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const { register, handleSubmit, watch, reset } = useForm<CampaignFormValues>({
     defaultValues: { channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '' },
   });
@@ -78,8 +83,9 @@ function CreateCampaignForm() {
                 <label className="text-sm font-medium">Customer Type (Optional)</label>
                 <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
                   <option value="">Any</option>
-                  <option value="INDIVIDUAL">Individual</option>
-                  <option value="BUSINESS">Business</option>
+                  {customerTypes?.map((t) => (
+                    <option key={t._id} value={t.key}>{t.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="col-span-2 text-xs text-slate-500">
@@ -133,6 +139,7 @@ function CreateCampaignForm() {
 
 export default function CampaignsPage() {
   const { data: campaigns, isLoading, isError } = useCampaigns();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const sendCampaign = useSendCampaign();
 
   return (
@@ -168,7 +175,7 @@ export default function CampaignsPage() {
                   pageSize={10}
                   columns={[
                     { key: 'name', header: 'Campaign Name' },
-                    { key: 'audience', header: 'Audience', render: (item) => <span className="text-sm">{audienceSummary(item)}</span> },
+                    { key: 'audience', header: 'Audience', render: (item) => <span className="text-sm">{audienceSummary(item, customerTypes)}</span> },
                     {
                       key: 'sent',
                       header: 'Sent / Failed',

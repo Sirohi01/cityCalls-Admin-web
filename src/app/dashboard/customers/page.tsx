@@ -7,10 +7,13 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 
 import { useCustomers, Customer } from '@/lib/hooks/useCustomers';
+import { useMasters } from '@/lib/hooks/useMasters';
 
 export default function CustomersPage() {
   const router = useRouter();
   const { data: customers, isLoading, isError } = useCustomers();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
+  const customerTypeLabel = (key: string) => customerTypes?.find((t) => t.key === key)?.label ?? key;
 
 
   return (
@@ -48,7 +51,7 @@ export default function CustomersPage() {
               header: 'City',
               render: (item) => item.addresses?.[0]?.city || 'N/A'
             },
-            { key: 'customerType', header: 'Type' },
+            { key: 'customerType', header: 'Type', render: (item) => customerTypeLabel(item.customerType) },
             {
               key: 'createdAt',
               header: 'Created At',

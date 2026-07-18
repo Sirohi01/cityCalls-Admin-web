@@ -9,7 +9,7 @@ export interface Campaign {
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
   templateId: string;
-  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: 'INDIVIDUAL' | 'BUSINESS' };
+  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: string };
   scheduledAt?: string;
   status: CampaignStatus;
   stats: { sent: number; delivered: number; read: number; failed: number };
@@ -30,7 +30,7 @@ export interface CreateCampaignInput {
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
   templateId: string;
-  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: 'INDIVIDUAL' | 'BUSINESS' };
+  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: string };
   scheduledAt?: string;
 }
 
