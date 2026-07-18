@@ -49,9 +49,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-[#f8faf5] via-[#eef5e5] to-[#d8eac1]">
+      
+      {/* Animated Moving Dots Background */}
+      <div className="absolute inset-0 z-0 opacity-50 bg-dots animate-moving-dots pointer-events-none"></div>
+
+      <style>{`
+        .bg-dots {
+          background-image: radial-gradient(rgba(140, 198, 63, 0.4) 1.5px, transparent 1.5px);
+          background-size: 30px 30px;
+        }
+        @keyframes move-dots {
+          0% { background-position: 0 0; }
+          100% { background-position: 30px 30px; }
+        }
+        .animate-moving-dots { 
+          animation: move-dots 2s linear infinite; 
+        }
+
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        
+        @keyframes float-delayed {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float-delayed { animation: float-delayed 7s ease-in-out 3.5s infinite; }
+        
+        @keyframes pulse-soft {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(140, 198, 63, 0.2); }
+          50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(140, 198, 63, 0.5); }
+        }
+        .animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
+
+        @keyframes fade-in-up {
+          0% { opacity: 0; transform: translateY(30px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; opacity: 0; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+      `}</style>
       <main
-        className="w-full max-w-7xl h-[90vh] max-h-[800px] flex flex-col relative overflow-hidden bg-[length:100%_100%] bg-no-repeat rounded-xl shadow-2xl bg-white"
+        className="w-full max-w-7xl h-[90vh] max-h-[800px] flex flex-col relative overflow-hidden bg-[length:100%_100%] bg-no-repeat rounded-xl shadow-2xl bg-white animate-fade-in-up"
         style={{ backgroundImage: `url(${bgImage.src})` }}
       >
         <div className="flex-1 grid lg:grid-cols-2 relative z-10 h-full pb-16">
@@ -60,21 +108,21 @@ export default function LoginPage() {
           <div className="hidden lg:flex flex-col justify-between py-10 px-10 h-full">
             <div>
 
-              <h1 className="text-3xl font-semibold text-gray-900 leading-tight mt-14 mb-4 [text-shadow:_0_0_15px_#ffffff,_0_0_30px_#ffffff]">
+              <h1 className="text-3xl font-semibold text-gray-900 leading-tight mt-14 mb-4 [text-shadow:_0_0_15px_#ffffff,_0_0_30px_#ffffff] animate-fade-in-up delay-100">
                 Smart CRM for<br />
                 <span className="text-[#649622] [text-shadow:_0_0_15px_#ffffff,_0_0_30px_#ffffff]">Smarter Service</span>
               </h1>
 
               {/* Small green horizontal line */}
-              <div className="w-12 h-1 bg-[#8cc63f] mb-6 rounded-full shadow-[0_0_10px_#ffffff]"></div>
+              <div className="w-12 h-1 bg-[#8cc63f] mb-6 rounded-full shadow-[0_0_10px_#ffffff] animate-fade-in-up delay-200"></div>
 
-              <p className="text-gray-800 font-medium text-base mb-6 max-w-md [text-shadow:_0_0_10px_#ffffff,_0_0_20px_#ffffff]">
+              <p className="text-gray-800 font-medium text-base mb-6 max-w-md [text-shadow:_0_0_10px_#ffffff,_0_0_20px_#ffffff] animate-fade-in-up delay-300">
                 Manage calls, customers and service operations in one powerful platform.
               </p>
 
-              <div className="space-y-6 max-w-md">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f]">
+              <div className="space-y-6 max-w-md animate-fade-in-up delay-400">
+                <div className="flex gap-4 group">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default">
                     <PhoneCall className="w-4 h-4" />
                   </div>
                   <div>
@@ -83,8 +131,8 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f]">
+                <div className="flex gap-4 group">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '0.5s'}}>
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
@@ -93,8 +141,8 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f]">
+                <div className="flex gap-4 group">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '1s'}}>
                     <CalendarCheck className="w-4 h-4" />
                   </div>
                   <div>
@@ -103,8 +151,8 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f]">
+                <div className="flex gap-4 group">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '1.5s'}}>
                     <BarChart3 className="w-4 h-4" />
                   </div>
                   <div>
@@ -115,8 +163,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex items-center gap-4 bg-white/80 backdrop-blur-md w-max px-5 py-3 rounded-2xl shadow-lg border border-white/50">
-              <div className="w-8 h-8 bg-[#8cc63f] rounded-full flex items-center justify-center text-white shrink-0">
+            <div className="mt-8 flex items-center gap-4 bg-white/80 backdrop-blur-md w-max px-5 py-3 rounded-2xl shadow-lg border border-white/50 animate-fade-in-up delay-500 hover:scale-105 transition-transform cursor-default">
+              <div className="w-8 h-8 bg-[#8cc63f] rounded-full flex items-center justify-center text-white shrink-0 animate-bounce" style={{animationDuration: '3s'}}>
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <p className="text-xs font-bold text-gray-900">
@@ -127,8 +175,8 @@ export default function LoginPage() {
           </div>
 
           {/* Right Section - Login Card */}
-          <div className="flex items-center justify-start relative z-10 lg:-ml-20">
-            <div className="w-full max-w-[350px] bg-white rounded-2xl shadow-2xl p-7">
+          <div className="flex items-center justify-start relative z-10 lg:-ml-20 animate-fade-in-up delay-300 animate-float">
+            <div className="w-full max-w-[350px] bg-white rounded-2xl shadow-2xl p-7 hover:shadow-[#8cc63f]/10 hover:shadow-[0_0_40px_rgba(140,198,63,0.15)] transition-shadow duration-500">
               <div className="text-center mb-6">
                 <h2 className="text-[24px] font-bold text-gray-900 mb-2">
                   Welcome <span className="text-[#8cc63f]">Back!</span>
