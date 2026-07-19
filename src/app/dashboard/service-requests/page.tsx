@@ -1,7 +1,8 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -9,14 +10,24 @@ import { Button } from '@/components/ui/button';
 import { useServiceRequests, stageForStatus } from '@/lib/hooks/useServiceRequests';
 
 export default function ServiceRequestsPage() {
+  return (
+    <Suspense>
+      <ServiceRequestsPageContent />
+    </Suspense>
+  );
+}
+
+function ServiceRequestsPageContent() {
   const router = useRouter();
-  const { data: tickets, isLoading, isError } = useServiceRequests();
+  const searchParams = useSearchParams();
+  const vertical = searchParams.get('vertical') ?? undefined;
+  const { data: tickets, isLoading, isError } = useServiceRequests({ vertical });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Service Requests</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Requests' : 'Service Requests'}</h1>
           <p className="text-muted-foreground">Manage and track customer tickets.</p>
         </div>
         <div className="space-x-2">

@@ -1,7 +1,8 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,18 @@ import { useCustomers, Customer } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
 
 export default function CustomersPage() {
+  return (
+    <Suspense>
+      <CustomersPageContent />
+    </Suspense>
+  );
+}
+
+function CustomersPageContent() {
   const router = useRouter();
-  const { data: customers, isLoading, isError } = useCustomers();
+  const searchParams = useSearchParams();
+  const vertical = searchParams.get('vertical') ?? undefined;
+  const { data: customers, isLoading, isError } = useCustomers({ vertical });
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const customerTypeLabel = (key: string) => customerTypes?.find((t) => t.key === key)?.label ?? key;
 
@@ -20,7 +31,7 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Customers' : 'Customers'}</h1>
           <p className="text-muted-foreground">Manage customer profiles and history.</p>
         </div>
         <Button render={<Link href="/dashboard/customers/create" />}>

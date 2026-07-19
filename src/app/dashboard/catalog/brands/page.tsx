@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,8 +9,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { MediaGallery } from '@/components/media/MediaGallery';
 
 import { useBrands, Brand } from '@/lib/hooks/useBrands';
 import { useMasters, useCreateMaster, Master } from '@/lib/hooks/useMasters';
@@ -43,6 +46,7 @@ function AddMasterEntryForm({ masterType, onClose }: { masterType: 'BRAND' | 'PR
 export default function BrandsPage() {
   const { data: brandsData, isLoading: loadingBrands } = useBrands();
   const { data: productTypes, isLoading: loadingProductTypes } = useMasters(['PRODUCT_TYPE']);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
 
   return (
     <div className="space-y-6">
@@ -71,6 +75,7 @@ export default function BrandsPage() {
                 <DataTable<Brand>
                   data={brandsData || []}
                   pageSize={10}
+                  onRowClick={(item) => setSelectedBrand(item)}
                   columns={[
                     { key: 'name', header: 'Brand Name' },
                     { key: 'key', header: 'System Key' },
@@ -82,6 +87,7 @@ export default function BrandsPage() {
                   ]}
                 />
               )}
+              <p className="text-xs text-muted-foreground">Click a brand to manage its photos and videos.</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -115,6 +121,18 @@ export default function BrandsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Sheet open={!!selectedBrand} onOpenChange={(open) => !open && setSelectedBrand(null)}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{selectedBrand?.name}</SheetTitle>
+            <SheetDescription>Photos and videos for this brand.</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 px-4 pb-4">
+            {selectedBrand && <MediaGallery entityType="MASTER" entityId={selectedBrand.id} title="Brand Media" />}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

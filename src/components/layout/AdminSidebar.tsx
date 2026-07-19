@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -46,8 +46,10 @@ import {
   BrainCircuit,
   BarChart4,
   FileKey,
-  Database
+  Database,
+  Sparkles
 } from 'lucide-react';
+import { useBeautyMode } from '@/lib/hooks/useBeautyMode';
 
 // module/action values here match citycalls-api's real RBAC vocabulary
 // exactly (src/modules/*/​*.routes.ts's requirePermission(module, action)
@@ -68,6 +70,14 @@ const navItems: { group: string; items: NavItem[] }[] = [
     group: 'Main',
     items: [
       { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, alwaysVisible: true },
+    ],
+  },
+  {
+    group: 'Beauty & Salon',
+    items: [
+      { title: 'Beauty Services', url: '/dashboard/catalog/services?vertical=BEAUTY', icon: Sparkles, module: 'catalog' },
+      { title: 'Beauty Customers', url: '/dashboard/customers?vertical=BEAUTY', icon: Sparkles, module: 'customers' },
+      { title: 'Beauty Requests', url: '/dashboard/service-requests?vertical=BEAUTY', icon: Sparkles, module: 'serviceRequests' },
     ],
   },
   {
@@ -178,17 +188,38 @@ const navItems: { group: string; items: NavItem[] }[] = [
 ];
 
 export function AdminSidebar() {
+  return (
+    <Suspense>
+      <AdminSidebarContent />
+    </Suspense>
+  );
+}
+
+function AdminSidebarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // Full current URL (path + query) — items like "Beauty Services" and the
+  // plain "Services" both point at /dashboard/catalog/services, differing
+  // only by ?vertical=BEAUTY, and usePathname() alone drops the query
+  // string, so both would otherwise show as active at once.
+  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+  const { isBeautyMode } = useBeautyMode();
 
   return (
-    <Sidebar className="border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-black text-white">
-      <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b border-gray-50 bg-black">
+    <Sidebar
+      className={
+        isBeautyMode
+          ? 'border-r border-pink-200 [&_[data-sidebar=sidebar]]:bg-white text-pink-950'
+          : 'border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-black text-white'
+      }
+    >
+      <SidebarHeader className={`h-12 flex justify-center items-center px-4 border-b ${isBeautyMode ? 'bg-white border-pink-100' : 'bg-black border-gray-50'}`}>
         <img src="/logo.png" alt="CityCalls Logo" className="h-10 w-auto object-contain" />
       </SidebarHeader>
       <SidebarContent>
         {navItems.map((group) => (
           <SidebarGroup key={group.group} className="py-0">
-            <SidebarGroupLabel className="text-gray-400 font-semibold">{group.group}</SidebarGroupLabel>
+            <SidebarGroupLabel className={isBeautyMode ? 'text-pink-400 font-semibold' : 'text-gray-400 font-semibold'}>{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
@@ -196,9 +227,13 @@ export function AdminSidebar() {
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         render={<Link href={item.url} />}
-                        isActive={pathname === item.url}
-                        className="text-white hover:bg-gray-800 hover:text-white data-[active]:bg-[#8cc63f] data-[active]:text-black transition-colors"
-                        style={{ color: pathname === item.url ? '#000' : '#fff' }}
+                        isActive={currentUrl === item.url}
+                        className={
+                          isBeautyMode
+                            ? 'text-pink-950 hover:bg-pink-50 hover:text-pink-950 data-[active]:bg-pink-500 data-[active]:text-white transition-colors'
+                            : 'text-white hover:bg-gray-800 hover:text-white data-[active]:bg-[#8cc63f] data-[active]:text-black transition-colors'
+                        }
+                        style={{ color: currentUrl === item.url ? (isBeautyMode ? '#fff' : '#000') : (isBeautyMode ? '#500724' : '#fff') }}
                       >
                         <item.icon />
                         <span>{item.title}</span>

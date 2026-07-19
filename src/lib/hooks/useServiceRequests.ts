@@ -98,6 +98,7 @@ interface ListParams {
   branchId?: string;
   assigneeId?: string;
   limit?: number;
+  vertical?: string;
 }
 
 // Every status except CLOSED/CANCELLED — the list endpoint only supports

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { MediaGallery } from '@/components/media/MediaGallery';
 
 import { useCatalogService, useUpdateCatalogService } from '@/lib/hooks/useCatalogServices';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -103,6 +104,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           </CardContent>
         </Card>
       </div>
+
+      <MediaGallery entityType="SERVICE" entityId={id} />
     </div>
   );
 }

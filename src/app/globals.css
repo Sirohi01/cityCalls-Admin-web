@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant beauty (&:is(.beauty *));
 
 @theme inline {
   --color-background: var(--background);
@@ -131,6 +132,25 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Beauty & Salon vertical reskin — pink accent, white/black neutrals.
+   Mirrors .dark's structure/mechanism (a class toggled on a root wrapper,
+   see AdminLayout.tsx + useBeautyMode.ts) so the rest of the app's shadcn
+   components (buttons, focus rings, badges) shift automatically. The
+   sidebar/navbar's own bg-black/hardcoded-hex chrome is switched separately
+   via conditional classes in those components, since they don't read these
+   tokens today. */
+.beauty {
+  --primary: oklch(0.65 0.24 5);
+  --primary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.96 0.03 5);
+  --accent-foreground: oklch(0.45 0.2 5);
+  --ring: oklch(0.65 0.24 5);
+  --secondary: oklch(0.97 0.02 5);
+  --secondary-foreground: oklch(0.45 0.2 5);
+  --sidebar-primary: oklch(0.65 0.24 5);
+  --sidebar-ring: oklch(0.65 0.24 5);
 }
 
 @layer base {

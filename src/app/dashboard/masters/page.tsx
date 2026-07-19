@@ -39,18 +39,28 @@ const createMasterSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   parentId: z.string().optional(),
   sortOrder: z.number().optional(),
+  vertical: z.string().optional(),
 });
 type CreateMasterValues = z.infer<typeof createMasterSchema>;
 
 function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string; siblings: Master[]; onClose: () => void }) {
   const createMaster = useCreateMaster();
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateMasterValues>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CreateMasterValues>({
     resolver: zodResolver(createMasterSchema),
     defaultValues: { masterType: defaultType, sortOrder: 0 },
   });
+  const masterType = watch('masterType');
 
   const onSubmit = (values: CreateMasterValues) => {
-    createMaster.mutate({ ...values, parentId: values.parentId || undefined }, { onSuccess: onClose });
+    const { vertical, ...rest } = values;
+    createMaster.mutate(
+      {
+        ...rest,
+        parentId: values.parentId || undefined,
+        meta: masterType === 'SERVICE_CATEGORY' && vertical ? { vertical } : undefined,
+      },
+      { onSuccess: onClose }
+    );
   };
 
   return (
@@ -72,6 +82,13 @@ function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string
         </select>
       </div>
       <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
+      {masterType === 'SERVICE_CATEGORY' && (
+        <AppFormField
+          label="Vertical (Optional)"
+          placeholder="e.g. BEAUTY"
+          {...register('vertical')}
+        />
+      )}
       {createMaster.isError && <p className="text-sm text-destructive">{createMaster.error.response?.data?.message ?? 'Failed to create master.'}</p>}
       <Button type="submit" className="w-full" disabled={createMaster.isPending}>
         {createMaster.isPending ? 'Creating...' : 'Add Master'}
@@ -84,6 +101,7 @@ const editMasterSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   parentId: z.string().optional(),
   sortOrder: z.number().optional(),
+  vertical: z.string().optional(),
 });
 type EditMasterValues = z.infer<typeof editMasterSchema>;
 
@@ -91,12 +109,24 @@ function EditMasterForm({ master, siblings, onClose }: { master: Master; sibling
   const updateMaster = useUpdateMaster();
   const { register, handleSubmit, formState: { errors } } = useForm<EditMasterValues>({
     resolver: zodResolver(editMasterSchema),
-    defaultValues: { label: master.label, parentId: master.parentId ?? '', sortOrder: master.sortOrder ?? 0 },
+    defaultValues: {
+      label: master.label,
+      parentId: master.parentId ?? '',
+      sortOrder: master.sortOrder ?? 0,
+      vertical: typeof master.meta?.vertical === 'string' ? master.meta.vertical : '',
+    },
   });
 
   const onSubmit = (values: EditMasterValues) => {
+    const { vertical, ...rest } = values;
     updateMaster.mutate(
-      { masterType: master.masterType, id: master._id, ...values, parentId: values.parentId || undefined },
+      {
+        masterType: master.masterType,
+        id: master._id,
+        ...rest,
+        parentId: values.parentId || undefined,
+        ...(master.masterType === 'SERVICE_CATEGORY' ? { meta: { ...master.meta, vertical: vertical || undefined } } : {}),
+      },
       { onSuccess: onClose }
     );
   };
@@ -113,6 +143,13 @@ function EditMasterForm({ master, siblings, onClose }: { master: Master; sibling
         </select>
       </div>
       <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
+      {master.masterType === 'SERVICE_CATEGORY' && (
+        <AppFormField
+          label="Vertical (Optional)"
+          placeholder="e.g. BEAUTY"
+          {...register('vertical')}
+        />
+      )}
       {updateMaster.isError && <p className="text-sm text-destructive">{updateMaster.error.response?.data?.message ?? 'Failed to update master.'}</p>}
       <Button type="submit" className="w-full" disabled={updateMaster.isPending}>
         {updateMaster.isPending ? 'Saving...' : 'Save Changes'}
@@ -171,6 +208,9 @@ export default function MastersPage() {
           columns={[
             { key: 'label', header: 'Name' },
             { key: 'key', header: 'System Key' },
+            ...(selectedType === 'SERVICE_CATEGORY'
+              ? [{ key: 'vertical', header: 'Vertical', render: (item: Master) => (typeof item.meta?.vertical === 'string' ? item.meta.vertical : '—') }]
+              : []),
             {
               key: 'active',
               header: 'Status',

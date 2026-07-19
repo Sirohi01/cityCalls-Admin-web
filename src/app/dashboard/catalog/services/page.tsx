@@ -1,7 +1,8 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,18 @@ import { useCatalogServices, CatalogService } from '@/lib/hooks/useCatalogServic
 import { useMasters } from '@/lib/hooks/useMasters';
 
 export default function ServicesPage() {
+  return (
+    <Suspense>
+      <ServicesPageContent />
+    </Suspense>
+  );
+}
+
+function ServicesPageContent() {
   const router = useRouter();
-  const { data: services, isLoading, isError } = useCatalogServices();
+  const searchParams = useSearchParams();
+  const vertical = searchParams.get('vertical') ?? undefined;
+  const { data: services, isLoading, isError } = useCatalogServices({ vertical });
   const { data: categories } = useMasters(['SERVICE_CATEGORY']);
   const categoryLabel = (id?: string) => categories?.find((c) => c._id === id)?.label ?? 'N/A';
 
@@ -19,7 +30,7 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Services Catalog</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Services' : 'Services Catalog'}</h1>
           <p className="text-muted-foreground">Manage the list of services offered to customers.</p>
         </div>
         <Button render={<Link href="/dashboard/catalog/services/create" />}>

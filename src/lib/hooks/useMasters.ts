@@ -10,14 +10,13 @@ export interface Master {
   active: boolean;
   sortOrder?: number;
   parentId?: string;
+  meta?: Record<string, unknown>;
 }
 
 export function useMasters(types: string[]) {
   return useQuery({
     queryKey: ['masters', types],
     queryFn: async () => {
-      // limit=100 — the backend defaults to 20/page, which silently truncated
-      // types with more entries (e.g. BRAND/PART at 25) below what was seeded.
       const responses = await Promise.all(
         types.map((type) => apiClient.get<ApiSuccessEnvelope<Master[]>>(`/masters/${type}`, { params: { limit: 100 } }))
       );
@@ -33,6 +32,7 @@ export interface CreateMasterInput {
   label: string;
   parentId?: string;
   sortOrder?: number;
+  meta?: Record<string, unknown>;
 }
 
 export function useCreateMaster() {
@@ -53,6 +53,7 @@ export interface UpdateMasterInput {
   parentId?: string;
   sortOrder?: number;
   active?: boolean;
+  meta?: Record<string, unknown>;
 }
 
 export function useUpdateMaster() {

@@ -36,7 +36,7 @@ export interface Customer {
   consent?: { whatsapp: ConsentState; email: ConsentState; sms: ConsentState };
 }
 
-export function useCustomers(params?: { tag?: string }, options?: { enabled?: boolean }) {
+export function useCustomers(params?: { tag?: string; vertical?: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['customers', params],
     queryFn: async () => {

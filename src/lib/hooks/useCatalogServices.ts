@@ -13,11 +13,11 @@ export interface CatalogService {
   active: boolean;
 }
 
-export function useCatalogServices() {
+export function useCatalogServices(params?: { vertical?: string }) {
   return useQuery({
-    queryKey: ['catalogServices'],
+    queryKey: ['catalogServices', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<CatalogService[]>>('/services', { params: { limit: 100 } });
+      const res = await apiClient.get<ApiSuccessEnvelope<CatalogService[]>>('/services', { params: { limit: 100, ...params } });
       return res.data.data;
     },
   });
