@@ -213,7 +213,7 @@ function AdminSidebarContent() {
           : 'border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-black text-white'
       }
     >
-      <SidebarHeader className={`h-12 flex justify-center items-center px-4 border-b ${isBeautyMode ? 'bg-white border-pink-100' : 'bg-black border-gray-50'}`}>
+      <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b bg-black border-gray-50">
         <img src="/logo.png" alt="CityCalls Logo" className="h-10 w-auto object-contain" />
       </SidebarHeader>
       <SidebarContent>
