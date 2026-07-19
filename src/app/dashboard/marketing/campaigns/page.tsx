@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -39,10 +39,10 @@ function CreateCampaignForm() {
   const createCampaign = useCreateCampaign();
   const { data: templates } = useNotificationTemplates();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
-  const { register, handleSubmit, watch, reset } = useForm<CampaignFormValues>({
+  const { register, handleSubmit, control, reset } = useForm<CampaignFormValues>({
     defaultValues: { channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '' },
   });
-  const channel = watch('channel');
+  const channel = useWatch({ control, name: 'channel' });
   const eligibleTemplates = (templates || []).filter((t) => t.channel === channel);
 
   const onSubmit = (values: CampaignFormValues) => {

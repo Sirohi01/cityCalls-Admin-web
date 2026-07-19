@@ -1,10 +1,11 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ImagePlus, Video, Trash2, Loader2 } from 'lucide-react';
-import { useFileList, useUploadFile, useDeleteFile } from '@/lib/hooks/useFiles';
+import { useFileList, useUploadFile, useDeleteFile, resolveFileUrl } from '@/lib/hooks/useFiles';
 
 interface MediaGalleryProps {
   entityType: string;
@@ -72,9 +73,9 @@ export function MediaGallery({ entityType, entityId, title = 'Media' }: MediaGal
             {media.map((f) => (
               <div key={f._id} className="relative group rounded-md overflow-hidden border aspect-square bg-muted">
                 {f.category === 'VIDEO' ? (
-                  <video src={f.url} className="w-full h-full object-cover" muted />
+                  <video src={resolveFileUrl(f)} className="w-full h-full object-cover" muted />
                 ) : (
-                  <img src={f.url} alt="" className="w-full h-full object-cover" />
+                  <Image src={resolveFileUrl(f)} alt="" fill sizes="(max-width: 768px) 25vw, 160px" className="object-cover" />
                 )}
                 <button
                   type="button"

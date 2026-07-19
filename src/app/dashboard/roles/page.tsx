@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -76,7 +76,7 @@ function EditUserForm({ user, close }: { user: User; close: () => void }) {
   const updateUser = useUpdateUser();
   const { data: branches } = useBranches();
   const { data: vendors } = useVendors();
-  const { register, handleSubmit, watch } = useForm<Omit<UpdateUserInput, 'id'>>({
+  const { register, handleSubmit, control } = useForm<Omit<UpdateUserInput, 'id'>>({
     defaultValues: {
       name: user.name,
       email: user.email ?? '',
@@ -88,7 +88,7 @@ function EditUserForm({ user, close }: { user: User; close: () => void }) {
       status: user.status,
     },
   });
-  const branchId = watch('branchId');
+  const branchId = useWatch({ control, name: 'branchId' });
   const { data: subBranches } = useSubBranches(branchId || undefined);
   const { data: teams } = useTeams();
   const branchTeams = teams?.filter((t) => t.branchId === branchId) ?? [];

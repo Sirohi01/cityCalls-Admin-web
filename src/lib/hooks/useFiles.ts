@@ -23,6 +23,16 @@ export interface UploadedFile {
   createdAt: string;
 }
 
+// LOCAL-provider urls are API-relative (e.g. "/uploads/...") — they're
+// served by citycalls-api, not this Next.js app, so rendering them directly
+// as-is would resolve against the wrong origin (this app's own port).
+// CLOUDINARY urls are already absolute and pass through unchanged.
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1').replace(/\/api\/v1\/?$/, '');
+
+export function resolveFileUrl(file: UploadedFile): string {
+  return file.provider === 'LOCAL' ? `${API_ORIGIN}${file.url}` : file.url;
+}
+
 export function useFileList(entityType: string, entityId: string) {
   return useQuery({
     queryKey: ['files', entityType, entityId],

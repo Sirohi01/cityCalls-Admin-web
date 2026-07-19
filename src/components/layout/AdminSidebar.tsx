@@ -24,7 +24,6 @@ import {
   Network,
   Users2,
   UserSquare2,
-  BookOpen,
   Wrench,
   Tags,
   Phone,
@@ -214,7 +213,7 @@ function AdminSidebarContent() {
       }
     >
       <SidebarHeader className="h-12 flex justify-center items-center px-4 border-b bg-black border-gray-50">
-        <img src="/logo.png" alt="CityCalls Logo" className="h-10 w-auto object-contain" />
+        <Image src="/logo.png" alt="CityCalls Logo" width={668} height={190} className="h-10 w-auto object-contain" priority />
       </SidebarHeader>
       <SidebarContent>
         {navItems.map((group) => (

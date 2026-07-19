@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -26,11 +26,11 @@ export default function CreateServiceRequestPage() {
   const { data: services } = useCatalogServices();
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: { priority: 'NORMAL' },
   });
 
-  const customerId = watch('customerId');
+  const customerId = useWatch({ control, name: 'customerId' });
   const selectedCustomer = customers?.find((c) => c._id === (customerId || selectedCustomerId));
 
   const onSubmit = (data: FormValues) => {

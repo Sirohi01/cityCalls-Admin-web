@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,11 @@ function CreateEstimateForm() {
   const { data: branches } = useBranches();
   const { data: serviceRequests } = useServiceRequests();
 
-  const { register, control, handleSubmit, watch, reset } = useForm<EstimateFormValues>({
+  const { register, control, handleSubmit, reset } = useForm<EstimateFormValues>({
     defaultValues: { items: [{ description: '', qty: 1, unitPrice: 0 }] },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
-  const items = watch('items');
+  const items = useWatch({ control, name: 'items' });
   const grandTotal = items?.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.unitPrice) || 0), 0) ?? 0;
 
   const onSubmit = (values: EstimateFormValues) => {

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { loginSchema, LoginFormValues } from '@/lib/validation/auth';
 import { useLogin } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -45,9 +46,12 @@ export default function LoginPage() {
 
       {/* Wordmark — mix-blend-lighten drops the logo's black backing plate so
           only the green/white text shows against whatever's behind it. */}
-      <img
+      <Image
         src="/citycallslogo.jpeg"
         alt="CityCalls"
+        width={1055}
+        height={1491}
+        priority
         className="absolute left-6 top-6 h-16 w-40 mix-blend-lighten object-cover object-center drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] lg:left-12 lg:top-10"
       />
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
@@ -57,11 +57,11 @@ function AddTeamForm({ onClose }: { onClose: () => void }) {
   const createTeam = useCreateTeam();
   const { data: branches } = useBranches();
   const { data: employees } = useEmployees();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<TeamFormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
   });
-  const branchId = watch('branchId');
-  const subBranchId = watch('subBranchId');
+  const branchId = useWatch({ control, name: 'branchId' });
+  const subBranchId = useWatch({ control, name: 'subBranchId' });
   const { data: subBranches } = useSubBranches(branchId || undefined);
   const [memberIds, setMemberIds] = useState<string[]>([]);
 
@@ -120,12 +120,12 @@ function EditTeamForm({ team, onClose }: { team: Team; onClose: () => void }) {
   const updateTeam = useUpdateTeam();
   const { data: branches } = useBranches();
   const { data: employees } = useEmployees();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<TeamFormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
     defaultValues: { branchId: team.branchId, subBranchId: team.subBranchId ?? '', name: team.name },
   });
-  const branchId = watch('branchId');
-  const subBranchId = watch('subBranchId');
+  const branchId = useWatch({ control, name: 'branchId' });
+  const subBranchId = useWatch({ control, name: 'subBranchId' });
   const { data: subBranches } = useSubBranches(branchId || undefined);
   const [memberIds, setMemberIds] = useState<string[]>(team.memberIds ?? []);
 

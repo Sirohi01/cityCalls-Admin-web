@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
@@ -46,11 +46,11 @@ type CreateMasterValues = z.infer<typeof createMasterSchema>;
 
 function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string; siblings: Master[]; onClose: () => void }) {
   const createMaster = useCreateMaster();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CreateMasterValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<CreateMasterValues>({
     resolver: zodResolver(createMasterSchema),
     defaultValues: { masterType: defaultType, sortOrder: 0 },
   });
-  const masterType = watch('masterType');
+  const masterType = useWatch({ control, name: 'masterType' });
 
   const onSubmit = (values: CreateMasterValues) => {
     const { vertical, ...rest } = values;

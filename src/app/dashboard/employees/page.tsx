@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
@@ -39,7 +39,7 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
   const mutation = isEdit ? updateEmployee : createEmployee;
   const { data: users } = useUsers();
   const { data: branches } = useBranches();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<EmployeeFormValues>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       userId: employee?.userId._id ?? '',
@@ -52,7 +52,7 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
       active: employee?.active ?? true,
     },
   });
-  const branchId = watch('branchId');
+  const branchId = useWatch({ control, name: 'branchId' });
   const { data: subBranches } = useSubBranches(branchId || undefined);
   const { data: teams } = useTeams();
   const branchTeams = teams?.filter((t) => t.branchId === branchId) ?? [];
