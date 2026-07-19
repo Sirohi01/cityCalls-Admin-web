@@ -51,9 +51,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-[#f8faf5] via-[#eef5e5] to-[#d8eac1]">
-      
+
       {/* Animated Moving Dots Background */}
       <div className="absolute inset-0 z-0 opacity-50 bg-dots animate-moving-dots pointer-events-none"></div>
+
 
       <style>{`
         .bg-dots {
@@ -100,16 +101,16 @@ export default function LoginPage() {
         .delay-500 { animation-delay: 500ms; }
       `}</style>
       <main
-        className="w-full max-w-7xl h-[90vh] max-h-[800px] flex flex-col relative overflow-hidden bg-[length:100%_100%] bg-no-repeat rounded-xl shadow-2xl bg-white animate-fade-in-up"
+        className="w-full max-w-7xl h-[90vh] max-h-[800px] flex flex-col relative overflow-hidden bg-[length:100%_100%] bg-no-repeat rounded-lg shadow-2xl bg-white animate-fade-in-up"
         style={{ backgroundImage: `url(${bgImage.src})` }}
       >
-        {/* Lottie Animation Overlay */}
-        <div className="absolute bottom-0 left-[-25%] w-[150%] h-full z-0 pointer-events-none opacity-100 flex items-center justify-center overflow-hidden">
+        {/* Lottie Animation (Bike) stationary in top right corner of bg image */}
+        <div className="absolute top-6 right-10 w-[250px] h-[150px] z-50 pointer-events-none flex items-center justify-center">
           <DotLottieReact
             src="https://lottie.host/02b7b6c7-c801-493b-aac5-e1bfa27e38c7/vdtItP9OMH.lottie"
             loop
             autoplay
-            className="w-full h-full scale-125"
+            className="w-full h-full scale-90"
           />
         </div>
 
@@ -143,7 +144,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex gap-4 group">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '0.5s'}}>
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{ animationDelay: '0.5s' }}>
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
@@ -153,7 +154,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex gap-4 group">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '1s'}}>
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{ animationDelay: '1s' }}>
                     <CalendarCheck className="w-4 h-4" />
                   </div>
                   <div>
@@ -163,7 +164,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex gap-4 group">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{animationDelay: '1.5s'}}>
+                  <div className="flex-shrink-0 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-[#8cc63f] animate-pulse-soft transition-transform group-hover:scale-110 cursor-default" style={{ animationDelay: '1.5s' }}>
                     <BarChart3 className="w-4 h-4" />
                   </div>
                   <div>
@@ -175,7 +176,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 flex items-center gap-4 bg-white/80 backdrop-blur-md w-max px-5 py-3 rounded-2xl shadow-lg border border-white/50 animate-fade-in-up delay-500 hover:scale-105 transition-transform cursor-default">
-              <div className="w-8 h-8 bg-[#8cc63f] rounded-full flex items-center justify-center text-white shrink-0 animate-bounce" style={{animationDuration: '3s'}}>
+              <div className="w-8 h-8 bg-[#8cc63f] rounded-full flex items-center justify-center text-white shrink-0 animate-bounce" style={{ animationDuration: '3s' }}>
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <p className="text-xs font-bold text-gray-900">
