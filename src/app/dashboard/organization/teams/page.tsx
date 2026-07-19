@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 import { Pencil } from 'lucide-react';
 import { useTeams, useCreateTeam, useUpdateTeam, useBranches, useSubBranches, Team } from '@/lib/hooks/useOrganization';
 import { useEmployees, Employee } from '@/lib/hooks/useEmployees';
@@ -215,6 +216,8 @@ export default function TeamsPage() {
           {(close) => <AddTeamForm onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading teams...</div>

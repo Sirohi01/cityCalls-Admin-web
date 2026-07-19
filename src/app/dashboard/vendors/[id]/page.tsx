@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Pencil } from 'lucide-react';
 
 import { useVendor, useUpdateVendor, useSetVendorBlacklist, useVendorTechnicians, useAddVendorTechnician, Vendor } from '@/lib/hooks/useVendors';
@@ -215,6 +216,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
           </FormSheet>
         </div>
       </div>
+
+      <Separator />
 
       {vendor.blacklisted && vendor.blacklistReason && (
         <Card className="bg-red-50 border-red-200">

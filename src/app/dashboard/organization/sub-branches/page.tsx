@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 import { Pencil } from 'lucide-react';
 import { useSubBranches, useCreateSubBranch, useUpdateSubBranch, useBranches, SubBranch } from '@/lib/hooks/useOrganization';
 import { useUsers } from '@/lib/hooks/useUsers';
@@ -118,6 +119,8 @@ export default function SubBranchesPage() {
           {(close) => <SubBranchForm onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       <div className="flex items-center gap-2">
         <label className="text-sm font-medium text-slate-700">Filter by Parent Branch:</label>

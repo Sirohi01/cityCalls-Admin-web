@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import { useCustomers, Customer } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -38,6 +39,8 @@ function CustomersPageContent() {
           Add Customer
         </Button>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading customers...</div>

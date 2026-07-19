@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 import { Pencil } from 'lucide-react';
 
 import { useMasters, useCreateMaster, useUpdateMaster, Master } from '@/lib/hooks/useMasters';
@@ -174,6 +175,8 @@ export default function MastersPage() {
           {(close) => <AddMasterForm defaultType={selectedType} siblings={masters || []} onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       <div className="flex flex-wrap gap-2 border-b pb-4">
         {MASTER_TYPES.map((t) => (

@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { BrainCircuit, Mic, MessageCircleHeart, Power } from 'lucide-react';
 
 import { useAISettings, useUpdateAISettings } from '@/lib/hooks/useAISettings';
@@ -19,6 +20,8 @@ export default function AISettingsPage() {
           <p className="text-muted-foreground">Configure artificial intelligence features for your workspace.</p>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid gap-6">
         <Card className="border-indigo-100 bg-indigo-50/30">

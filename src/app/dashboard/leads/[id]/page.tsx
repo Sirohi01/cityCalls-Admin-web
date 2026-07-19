@@ -4,6 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Phone, Sparkles } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -85,6 +86,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-1 space-y-6">

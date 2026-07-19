@@ -7,6 +7,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Pencil } from 'lucide-react';
@@ -145,6 +146,8 @@ export default function EmployeesPage() {
           {(close) => <EmployeeForm onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

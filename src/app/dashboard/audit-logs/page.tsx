@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import { useAuditLogs, AUDIT_LOG_MODULES } from '@/lib/hooks/useAuditLogs';
 
@@ -28,6 +29,8 @@ export default function AuditLogsPage() {
           <p className="text-muted-foreground">Immutable trail of all actions performed within the system.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

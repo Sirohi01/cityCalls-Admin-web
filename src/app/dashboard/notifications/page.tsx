@@ -4,6 +4,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Bell, AlertTriangle, Inbox, Check } from 'lucide-react';
 
 import { useNotifications, useUnreadCount, useMarkNotificationRead, Notification } from '@/lib/hooks/useNotifications';
@@ -25,6 +26,8 @@ export default function NotificationsPage() {
           <p className="text-muted-foreground">In-app, SMS, WhatsApp, and email notifications addressed to your account.</p>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-slate-50 border-slate-200">

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import { useCatalogServices, CatalogService } from '@/lib/hooks/useCatalogServices';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -37,6 +38,8 @@ function ServicesPageContent() {
           Add Service
         </Button>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading services...</div>

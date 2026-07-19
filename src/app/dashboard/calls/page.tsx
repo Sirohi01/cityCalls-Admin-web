@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import { useCalls, Call } from '@/lib/hooks/useCalls';
 
@@ -23,6 +24,8 @@ export default function CallsPage() {
           Log New Call
         </Button>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading calls...</div>

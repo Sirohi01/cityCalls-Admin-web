@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Separator } from '@/components/ui/separator';
 import { useLeads, Lead } from '@/lib/hooks/useLeads';
 
 export default function LeadsListPage() {
@@ -27,6 +28,8 @@ export default function LeadsListPage() {
           </Button>
         </div>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading leads...</div>

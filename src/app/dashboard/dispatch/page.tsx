@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { User, MapPin, Wrench } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
@@ -48,6 +49,8 @@ export default function DispatchBoardPage() {
           <p className="text-muted-foreground">Assign open service requests to available technicians.</p>
         </div>
       </div>
+
+      <Separator />
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
         {/* Left Pane: Unassigned Requests */}

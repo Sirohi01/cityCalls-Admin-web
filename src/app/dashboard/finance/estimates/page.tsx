@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, FileText } from 'lucide-react';
 
 import { useEstimates, useCreateEstimate, useShareEstimate, useConvertEstimate, Estimate, LineItem } from '@/lib/hooks/useEstimates';
@@ -162,6 +163,8 @@ export default function EstimatesPage() {
           <p className="text-muted-foreground">Manage and generate cost estimates for service requests.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">

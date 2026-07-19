@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import { useCreateServiceRequest } from '@/lib/hooks/useServiceRequests';
 import { useCustomers } from '@/lib/hooks/useCustomers';
@@ -71,6 +72,8 @@ export default function CreateServiceRequestPage() {
         </div>
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <Separator />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>

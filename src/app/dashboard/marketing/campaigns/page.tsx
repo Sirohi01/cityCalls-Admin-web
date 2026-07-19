@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppFormField } from '@/components/ui/AppFormField';
+import { Separator } from '@/components/ui/separator';
 import { Megaphone, Users, Send } from 'lucide-react';
 
 import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign } from '@/lib/hooks/useCampaigns';
@@ -150,6 +151,8 @@ export default function CampaignsPage() {
           <p className="text-muted-foreground">Launch targeted WhatsApp/Email campaigns to consented customer segments.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">

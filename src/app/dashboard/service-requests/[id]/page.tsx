@@ -4,6 +4,7 @@ import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, User, UserCog, XCircle } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
@@ -82,6 +83,8 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
           <StatusBadge label={ticket.status} category={ticket.status === 'NEW' ? 'error' : isCancelled ? 'error' : 'info'} />
         </div>
       </div>
+
+      <Separator />
 
       {/* Status Transition Ribbon */}
       {isCancelled ? (

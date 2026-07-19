@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 import { ShieldCheck, Key, Trash2, Lock, Pencil } from 'lucide-react';
 
 import { useUsers, useCreateUser, useUpdateUser, CreateUserInput, UpdateUserInput, STAFF_ROLES, User } from '@/lib/hooks/useUsers';
@@ -351,6 +352,8 @@ export default function RolesAndUsersPage() {
           <p className="text-muted-foreground">Manage system access, user accounts, and permission matrices.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-4">

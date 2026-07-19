@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 
 import {
   useNotificationTemplates,
@@ -85,6 +86,8 @@ export default function TemplatesPage() {
           <p className="text-muted-foreground">Manage messaging templates for SMS, WhatsApp, and Email. Registered per trigger event, seeded at setup.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

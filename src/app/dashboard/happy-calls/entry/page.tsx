@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { Star } from 'lucide-react';
 import { Suspense, useState } from 'react';
 import { useRecordHappyCallOutcome } from '@/lib/hooks/useHappyCalls';
@@ -47,6 +48,8 @@ function HappyCallEntryForm() {
         </div>
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <Separator />
 
       {!happyCallId && (
         <p className="text-sm text-destructive">No happy call selected — go back to the list and click &quot;Log Call&quot; on a pending entry.</p>

@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { IndianRupee } from 'lucide-react';
 
 import { useInvoices, useRecordPayment, useShareInvoice, useCancelInvoice, usePaymentHistory, Invoice } from '@/lib/hooks/useInvoices';
@@ -50,6 +51,8 @@ export default function InvoicesPage() {
           <p className="text-muted-foreground">Manage final billing and record customer payments.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">

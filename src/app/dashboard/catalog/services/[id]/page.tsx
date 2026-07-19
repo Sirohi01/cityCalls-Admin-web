@@ -4,6 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { MediaGallery } from '@/components/media/MediaGallery';
@@ -58,6 +59,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           </Button>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
@@ -278,6 +279,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </FormSheet>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-6">

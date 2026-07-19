@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { UploadCloud } from 'lucide-react';
 import { useImportEntity } from '@/lib/hooks/useImportExport';
 
@@ -35,6 +36,8 @@ export default function LeadImportPage() {
         </div>
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

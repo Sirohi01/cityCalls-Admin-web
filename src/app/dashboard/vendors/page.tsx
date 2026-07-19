@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 
 import { useVendors, useCreateVendor, Vendor } from '@/lib/hooks/useVendors';
 
@@ -94,6 +95,8 @@ export default function VendorsPage() {
           {(close) => <OnboardVendorForm onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

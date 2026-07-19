@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 
@@ -99,6 +100,8 @@ export default function LeadsPipelinePage() {
           </FormSheet>
         </div>
       </div>
+
+      <Separator />
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex h-full gap-4 min-w-max pb-4">

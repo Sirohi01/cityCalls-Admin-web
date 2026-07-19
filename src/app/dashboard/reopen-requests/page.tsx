@@ -5,6 +5,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 
 import { useReopenRequests, ReopenRequest } from '@/lib/hooks/useReopenRequests';
@@ -20,6 +21,8 @@ export default function ReopenRequestsPage() {
           <p className="text-muted-foreground">History of service requests reopened via customer feedback.</p>
         </div>
       </div>
+
+      <Separator />
 
       <Card className="border-orange-200">
         <CardHeader className="bg-orange-50/50">

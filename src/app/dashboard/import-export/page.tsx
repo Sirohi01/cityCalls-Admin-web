@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { UploadCloud, DownloadCloud, FileSpreadsheet, CheckCircle2, XCircle } from 'lucide-react';
 
 import { useImportEntity, downloadExport, EXPORT_ENTITIES, ImportEntityInput } from '@/lib/hooks/useImportExport';
@@ -171,6 +172,8 @@ export default function ImportExportPage() {
           <p className="text-muted-foreground">Bulk upload data into the system or extract data for external use.</p>
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid md:grid-cols-2 gap-6">
         <ImportSection />

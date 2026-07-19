@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { useCustomerDuplicateCheck } from '@/lib/hooks/useCustomers';
 
@@ -30,6 +31,8 @@ export default function DuplicateReviewPage() {
         <h1 className="text-3xl font-bold tracking-tight">Duplicate Check</h1>
         <p className="text-muted-foreground">Check whether a name, mobile, GSTIN, or business name already matches an existing customer.</p>
       </div>
+
+      <Separator />
 
       <Card>
         <CardHeader>

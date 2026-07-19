@@ -12,6 +12,7 @@ import { FormSheet } from '@/components/ui/FormSheet';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { MediaGallery } from '@/components/media/MediaGallery';
 
 import { useBrands, Brand } from '@/lib/hooks/useBrands';
@@ -54,6 +55,8 @@ export default function BrandsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Brands & Product Types</h1>
         <p className="text-muted-foreground">Manage the appliance catalog hierarchy.</p>
       </div>
+
+      <Separator />
 
       <Tabs defaultValue="brands" className="w-full">
         <TabsList className="mb-4">

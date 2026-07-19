@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { BarChart4, PieChart, TrendingUp, Download, Users, Wrench, Megaphone } from 'lucide-react';
 
 import { useBranches } from '@/lib/hooks/useOrganization';
@@ -108,6 +109,8 @@ export default function ReportsPage() {
           <input type="date" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </div>
       </div>
+
+      <Separator />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ReportCard

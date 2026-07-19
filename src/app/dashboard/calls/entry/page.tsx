@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { Phone, MapPin, CheckCircle2, XCircle, Search, ArrowLeft } from 'lucide-react';
 
@@ -357,6 +358,8 @@ export default function CallEntryPage() {
         </div>
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <Separator />
 
       {/* Step 1: Number */}
       {step === 'number' && (

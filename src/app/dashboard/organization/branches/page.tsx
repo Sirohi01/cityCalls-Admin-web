@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
+import { Separator } from '@/components/ui/separator';
 import { Pencil } from 'lucide-react';
 import { useBranches, useCreateBranch, useUpdateBranch, Branch, WorkingHoursRow } from '@/lib/hooks/useOrganization';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -216,6 +217,8 @@ export default function BranchesPage() {
           {(close) => <BranchForm onClose={close} />}
         </FormSheet>
       </div>
+
+      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading branches...</div>

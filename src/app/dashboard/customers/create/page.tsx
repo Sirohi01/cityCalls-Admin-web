@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { useCreateCustomer } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -71,6 +72,8 @@ export default function CreateCustomerPage() {
         </div>
         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <Separator />
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card>

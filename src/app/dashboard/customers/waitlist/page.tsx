@@ -2,6 +2,7 @@
 
 import { DataTable } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Clock, Megaphone } from 'lucide-react';
 
 import { useCustomers, Customer } from '@/lib/hooks/useCustomers';
@@ -31,6 +32,8 @@ export default function ServiceAreaWaitlistPage() {
         <h1 className="text-3xl font-bold tracking-tight">Service Area Waitlist</h1>
         <p className="text-muted-foreground">Callers from areas we don&apos;t serve yet — captured so we can reach out once we launch there.</p>
       </div>
+
+      <Separator />
 
       <Card className="border-indigo-100 bg-indigo-50/40">
         <CardContent className="flex items-start gap-3 pt-6 text-sm text-indigo-900">

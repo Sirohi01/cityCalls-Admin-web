@@ -4,6 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { ArrowLeft, User, Sparkles, Pencil } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -78,6 +79,8 @@ export default function CallDetailPage({ params }: { params: Promise<{ id: strin
           </Button>
         </div>
       </div>
+
+      <Separator />
 
       {editing && (
         <Card>
