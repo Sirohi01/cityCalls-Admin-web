@@ -113,23 +113,25 @@ export const OPEN_SERVICE_REQUEST_STATUSES = [
   'PARTIALLY_PAID', 'PAID', 'FOLLOW_UP_PENDING', 'HAPPY_CALL_PENDING', 'REOPENED',
 ].join(',');
 
-export function useServiceRequests(params?: ListParams) {
+export function useServiceRequests(params?: ListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['service-requests', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<ServiceRequest[]>>('/service-requests', { params: { limit: 100, ...params } });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useServiceRequestsCount(params?: ListParams) {
+export function useServiceRequestsCount(params?: ListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['service-requests', 'count', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<ServiceRequest[]>>('/service-requests', { params: { ...params, limit: 1 } });
       return res.data.meta?.total ?? 0;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

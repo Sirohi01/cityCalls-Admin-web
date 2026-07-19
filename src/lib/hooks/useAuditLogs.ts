@@ -33,7 +33,7 @@ export interface AuditLogPage {
   meta: { page: number; limit: number; total: number; totalPages: number } | null;
 }
 
-export function useAuditLogs(params?: AuditLogParams) {
+export function useAuditLogs(params?: AuditLogParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['auditLogs', params],
     queryFn: async (): Promise<AuditLogPage> => {
@@ -42,5 +42,6 @@ export function useAuditLogs(params?: AuditLogParams) {
       });
       return { items: res.data.data, meta: res.data.meta };
     },
+    enabled: options?.enabled ?? true,
   });
 }

@@ -34,7 +34,10 @@ export default function CreateServiceRequestPage() {
 
   const onSubmit = (data: FormValues) => {
     const address = selectedCustomer?.addresses[Number(data.addressIndex)];
-    if (!selectedCustomer || !address) return;
+    // The dropdown only lists addresses that already have a line1 (see the
+    // note above the select), so this is always true in practice here —
+    // just narrowing the type, not a real runtime fallback.
+    if (!selectedCustomer || !address || !address.line1) return;
 
     createReq.mutate(
       {
@@ -107,13 +110,24 @@ export default function CreateServiceRequestPage() {
                 <label className="text-sm font-medium">Select Address</label>
                 <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('addressIndex', { required: 'Select an address' })} disabled={!selectedCustomer}>
                   <option value="">{selectedCustomer ? 'Choose registered address...' : 'Select a customer first'}</option>
-                  {(selectedCustomer?.addresses || []).map((addr, i) => (
-                    <option key={addr._id ?? i} value={i}>
-                      {addr.line1}, {addr.city} {addr.pinCode}
-                    </option>
-                  ))}
+                  {(selectedCustomer?.addresses || []).map((addr, i) =>
+                    // A service request needs a real street line to dispatch a
+                    // technician to — addresses saved from a pincode-only check
+                    // (city/state known, no line1 yet) aren't usable here until
+                    // completed on the customer's profile.
+                    addr.line1 ? (
+                      <option key={addr._id ?? i} value={i}>
+                        {[addr.line1, addr.city, addr.pinCode].filter(Boolean).join(', ')}
+                      </option>
+                    ) : null
+                  )}
                 </select>
                 {errors.addressIndex && <p className="text-sm text-destructive">{errors.addressIndex.message}</p>}
+                {selectedCustomer && selectedCustomer.addresses.length > 0 && selectedCustomer.addresses.every((a) => !a.line1) && (
+                  <p className="text-xs text-amber-600">
+                    This customer&apos;s saved address(es) don&apos;t have a street line yet — add one from their profile before creating a service request.
+                  </p>
+                )}
               </div>
             </div>
 

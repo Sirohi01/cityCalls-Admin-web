@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { useCreateCustomer } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
+import { useCheckPincode, areaCityLabel } from '@/lib/hooks/useGeo';
 
 const createCustomerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -26,13 +27,27 @@ export default function CreateCustomerPage() {
   const router = useRouter();
   const createCustomer = useCreateCustomer();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateCustomerValues>({
+  const checkPincode = useCheckPincode();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<CreateCustomerValues>({
     resolver: zodResolver(createCustomerSchema),
     defaultValues: { customerType: 'RESIDENTIAL' },
   });
 
+  const handlePincodeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const pinCode = e.target.value.trim();
+    if (pinCode.length < 6) return;
+    checkPincode.mutate(pinCode, {
+      onSuccess: (result) => {
+        setValue('city', areaCityLabel(result));
+        setValue('state', result.state ?? '');
+      },
+    });
+  };
+
   const onSubmit = (values: CreateCustomerValues) => {
-    const hasAddress = values.addressLine1 && values.city && values.state && values.pinCode;
+    // Street line is optional now — at minimum, city/state/pinCode resolved
+    // from the pincode check is saved as a real address.
+    const hasAddress = values.city && values.state && values.pinCode;
     createCustomer.mutate(
       {
         name: values.name,
@@ -40,7 +55,7 @@ export default function CreateCustomerPage() {
         email: values.email || undefined,
         contacts: [{ name: values.name, mobile: values.mobile, isPrimary: true }],
         addresses: hasAddress
-          ? [{ line1: values.addressLine1!, city: values.city!, state: values.state!, pinCode: values.pinCode!, country: 'India', isDefault: true }]
+          ? [{ line1: values.addressLine1 || undefined, city: values.city!, state: values.state!, pinCode: values.pinCode!, country: 'India', isDefault: true }]
           : [],
       },
       { onSuccess: () => router.push('/dashboard/customers') }
@@ -81,14 +96,22 @@ export default function CreateCustomerPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Address (Optional)</label>
-              <p className="text-xs text-muted-foreground">Fill in all four fields to save an address, or leave all blank.</p>
+              <p className="text-xs text-muted-foreground">Enter a pin code to auto-fill City/State, or leave all blank to skip the address for now.</p>
             </div>
-            <AppFormField label="Address Line 1" placeholder="e.g. House No. 12, Sector 5" {...register('addressLine1')} />
             <div className="grid grid-cols-3 gap-4">
-              <AppFormField label="City" placeholder="e.g. Delhi" {...register('city')} />
-              <AppFormField label="State" placeholder="e.g. Delhi" {...register('state')} />
-              <AppFormField label="Pin Code" placeholder="e.g. 110001" {...register('pinCode')} />
+              <AppFormField
+                label="Pin Code"
+                placeholder="e.g. 110001"
+                {...register('pinCode', {
+                  onBlur: handlePincodeBlur,
+                })}
+              />
+              <AppFormField label="City" placeholder="Auto-filled from pin code" {...register('city')} />
+              <AppFormField label="State" placeholder="Auto-filled from pin code" {...register('state')} />
             </div>
+            {checkPincode.isPending && <p className="text-xs text-muted-foreground">Looking up City/State for this pin code...</p>}
+            {checkPincode.isError && <p className="text-xs text-destructive">Couldn&apos;t look up this pin code — enter City/State manually.</p>}
+            <AppFormField label="Address Line 1 (Optional)" placeholder="e.g. House No. 12, Sector 5" {...register('addressLine1')} />
             {createCustomer.isError && (
               <p className="text-sm text-destructive">{createCustomer.error.response?.data?.message ?? 'Failed to create customer.'}</p>
             )}

@@ -11,12 +11,13 @@ export interface ReopenRequest {
   reopenedAt: string;
 }
 
-export function useReopenRequests() {
+export function useReopenRequests(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['reopenRequests'],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<ReopenRequest[]>>('/reopen-requests', { params: { limit: 100 } });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }

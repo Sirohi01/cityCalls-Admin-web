@@ -35,13 +35,14 @@ export function useCalls() {
   });
 }
 
-export function useCallsCount(params?: { direction?: (typeof CALL_DIRECTIONS)[number] }) {
+export function useCallsCount(params?: { direction?: (typeof CALL_DIRECTIONS)[number] }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['calls', 'count', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls', { params: { ...params, limit: 1 } });
       return res.data.meta?.total ?? 0;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

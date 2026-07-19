@@ -25,9 +25,10 @@ import {
   ConsentState,
 } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
+import { useCheckPincode, areaCityLabel } from '@/lib/hooks/useGeo';
 
 const addAddressSchema = z.object({
-  line1: z.string().min(1, 'Address line is required'),
+  line1: z.string().optional(),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   pinCode: z.string().min(4, 'Pin code is required'),
@@ -36,18 +37,31 @@ type AddAddressValues = z.infer<typeof addAddressSchema>;
 
 function AddAddressForm({ customerId, onClose }: { customerId: string; onClose: () => void }) {
   const addAddress = useAddCustomerAddress();
-  const { register, handleSubmit, formState: { errors } } = useForm<AddAddressValues>({ resolver: zodResolver(addAddressSchema) });
+  const checkPincode = useCheckPincode();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddAddressValues>({ resolver: zodResolver(addAddressSchema) });
+
+  const handlePincodeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const pinCode = e.target.value.trim();
+    if (pinCode.length < 6) return;
+    checkPincode.mutate(pinCode, {
+      onSuccess: (result) => {
+        setValue('city', areaCityLabel(result));
+        setValue('state', result.state ?? '');
+      },
+    });
+  };
 
   const onSubmit = (values: AddAddressValues) => {
-    addAddress.mutate({ ...values, country: 'India', customerId }, { onSuccess: onClose });
+    addAddress.mutate({ ...values, line1: values.line1 || undefined, country: 'India', customerId }, { onSuccess: onClose });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <AppFormField label="Address Line 1" error={errors.line1?.message} {...register('line1')} />
-      <AppFormField label="City" error={errors.city?.message} {...register('city')} />
-      <AppFormField label="State" error={errors.state?.message} {...register('state')} />
-      <AppFormField label="Pin Code" error={errors.pinCode?.message} {...register('pinCode')} />
+      <AppFormField label="Pin Code" error={errors.pinCode?.message} {...register('pinCode', { onBlur: handlePincodeBlur })} />
+      <AppFormField label="City" placeholder="Auto-filled from pin code" error={errors.city?.message} {...register('city')} />
+      <AppFormField label="State" placeholder="Auto-filled from pin code" error={errors.state?.message} {...register('state')} />
+      {checkPincode.isPending && <p className="text-xs text-muted-foreground">Looking up City/State for this pin code...</p>}
+      <AppFormField label="Address Line 1 (Optional)" error={errors.line1?.message} {...register('line1')} />
       {addAddress.isError && <p className="text-sm text-destructive">Failed to add address.</p>}
       <Button type="submit" className="w-full" disabled={addAddress.isPending}>
         {addAddress.isPending ? 'Adding...' : 'Add Address'}
@@ -110,22 +124,35 @@ function EditCustomerForm({ customer, onClose }: { customer: Customer; onClose: 
 
 function EditAddressForm({ customerId, address, onClose }: { customerId: string; address: CustomerAddress; onClose: () => void }) {
   const updateAddress = useUpdateCustomerAddress();
-  const { register, handleSubmit, formState: { errors } } = useForm<AddAddressValues>({
+  const checkPincode = useCheckPincode();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddAddressValues>({
     resolver: zodResolver(addAddressSchema),
-    defaultValues: { line1: address.line1, city: address.city, state: address.state, pinCode: address.pinCode },
+    defaultValues: { line1: address.line1 ?? '', city: address.city, state: address.state, pinCode: address.pinCode },
   });
+
+  const handlePincodeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const pinCode = e.target.value.trim();
+    if (pinCode.length < 6) return;
+    checkPincode.mutate(pinCode, {
+      onSuccess: (result) => {
+        setValue('city', areaCityLabel(result));
+        setValue('state', result.state ?? '');
+      },
+    });
+  };
 
   const onSubmit = (values: AddAddressValues) => {
     if (!address._id) return;
-    updateAddress.mutate({ ...values, customerId, addressId: address._id }, { onSuccess: onClose });
+    updateAddress.mutate({ ...values, line1: values.line1 || undefined, customerId, addressId: address._id }, { onSuccess: onClose });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <AppFormField label="Address Line 1" error={errors.line1?.message} {...register('line1')} />
+      <AppFormField label="Pin Code" error={errors.pinCode?.message} {...register('pinCode', { onBlur: handlePincodeBlur })} />
       <AppFormField label="City" error={errors.city?.message} {...register('city')} />
       <AppFormField label="State" error={errors.state?.message} {...register('state')} />
-      <AppFormField label="Pin Code" error={errors.pinCode?.message} {...register('pinCode')} />
+      {checkPincode.isPending && <p className="text-xs text-muted-foreground">Looking up City/State for this pin code...</p>}
+      <AppFormField label="Address Line 1 (Optional)" error={errors.line1?.message} {...register('line1')} />
       {updateAddress.isError && <p className="text-sm text-destructive">Failed to update address.</p>}
       <Button type="submit" className="w-full" disabled={updateAddress.isPending}>
         {updateAddress.isPending ? 'Saving...' : 'Save Changes'}

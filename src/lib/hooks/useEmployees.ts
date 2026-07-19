@@ -18,13 +18,14 @@ export interface Employee {
   createdAt: string;
 }
 
-export function useEmployees() {
+export function useEmployees(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<Employee[]>>('/employees');
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -10,6 +10,17 @@ function pincodeTagOf(customer: Customer): string {
   return customer.tags?.find((t) => t.startsWith('waitlist-'))?.replace('waitlist-', '') ?? '—';
 }
 
+// Prefer the real saved address (city/state resolved from the pincode check
+// at signup) — older records before that existed only have it embedded in a
+// notes string, so that's kept as a fallback for those.
+function cityStateOf(customer: Customer): string {
+  const addr = customer.addresses?.[0];
+  if (addr?.city || addr?.state) {
+    return [addr.city, addr.state].filter(Boolean).join(', ');
+  }
+  return customer.notes?.[0]?.replace(/^Waitlist:\s*/, '').replace(/\s*\(pincode.*\)$/, '') || '—';
+}
+
 export default function ServiceAreaWaitlistPage() {
   const { data: customers, isLoading, isError } = useCustomers({ tag: 'waitlist' });
   const data = customers || [];
@@ -50,7 +61,7 @@ export default function ServiceAreaWaitlistPage() {
                 { key: 'name', header: 'Name' },
                 { key: 'mobile', header: 'Mobile', render: (item) => item.contacts?.[0]?.mobile ?? '—' },
                 { key: 'pincode', header: 'Pincode', render: (item) => pincodeTagOf(item) },
-                { key: 'city', header: 'City / State', render: (item) => item.notes?.[0]?.replace(/^Waitlist:\s*/, '').replace(/\s*\(pincode.*\)$/, '') || '—' },
+                { key: 'city', header: 'City / State', render: (item) => cityStateOf(item) },
                 { key: 'createdAt', header: 'Waiting Since', render: (item) => new Date(item.createdAt).toLocaleDateString() },
               ]}
               emptyMessage="No one is on the waitlist right now."

@@ -68,12 +68,13 @@ export type ReportDataMap = {
   'campaign-performance': CampaignPerformanceRow[];
 };
 
-export function useReport<K extends ReportKey>(reportKey: K, params: ReportFilterParams) {
+export function useReport<K extends ReportKey>(reportKey: K, params: ReportFilterParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['reports', reportKey, params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<ReportDataMap[K]>>(`/reports/${reportKey}`, { params });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }

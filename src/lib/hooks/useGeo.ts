@@ -14,9 +14,9 @@ export interface AreaCheckResult {
   district?: string;
 }
 
-// A mutation (not a query) even though it's a GET — the call-entry wizard
-// triggers this on-demand ("Check Area" button click), not automatically on
-// every keystroke, so the imperative mutate() call is the right fit.
+// A mutation (not a query) even though it's a GET — trigger this on-demand
+// (button click / field blur), not automatically on every keystroke, so the
+// imperative mutate() call is the right fit.
 export function useCheckPincode() {
   return useMutation<AreaCheckResult, AxiosError<ApiErrorEnvelope>, string>({
     mutationFn: async (pincode) => {
@@ -24,4 +24,13 @@ export function useCheckPincode() {
       return res.data.data;
     },
   });
+}
+
+// "City" here follows this business's own convention (confirmed against
+// their real paper intake form): our branch name IS the City field when the
+// pincode falls inside our own coverage — there's no separate generic postal
+// city concept for serviceable areas. Falls back to the real postal city
+// (from India Post, via the pincodeAdapter) for areas outside our coverage.
+export function areaCityLabel(result: AreaCheckResult): string {
+  return result.city ?? result.branchName ?? '';
 }

@@ -55,13 +55,14 @@ export function useVendor(id: string) {
   });
 }
 
-export function useVendorsCount(params?: { active?: boolean; blacklisted?: boolean }) {
+export function useVendorsCount(params?: { active?: boolean; blacklisted?: boolean }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['vendors', 'count', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<Vendor[]>>('/vendors', { params: { ...params, limit: 1 } });
       return res.data.meta?.total ?? 0;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

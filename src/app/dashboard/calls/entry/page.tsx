@@ -15,8 +15,10 @@ import {
   useAddCustomerAddress,
   useAddCustomerProduct,
   useCustomer,
+  useFetchCustomer,
+  useUpdateCustomer,
 } from '@/lib/hooks/useCustomers';
-import { useCheckPincode, AreaCheckResult } from '@/lib/hooks/useGeo';
+import { useCheckPincode, AreaCheckResult, areaCityLabel } from '@/lib/hooks/useGeo';
 import { useCreateServiceRequest } from '@/lib/hooks/useServiceRequests';
 import { useCatalogServices } from '@/lib/hooks/useCatalogServices';
 import { useMasters } from '@/lib/hooks/useMasters';
@@ -58,24 +60,9 @@ export default function CallEntryPage() {
   const [noMatchFound, setNoMatchFound] = useState(false);
 
   const lookupMobile = useLookupCustomerByMobile();
+  const fetchCustomer = useFetchCustomer();
   const { data: matchedCustomer } = useCustomer(matchedCustomerId ?? '');
   const { data: customerTypeMasters } = useMasters(['CUSTOMER_TYPE']);
-
-  const handleCheckNumber = () => {
-    setNoMatchFound(false);
-    lookupMobile.mutate(mobile, {
-      onSuccess: (matches) => {
-        const match = matches.find((m) => m.contacts.some((c) => c.mobile === mobile)) ?? matches[0];
-        if (match) {
-          setMatchedCustomerId(match._id);
-          setStep('details');
-        } else {
-          setNoMatchFound(true);
-          setStep('pincode');
-        }
-      },
-    });
-  };
 
   // --- Step 2: pincode + area check ---
   const [pincode, setPincode] = useState('');
@@ -86,7 +73,89 @@ export default function CallEntryPage() {
     checkPincode.mutate(pincode, {
       onSuccess: (result) => {
         setAreaInfo(result);
-        setStep(result.serviceable ? 'details' : 'waitlist');
+        // An already-matched customer (e.g. one with no saved address yet)
+        // always stays on the 'details' step, even when this pincode isn't
+        // serviceable — that step already knows how to show the "not
+        // serviceable" choice while reusing matchedCustomerId. Routing them
+        // to 'waitlist' instead would submit through the anonymous
+        // new-customer form and create a duplicate customer record.
+        setStep(result.serviceable || matchedCustomerId ? 'details' : 'waitlist');
+      },
+    });
+  };
+
+  const [existingCustomerError, setExistingCustomerError] = useState<string | null>(null);
+
+  // Unsticks the wizard if fetchCustomer/checkPincode fails partway through
+  // — without this, a match was found but the "Check Number" button stays
+  // disabled forever with no error shown (matchedCustomerId is set, so the
+  // button never re-enables), which looks exactly like "nothing happens."
+  const resetMatch = () => {
+    setMatchedCustomerId(null);
+  };
+
+  const handleCheckNumber = () => {
+    setNoMatchFound(false);
+    setExistingCustomerError(null);
+    lookupMobile.mutate(mobile, {
+      onSuccess: (matches) => {
+        const match = matches.find((m) => m.contacts.some((c) => c.mobile === mobile)) ?? matches[0];
+        if (!match) {
+          setNoMatchFound(true);
+          setStep('pincode');
+          return;
+        }
+        setMatchedCustomerId(match._id);
+        // Existing customers were previously skipping the area check
+        // entirely (jumping straight to 'details' with no serviceability
+        // info shown). Fetch the full record (with addresses) and run the
+        // same real check against it before advancing — chained through
+        // mutation callbacks rather than an effect on the useCustomer query.
+        fetchCustomer.mutate(match._id, {
+          onError: () => {
+            setExistingCustomerError('Found this customer but could not load their details. Please try again.');
+            resetMatch();
+          },
+          onSuccess: (customer) => {
+            const addr = customer.addresses?.find((a) => a.isDefault) ?? customer.addresses?.[0];
+            if (!addr?.pinCode) {
+              // No address on file yet (e.g. a previously-waitlisted
+              // customer calling back) — treat like a fresh number instead
+              // of silently breaking later at submit time.
+              setStep('pincode');
+              return;
+            }
+            setPincode(addr.pinCode);
+            checkPincode.mutate(addr.pinCode, {
+              onError: () => {
+                // Area check failed (e.g. network blip) — we already have
+                // the customer's real data, so don't block on this; just
+                // proceed without an area badge rather than getting stuck.
+                setStep('details');
+              },
+              onSuccess: (result) => {
+                setAreaInfo(result);
+                setStep('details');
+              },
+            });
+          },
+        });
+      },
+    });
+  };
+
+  // --- Existing customer, area not serviceable: same address, or a
+  // different pincode for this visit? Either way, reuses matchedCustomer —
+  // never creates a duplicate.
+  const [useNewAddress, setUseNewAddress] = useState(false);
+  const [altPincode, setAltPincode] = useState('');
+
+  const handleCheckAltPincode = () => {
+    checkPincode.mutate(altPincode, {
+      onSuccess: (result) => {
+        setAreaInfo(result);
+        setPincode(altPincode);
+        setUseNewAddress(true);
       },
     });
   };
@@ -101,16 +170,21 @@ export default function CallEntryPage() {
   } = useForm<WaitlistFormValues>({ defaultValues: { customerType: 'RESIDENTIAL', whatsappConsent: true, emailConsent: true } });
 
   const onWaitlistSubmit = (values: WaitlistFormValues) => {
+    // The pincode check resolves real city/state/country (via India Post for
+    // out-of-area numbers) before a street line is known — that's saved as a
+    // real address now (line1 optional) rather than only in a notes string.
+    // Falls back to notes only in the rare case the postal lookup itself
+    // couldn't resolve city/state at all for this pincode.
+    const hasCityState = areaInfo?.city && areaInfo?.state;
     createCustomer.mutate(
       {
         customerType: values.customerType,
         name: values.name,
         contacts: [{ name: values.name, mobile, isPrimary: true }],
-        // No street address was captured (only a pincode, before we knew
-        // whether the area was even serviceable) — the address schema
-        // requires a real line1, so the location goes in a note instead of
-        // an invented empty address.
-        notes: [`Waitlist: ${areaInfo?.city ?? 'Unknown city'}, ${areaInfo?.state ?? 'Unknown state'} (pincode ${pincode})`],
+        addresses: hasCityState
+          ? [{ city: areaInfo!.city!, state: areaInfo!.state!, pinCode: pincode, country: areaInfo?.country ?? 'India', isDefault: true }]
+          : [],
+        notes: hasCityState ? undefined : [`Waitlist: pincode ${pincode} — city/state could not be resolved`],
         tags: ['waitlist', `waitlist-${pincode}`],
         consent: {
           whatsapp: values.whatsappConsent ? 'GRANTED' : 'NOT_ASKED',
@@ -147,6 +221,7 @@ export default function CallEntryPage() {
   const addAddress = useAddCustomerAddress();
   const addProduct = useAddCustomerProduct();
   const createSR = useCreateServiceRequest();
+  const updateCustomer = useUpdateCustomer();
 
   const defaultAddress = matchedCustomer?.addresses?.find((a) => a.isDefault) ?? matchedCustomer?.addresses?.[0];
 
@@ -179,16 +254,20 @@ export default function CallEntryPage() {
     setSubmitting(true);
     try {
       let customerId = matchedCustomer?._id;
-      let addressSnapshot = defaultAddress
+      // useNewAddress means the agent chose "check a different pincode"
+      // instead of the customer's address on file (e.g. it's no longer
+      // serviceable) — falls through to the "add a new address" branch
+      // below, which adds it to this SAME customer, not a duplicate.
+      let addressSnapshot = defaultAddress && !useNewAddress
         ? {
-            line1: values.line1,
-            line2: values.line2 || undefined,
-            landmark: values.landmark || undefined,
-            city: defaultAddress.city,
-            state: defaultAddress.state,
-            pinCode: defaultAddress.pinCode,
-            country: defaultAddress.country || 'India',
-          }
+          line1: values.line1,
+          line2: values.line2 || undefined,
+          landmark: values.landmark || undefined,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          pinCode: defaultAddress.pinCode,
+          country: defaultAddress.country || 'India',
+        }
         : undefined;
 
       if (!customerId) {
@@ -207,12 +286,27 @@ export default function CallEntryPage() {
           line1: values.line1,
           line2: values.line2 || undefined,
           landmark: values.landmark || undefined,
-          city: areaInfo?.branchName ?? '',
+          city: areaInfo ? areaCityLabel(areaInfo) : '',
           state: areaInfo?.state ?? '',
           pinCode: pincode,
           country: areaInfo?.country ?? 'India',
         };
         await addAddress.mutateAsync({ ...addressSnapshot, customerId });
+      }
+
+      // An existing customer whose current pincode isn't serviceable still
+      // belongs on the Service Area Waitlist (same as a brand-new caller
+      // from that pincode) so Marketing can reach out once we launch there —
+      // otherwise they'd silently disappear from that list.
+      if (matchedCustomer && areaInfo && !areaInfo.serviceable) {
+        const existingTags = matchedCustomer.tags ?? [];
+        const waitlistTags = ['waitlist', `waitlist-${pincode}`];
+        if (!waitlistTags.every((t) => existingTags.includes(t))) {
+          await updateCustomer.mutateAsync({
+            customerId,
+            tags: Array.from(new Set([...existingTags, ...waitlistTags])),
+          });
+        }
       }
 
       if (values.brandId && values.productTypeId) {
@@ -288,10 +382,11 @@ export default function CallEntryPage() {
               </select>
             </div>
             {lookupMobile.isError && <p className="text-sm text-destructive">Failed to check this number. Try again.</p>}
+            {existingCustomerError && <p className="text-sm text-destructive">{existingCustomerError}</p>}
           </CardContent>
           <CardFooter className="justify-end bg-muted/50 p-6">
-            <Button className="gap-2" onClick={handleCheckNumber} disabled={mobile.length < 10 || lookupMobile.isPending}>
-              <Search className="w-4 h-4" /> {lookupMobile.isPending ? 'Checking...' : 'Check Number'}
+            <Button className="gap-2" onClick={handleCheckNumber} disabled={mobile.length < 10 || lookupMobile.isPending || !!matchedCustomerId}>
+              <Search className="w-4 h-4" /> {lookupMobile.isPending || matchedCustomerId ? 'Checking...' : 'Check Number'}
             </Button>
           </CardFooter>
         </Card>
@@ -301,9 +396,13 @@ export default function CallEntryPage() {
       {step === 'pincode' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><MapPin className="w-4 h-4" /> New Customer — Service Area</CardTitle>
+            <CardTitle className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Service Area</CardTitle>
             <CardDescription>
-              {noMatchFound ? 'No existing customer found for this number. ' : ''}
+              {noMatchFound
+                ? 'No existing customer found for this number. '
+                : matchedCustomer
+                  ? `${matchedCustomer.name} is already with us but has no saved address yet. `
+                  : ''}
               Enter their pincode to check City/State and whether we serve that area.
             </CardDescription>
           </CardHeader>
@@ -360,13 +459,14 @@ export default function CallEntryPage() {
       {/* Step: Details (existing customer OR newly-serviceable) */}
       {step === 'details' && (
         <form onSubmit={handleDetailsSubmit(onDetailsSubmit)} className="space-y-6">
-          {matchedCustomer ? (
+          {matchedCustomer && (
             <Card className="border-green-200">
               <CardContent className="pt-6 flex items-center gap-2 text-green-700 text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4" /> Existing customer found — details pre-filled below.
               </CardContent>
             </Card>
-          ) : areaInfo?.serviceable ? (
+          )}
+          {areaInfo?.serviceable ? (
             <Card className="border-green-200">
               <CardContent className="pt-6 flex items-center gap-2 text-green-700 text-sm">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -374,6 +474,30 @@ export default function CallEntryPage() {
                   Serviceable — <strong>{areaInfo.branchName}</strong>
                   {areaInfo.subBranchName ? ` / ${areaInfo.subBranchName}` : ''}, {areaInfo.state}, {areaInfo.country}
                 </span>
+              </CardContent>
+            </Card>
+          ) : matchedCustomer && areaInfo && !areaInfo.serviceable ? (
+            <Card className="border-amber-200">
+              <CardContent className="pt-6 space-y-3 text-amber-800 text-sm">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-4 h-4 shrink-0" />
+                  <span>
+                    {areaCityLabel(areaInfo)}, {areaInfo.state} — {pincode} is outside our current service area.
+                  </span>
+                </div>
+                <p className="text-xs">Continue anyway, or check a different pincode for this visit — either way it stays the same customer, not a new one.</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AppFormField
+                    label="Different pincode for this visit"
+                    placeholder="e.g. 110001"
+                    value={altPincode}
+                    onChange={(e) => setAltPincode(e.target.value)}
+                  />
+                  <Button type="button" size="sm" variant="outline" onClick={handleCheckAltPincode} disabled={altPincode.length < 4 || checkPincode.isPending}>
+                    {checkPincode.isPending ? 'Checking...' : 'Check This Pincode'}
+                  </Button>
+                </div>
+                {checkPincode.isError && <p className="text-xs text-destructive">Couldn&apos;t check that pincode — try again.</p>}
               </CardContent>
             </Card>
           ) : null}
@@ -393,16 +517,18 @@ export default function CallEntryPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <AppFormField label="Address Line 1" error={detailsErrors.line1?.message} {...registerDetails('line1', { required: 'Address is required' })} />
+                <AppFormField label="Address Line 1 (Optional)" error={detailsErrors.line1?.message} {...registerDetails('line1')} />
                 <AppFormField label="Address Line 2 (Optional)" {...registerDetails('line2')} />
               </div>
               <AppFormField label="Landmark (Optional)" {...registerDetails('landmark')} />
-              {defaultAddress && (
+              {defaultAddress && !useNewAddress ? (
                 <p className="text-xs text-muted-foreground">{defaultAddress.city}, {defaultAddress.state} — {defaultAddress.pinCode}</p>
-              )}
-              {!defaultAddress && areaInfo && (
-                <p className="text-xs text-muted-foreground">{areaInfo.branchName}{areaInfo.subBranchName ? `, ${areaInfo.subBranchName}` : ''}, {areaInfo.state} — {pincode}</p>
-              )}
+              ) : areaInfo ? (
+                <p className="text-xs text-muted-foreground">
+                  {useNewAddress && 'New address for this visit — '}
+                  {areaCityLabel(areaInfo)}{areaInfo.subBranchName ? `, ${areaInfo.subBranchName}` : ''}, {areaInfo.state} — {pincode}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -472,7 +598,22 @@ export default function CallEntryPage() {
               {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             </CardContent>
             <CardFooter className="justify-between bg-muted/50 p-6">
-              <Button type="button" variant="ghost" className="gap-2" onClick={() => (matchedCustomer ? setStep('number') : setStep('pincode'))}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="gap-2"
+                onClick={() => {
+                  if (matchedCustomer) {
+                    setMatchedCustomerId(null);
+                    setAreaInfo(null);
+                    setUseNewAddress(false);
+                    setAltPincode('');
+                    setStep('number');
+                  } else {
+                    setStep('pincode');
+                  }
+                }}
+              >
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
               <Button type="submit" disabled={submitting}>

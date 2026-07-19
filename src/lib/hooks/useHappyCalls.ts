@@ -28,13 +28,14 @@ export function assignedToName(hc: HappyCall): string {
   return typeof hc.assignedTo === 'string' ? hc.assignedTo : hc.assignedTo.name;
 }
 
-export function useHappyCalls() {
+export function useHappyCalls(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['happyCalls'],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<HappyCall[]>>('/happy-calls', { params: { limit: 100 } });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

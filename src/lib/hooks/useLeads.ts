@@ -35,23 +35,25 @@ export interface Lead {
   createdAt: string;
 }
 
-export function useLeads() {
+export function useLeads(params?: { stage?: (typeof LEAD_STAGES)[number]; limit?: number }, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['leads'],
+    queryKey: ['leads', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Lead[]>>('/leads');
+      const res = await apiClient.get<ApiSuccessEnvelope<Lead[]>>('/leads', { params });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useLeadsCount(params?: { stage?: (typeof LEAD_STAGES)[number] }) {
+export function useLeadsCount(params?: { stage?: (typeof LEAD_STAGES)[number] }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['leads', 'count', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<Lead[]>>('/leads', { params: { ...params, limit: 1 } });
       return res.data.meta?.total ?? 0;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

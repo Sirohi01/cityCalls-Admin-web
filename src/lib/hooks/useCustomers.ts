@@ -5,7 +5,10 @@ import { AxiosError } from 'axios';
 export interface CustomerAddress {
   _id?: string;
   label?: string;
-  line1: string;
+  // Optional — a pincode check can save a real city/state/country/pinCode
+  // address before the street line is known (e.g. before a technician visit
+  // is scheduled), rather than not saving an address at all.
+  line1?: string;
   line2?: string;
   landmark?: string;
   city: string;
@@ -33,13 +36,14 @@ export interface Customer {
   consent?: { whatsapp: ConsentState; email: ConsentState; sms: ConsentState };
 }
 
-export function useCustomers(params?: { tag?: string }) {
+export function useCustomers(params?: { tag?: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['customers', params],
     queryFn: async () => {
       const res = await apiClient.get<ApiSuccessEnvelope<Customer[]>>('/customers', { params: { limit: 100, ...params } });
       return res.data.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -51,6 +55,19 @@ export function useCustomer(id: string) {
       return res.data.data;
     },
     enabled: !!id,
+  });
+}
+
+// On-demand version of the same GET /customers/:id, as a mutation rather
+// than a query — the call-intake wizard needs an onSuccess callback to chain
+// straight into an area check once the full record (with addresses) is
+// available, which useQuery doesn't support directly in TanStack Query v5.
+export function useFetchCustomer() {
+  return useMutation<Customer, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.get<ApiSuccessEnvelope<Customer>>(`/customers/${id}`);
+      return res.data.data;
+    },
   });
 }
 
@@ -130,6 +147,7 @@ export interface UpdateCustomerInput {
   businessName?: string;
   gstin?: string;
   email?: string;
+  tags?: string[];
 }
 
 export function useUpdateCustomer() {
