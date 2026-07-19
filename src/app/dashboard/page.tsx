@@ -47,20 +47,21 @@ function StatCard({
   color: string;
 }) {
   const body = (
-    <Card className={href ? 'transition-shadow hover:shadow-md h-full' : 'h-full'}>
-      <CardContent className="pt-6 flex items-start gap-3">
-        <div className="rounded-xl p-2.5 shrink-0" style={{ backgroundColor: `${color}1a`, color }}>
-          <Icon className="w-5 h-5" />
+    <Card size="sm" className={href ? 'transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 border-l-[3px] overflow-hidden relative group' : 'border-l-[3px] overflow-hidden relative'} style={{ borderLeftColor: color }}>
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <CardContent className="flex items-center gap-2.5 p-3">
+        <div className="rounded-lg p-1.5 shrink-0 shadow-sm transition-transform group-hover:scale-110 duration-300" style={{ backgroundColor: `${color}15`, color }}>
+          <Icon className="w-4 h-4 drop-shadow-sm" />
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground truncate">{title}</p>
-          <div className="text-2xl font-bold leading-tight">{value}</div>
-          {sub && <p className="text-xs text-muted-foreground mt-0.5 truncate">{sub}</p>}
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate leading-none">{title}</p>
+          <div className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/80 leading-none">{value}</div>
+          {sub && <p className="text-[10px] font-medium text-muted-foreground/80 truncate inline-block px-1.5 py-0.5 bg-muted/40 rounded-full">{sub}</p>}
         </div>
       </CardContent>
     </Card>
   );
-  return href ? <Link href={href}>{body}</Link> : body;
+  return href ? <Link href={href} className="block h-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl">{body}</Link> : body;
 }
 
 function DonutWithCenter({ data, colors, centerLabel, centerValue }: {
@@ -71,11 +72,11 @@ function DonutWithCenter({ data, colors, centerLabel, centerValue }: {
 }) {
   const hasData = data.some((d) => d.value > 0);
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative w-[140px] h-[140px] shrink-0">
+    <div className="flex items-center gap-3">
+      <div className="relative w-[110px] h-[110px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={hasData ? data : [{ name: 'None', value: 1 }]} dataKey="value" nameKey="name" innerRadius={45} outerRadius={65} paddingAngle={2} strokeWidth={0}>
+            <Pie data={hasData ? data : [{ name: 'None', value: 1 }]} dataKey="value" nameKey="name" innerRadius={34} outerRadius={50} paddingAngle={2} strokeWidth={0}>
               {(hasData ? data : [{ name: 'None', value: 1 }]).map((entry, i) => (
                 <Cell key={entry.name} fill={hasData ? colors[i % colors.length] : '#e5e7eb'} />
               ))}
@@ -84,11 +85,11 @@ function DonutWithCenter({ data, colors, centerLabel, centerValue }: {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl font-bold">{centerValue}</span>
+          <span className="text-lg font-bold">{centerValue}</span>
           <span className="text-[10px] text-muted-foreground">{centerLabel}</span>
         </div>
       </div>
-      <div className="space-y-1.5 flex-1 min-w-0">
+      <div className="space-y-1 flex-1 min-w-0">
         {data.map((d, i) => (
           <div key={d.name} className="flex items-center justify-between text-xs gap-2">
             <span className="flex items-center gap-1.5 min-w-0">
@@ -182,14 +183,16 @@ export default function DashboardPage() {
   const topWaitlistPincodes = Object.entries(waitlistByPincode).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {me?.name ?? '...'}</h1>
-        <p className="text-muted-foreground">Here&apos;s what&apos;s happening across CityCalls today.</p>
+        <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          Welcome back, {me?.name ?? '...'}
+        </h1>
+        <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across CityCalls today.</p>
       </div>
 
       {/* KPI row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         {canCalls && (
           <StatCard title="Total Calls Logged" icon={Phone} href="/dashboard/calls" color="#3b82f6"
             value={callsLoading ? '—' : totalCalls} sub={`${incomingCalls ?? 0} incoming`} />
@@ -227,9 +230,9 @@ export default function DashboardPage() {
       </div>
 
       {(canSR || canLeads) && canReports && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {canSR && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Ticket className="w-4 h-4" /> Service Request Pipeline</CardTitle>
                 <CardDescription>{srSummary?.totals.total ?? 0} requests, by stage</CardDescription>
@@ -249,7 +252,7 @@ export default function DashboardPage() {
             </Card>
           )}
           {canLeads && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Lead Funnel</CardTitle>
                 <CardDescription>
@@ -262,7 +265,7 @@ export default function DashboardPage() {
                 ) : funnelData.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No leads yet.</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
+                  <ResponsiveContainer width="100%" height={190}>
                     <FunnelChart>
                       <Tooltip />
                       <Funnel dataKey="value" data={funnelData} isAnimationActive>
@@ -282,14 +285,14 @@ export default function DashboardPage() {
       )}
 
       {(canFinance || canEmployees) && canReports && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {canFinance && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><IndianRupee className="w-4 h-4" /> Revenue Snapshot</CardTitle>
                 <CardDescription>Across all invoices</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {revenueLoading ? (
                   <p className="text-sm text-muted-foreground">Loading...</p>
                 ) : (
@@ -314,7 +317,7 @@ export default function DashboardPage() {
             </Card>
           )}
           {canEmployees && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Briefcase className="w-4 h-4" /> Top Technicians</CardTitle>
                 <CardDescription>By assigned service requests</CardDescription>
@@ -323,7 +326,7 @@ export default function DashboardPage() {
                 {topTechnicians.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No assignment data yet.</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
+                  <ResponsiveContainer width="100%" height={190}>
                     <BarChart data={technicianChartData} layout="vertical" margin={{ left: 8, right: 16 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                       <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
@@ -342,13 +345,13 @@ export default function DashboardPage() {
       )}
 
       {(canLeads || canHappyCalls || canAudit) && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {(canLeads || canHappyCalls) && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Clock className="w-4 h-4" /> Today&apos;s Follow-ups</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {canLeads && (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2">LEADS</p>
@@ -357,11 +360,11 @@ export default function DashboardPage() {
                     ) : !followUpLeadsList || followUpLeadsList.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No leads awaiting follow-up.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {followUpLeadsList.map((l) => (
-                          <Link key={l._id} href={`/dashboard/leads/${l._id}`} className="flex justify-between text-sm hover:underline">
-                            <span>{l.contactName || l.number}</span>
-                            <span className="text-muted-foreground">{l.followUpDate ? new Date(l.followUpDate).toLocaleDateString() : '—'}</span>
+                          <Link key={l._id} href={`/dashboard/leads/${l._id}`} className="flex justify-between text-sm hover:underline py-0.5">
+                            <span className="truncate pr-2">{l.contactName || l.number}</span>
+                            <span className="text-muted-foreground shrink-0">{l.followUpDate ? new Date(l.followUpDate).toLocaleDateString() : '—'}</span>
                           </Link>
                         ))}
                       </div>
@@ -376,11 +379,11 @@ export default function DashboardPage() {
                     ) : pendingHappyCalls.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No happy calls pending.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
                         {pendingHappyCalls.slice(0, 5).map((h) => (
-                          <div key={h._id} className="flex justify-between text-sm">
+                          <div key={h._id} className="flex justify-between text-sm py-0.5">
                             <span>SR {serviceRequestNumber(h)}</span>
-                            <span className="text-muted-foreground">{assignedToName(h)}</span>
+                            <span className="text-muted-foreground truncate max-w-[120px] text-right">{assignedToName(h)}</span>
                           </div>
                         ))}
                       </div>
@@ -392,7 +395,7 @@ export default function DashboardPage() {
           )}
 
           {canAudit && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileKey className="w-4 h-4" /> Recent Activity</CardTitle>
               </CardHeader>
@@ -402,14 +405,14 @@ export default function DashboardPage() {
                 ) : !auditPage || auditPage.items.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No recent activity.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
                     {auditPage.items.map((log) => (
-                      <div key={log.id} className="flex justify-between text-sm">
-                        <span>
+                      <div key={log.id} className="flex justify-between text-sm py-0.5 border-b border-border/50 last:border-0 pb-1.5 last:pb-0.5">
+                        <span className="truncate pr-2">
                           <span className="font-medium">{log.user}</span>{' '}
-                          <span className="text-muted-foreground">{log.action.toLowerCase().replace(/_/g, ' ')} {log.entityType.toLowerCase()}</span>
+                          <span className="text-muted-foreground text-xs">{log.action.toLowerCase().replace(/_/g, ' ')} {log.entityType.toLowerCase()}</span>
                         </span>
-                        <span className="text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{new Date(log.createdAt).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
                       </div>
                     ))}
                   </div>
@@ -421,9 +424,9 @@ export default function DashboardPage() {
       )}
 
       {(canCustomers || canCreateCalls || canCreateCustomers || canImportLeads || canReports) && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {canCustomers && (
-            <Card>
+            <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Clock className="w-4 h-4" /> Service Area Waitlist</CardTitle>
                 <CardDescription>Callers we can&apos;t serve yet</CardDescription>
@@ -436,12 +439,14 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">{waitlistCustomers?.length} people waiting</p>
-                    {topWaitlistPincodes.map(([pincode, count]) => (
-                      <div key={pincode} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Pincode {pincode}</span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
+                    <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
+                      {topWaitlistPincodes.map(([pincode, count]) => (
+                        <div key={pincode} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Pincode {pincode}</span>
+                          <span className="font-medium">{count}</span>
+                        </div>
+                      ))}
+                    </div>
                     <Link href="/dashboard/customers/waitlist" className="text-xs text-primary hover:underline block pt-1">View all →</Link>
                   </div>
                 )}
@@ -449,22 +454,22 @@ export default function DashboardPage() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
+          <Card size="sm" className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+            <CardHeader className="bg-muted/30">
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               {canCreateCalls && (
-                <Link href="/dashboard/calls/entry"><Button variant="outline" className="w-full justify-start gap-2"><PhoneCall className="w-4 h-4" /> Log New Call</Button></Link>
+                <Link href="/dashboard/calls/entry"><Button size="sm" variant="outline" className="w-full justify-start gap-2 shadow-sm hover:shadow-md transition-all hover:-translate-y-px"><PhoneCall className="w-3.5 h-3.5 text-blue-500" /> Log New Call</Button></Link>
               )}
               {canCreateCustomers && (
-                <Link href="/dashboard/customers/create"><Button variant="outline" className="w-full justify-start gap-2"><UserSquare2 className="w-4 h-4" /> Add Customer</Button></Link>
+                <Link href="/dashboard/customers/create"><Button size="sm" variant="outline" className="w-full justify-start gap-2 shadow-sm hover:shadow-md transition-all hover:-translate-y-px"><UserSquare2 className="w-3.5 h-3.5 text-emerald-500" /> Add Customer</Button></Link>
               )}
               {canImportLeads && (
-                <Link href="/dashboard/leads/import"><Button variant="outline" className="w-full justify-start gap-2"><Upload className="w-4 h-4" /> Import Leads</Button></Link>
+                <Link href="/dashboard/leads/import"><Button size="sm" variant="outline" className="w-full justify-start gap-2 shadow-sm hover:shadow-md transition-all hover:-translate-y-px"><Upload className="w-3.5 h-3.5 text-purple-500" /> Import Leads</Button></Link>
               )}
               {canReports && (
-                <Link href="/dashboard/reports"><Button variant="outline" className="w-full justify-start gap-2"><BarChart4 className="w-4 h-4" /> View Reports</Button></Link>
+                <Link href="/dashboard/reports"><Button size="sm" variant="outline" className="w-full justify-start gap-2 shadow-sm hover:shadow-md transition-all hover:-translate-y-px"><BarChart4 className="w-3.5 h-3.5 text-orange-500" /> View Reports</Button></Link>
               )}
             </CardContent>
           </Card>
