@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginFormValues } from '@/lib/validation/auth';
 import { useLogin } from '@/lib/hooks/useAuth';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
   PhoneCall,
   Users,
@@ -102,6 +103,16 @@ export default function LoginPage() {
         className="w-full max-w-7xl h-[90vh] max-h-[800px] flex flex-col relative overflow-hidden bg-[length:100%_100%] bg-no-repeat rounded-xl shadow-2xl bg-white animate-fade-in-up"
         style={{ backgroundImage: `url(${bgImage.src})` }}
       >
+        {/* Lottie Animation Overlay */}
+        <div className="absolute bottom-0 left-[-25%] w-[150%] h-full z-0 pointer-events-none opacity-100 flex items-center justify-center overflow-hidden">
+          <DotLottieReact
+            src="https://lottie.host/02b7b6c7-c801-493b-aac5-e1bfa27e38c7/vdtItP9OMH.lottie"
+            loop
+            autoplay
+            className="w-full h-full scale-125"
+          />
+        </div>
+
         <div className="flex-1 grid lg:grid-cols-2 relative z-10 h-full pb-16">
 
           {/* Left Section - Floating text over the background's white area */}
@@ -282,7 +293,7 @@ export default function LoginPage() {
             <ShieldCheck className="w-4 h-4 text-[#8cc63f]" />
             <div>
               <h4 className="text-xs font-semibold text-gray-900 leading-tight">Verified Technicians</h4>
-              <p className="text-[10px] text-gray-500 mt-0.5">Skilled & background verified</p>
+              <p className="text-[10px] text-gray-900 mt-0.5">Skilled & background verified</p>
             </div>
           </div>
 
