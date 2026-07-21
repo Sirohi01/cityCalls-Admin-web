@@ -31,7 +31,7 @@ function ServicesPageContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Services' : 'Services Catalog'}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Services' : 'Services Catalog'}</h1>
           <p className="text-muted-foreground">Manage the list of services offered to customers.</p>
         </div>
         <Button render={<Link href="/dashboard/catalog/services/create" />}>

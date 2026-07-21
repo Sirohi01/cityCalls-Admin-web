@@ -183,12 +183,12 @@ export default function DashboardPage() {
   const topWaitlistPincodes = Object.entries(waitlistByPincode).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-          Welcome back, {me?.name ?? '...'}
+    <div className="space-y-3 animate-in fade-in duration-500">
+      <div className="pb-1 mb-1.5 border-b border-border/50">
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+          Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{me?.name ?? '...'}</span>
         </h1>
-        <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening across CityCalls today.</p>
+        <p className="text-[13px] text-muted-foreground">Here&apos;s what&apos;s happening across CityCalls today.</p>
       </div>
 
       {/* KPI row */}
