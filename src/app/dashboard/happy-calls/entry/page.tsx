@@ -40,7 +40,7 @@ function HappyCallEntryForm() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6">
       <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
           <h1 className="text-lg font-medium tracking-tight text-foreground">Log Happy Call</h1>
@@ -53,43 +53,47 @@ function HappyCallEntryForm() {
         <p className="text-sm text-destructive">No happy call selected — go back to the list and click &quot;Log Call&quot; on a pending entry.</p>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Feedback</CardTitle>
-          <CardDescription>Ask the customer the following questions regarding their recent service experience.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8">
-
-          <div className="space-y-4">
-            <label className="text-sm font-bold text-slate-800">1. Was your issue completely resolved?</label>
+      <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
+        <CardContent className="space-y-4">
+          
+          <div className="space-y-3">
+            <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+              <h2 className="text-sm font-semibold text-foreground">1. Was your issue completely resolved?</h2>
+              <p className="text-[13px] text-muted-foreground">Select whether the customer&apos;s problem was fixed.</p>
+            </div>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer border p-3 rounded-md hover:bg-slate-50 flex-1">
+              <label className="flex items-center gap-2 cursor-pointer border border-border/50 p-3 rounded-md hover:bg-slate-50 transition-colors flex-1">
                 <input type="radio" name="resolved" value="yes" checked={resolved === 'yes'} onChange={() => setResolved('yes')} className="w-4 h-4 accent-primary" />
-                <span className="font-medium text-green-700">Yes, fully resolved</span>
+                <span className="font-medium text-green-700 text-sm">Yes, fully resolved</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer border p-3 rounded-md hover:bg-slate-50 flex-1">
+              <label className="flex items-center gap-2 cursor-pointer border border-border/50 p-3 rounded-md hover:bg-slate-50 transition-colors flex-1">
                 <input type="radio" name="resolved" value="no" checked={resolved === 'no'} onChange={() => setResolved('no')} className="w-4 h-4 accent-red-600" />
-                <span className="font-medium text-red-600">No, issue persists (Request Reopen)</span>
+                <span className="font-medium text-red-600 text-sm">No, issue persists (Request Reopen)</span>
               </label>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <label className="text-sm font-bold text-slate-800">2. How would you rate the service experience?</label>
-            <div className="flex items-center gap-2">
+          <div className="space-y-3 ">
+            <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+              <h2 className="text-sm font-semibold text-foreground">2. How would you rate the service experience?</h2>
+              <p className="text-[13px] text-muted-foreground">Rate from 1 to 5 stars.</p>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`w-10 h-10 cursor-pointer transition-colors ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`}
+                  className={`w-9 h-9 cursor-pointer transition-colors ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 hover:text-slate-300'}`}
                 />
               ))}
               <span className="ml-4 font-bold text-lg text-slate-500">{rating} / 5</span>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-800">3. Any additional comments from the customer?</label>
+          <div className="space-y-3 ">
+            <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+              <h2 className="text-sm font-semibold text-foreground">3. Any additional comments from the customer?</h2>
+            </div>
             <textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
@@ -102,7 +106,8 @@ function HappyCallEntryForm() {
             <p className="text-sm text-destructive">{recordOutcome.error.response?.data?.message ?? 'Failed to submit feedback.'}</p>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end bg-slate-50 p-6 border-t">
+        <CardFooter className="flex justify-between bg-muted/30 p-4 border-t border-border/50">
+          <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={!happyCallId || recordOutcome.isPending} className="bg-green-600 hover:bg-green-700">
             {recordOutcome.isPending ? 'Submitting...' : 'Submit Feedback'}
           </Button>
