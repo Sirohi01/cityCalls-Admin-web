@@ -61,63 +61,70 @@ function CreateCampaignForm() {
       { onSuccess: () => reset({ channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '', name: '', templateId: '' }) }
     );
   };
-
   return (
-    <Card className="max-w-4xl border-indigo-100">
-      <CardHeader className="bg-indigo-50/50">
-        <CardTitle className="flex items-center gap-2 text-indigo-900">
-          <Megaphone className="w-5 h-5 text-indigo-600" />
-          Setup Campaign
-        </CardTitle>
-        <CardDescription>Filter your audience by tag/segment and select an approved message template.</CardDescription>
-      </CardHeader>
+    <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-8 pt-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Users className="w-5 h-5 text-slate-400" /> 1. Target Audience
-            </h3>
-            <div className="grid grid-cols-2 gap-6 p-4 border rounded-lg bg-slate-50">
+        <CardContent className="space-y-6 pt-5">
+          
+          <div className="space-y-3">
+            <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-600" /> 1. Target Audience
+              </h2>
+              <p className="text-[13px] text-muted-foreground">Filter your audience by tag, segment, or customer type.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <AppFormField label="Tags (comma-separated, optional)" placeholder="e.g., out-of-warranty, amc-expiring" {...register('tags')} />
               <AppFormField label="Segments (comma-separated, optional)" placeholder="e.g., delhi-ncr" {...register('segments')} />
+              
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Customer Type (Optional)</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('customerType')}>
                   <option value="">Any</option>
                   {customerTypes?.map((t) => (
                     <option key={t._id} value={t.key}>{t.label}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-span-2 text-xs text-slate-500">
-                Only customers who granted marketing consent for this channel will be included. Reach is determined at send time — no pre-send estimate is available.
+
+              <div className="col-span-2 mt-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-md p-3 text-[12.5px] text-slate-600 leading-relaxed">
+                  <span className="font-semibold text-slate-700">Note:</span> Only customers who granted marketing consent for this channel will be included. Reach is determined at send time — no pre-send estimate is available.
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-slate-400" /> 2. Content
-            </h3>
-            <div className="grid grid-cols-2 gap-6 p-4 border rounded-lg bg-slate-50">
+          <div className="space-y-3 pt-2">
+            <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Megaphone className="w-4 h-4 text-indigo-600" /> 2. Content
+              </h2>
+              <p className="text-[13px] text-muted-foreground">Set campaign name and approved message template.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <AppFormField label="Campaign Name" placeholder="e.g., Summer Discount Push" {...register('name', { required: true })} />
+              
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('channel', { required: true })}>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('channel', { required: true })}>
                   <option value="WHATSAPP">WhatsApp</option>
                   <option value="EMAIL">Email</option>
                 </select>
               </div>
+
               <div className="col-span-2 space-y-1.5">
                 <label className="text-sm font-medium">Message Template</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('templateId', { required: true })}>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('templateId', { required: true })}>
                   <option value="">Select an approved template...</option>
                   {eligibleTemplates.map((t) => (
                     <option key={t._id} value={t._id}>{t.triggerKey}</option>
                   ))}
                 </select>
                 {eligibleTemplates.length === 0 && (
-                  <p className="text-xs text-amber-600">No {channel} templates available.</p>
+                  <p className="text-xs text-amber-600 mt-1">No {channel} templates available.</p>
                 )}
               </div>
             </div>
@@ -128,7 +135,8 @@ function CreateCampaignForm() {
           )}
           {createCampaign.isSuccess && <p className="text-sm text-green-600">Campaign created. Send it from the campaign list.</p>}
         </CardContent>
-        <div className="flex justify-end border-t p-6 pt-6">
+        <div className="flex justify-end gap-2 bg-muted/30 p-4 border-t border-border/50">
+          <Button type="button" variant="ghost" onClick={() => reset()}>Reset</Button>
           <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending}>
             <Send className="w-4 h-4" /> {createCampaign.isPending ? 'Saving...' : 'Save Campaign'}
           </Button>
@@ -159,11 +167,8 @@ export default function CampaignsPage() {
         </TabsList>
 
         <TabsContent value="list">
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign History</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
+            <CardContent className="p-0">
               {isLoading ? (
                 <div className="flex justify-center p-8 text-muted-foreground">Loading campaigns...</div>
               ) : isError ? (

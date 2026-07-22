@@ -34,72 +34,79 @@ function ImportSection() {
   };
 
   return (
-    <Card className="border-dashed border-2 border-slate-200">
-      <CardHeader className="bg-slate-50/50 pb-4 border-b">
-        <CardTitle className="flex items-center gap-2">
-          <UploadCloud className="w-5 h-5 text-indigo-600" /> Bulk Import
-        </CardTitle>
-        <CardDescription>Upload a CSV file to bulk-create customers or leads. XLSX is not supported for import.</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Select Entity Type</label>
-          <select
-            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={entity}
-            onChange={(e) => setEntity(e.target.value as ImportEntityInput['entity'])}
-          >
-            {IMPORT_ENTITIES.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
-          </select>
-        </div>
+    <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
+      <CardContent className="space-y-6 pt-5">
+        <div className="space-y-3">
+          <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <UploadCloud className="w-4 h-4 text-indigo-600" /> Bulk Import
+            </h2>
+            <p className="text-[13px] text-muted-foreground">Upload a CSV file to bulk-create customers or leads.</p>
+          </div>
+          
+          <div className="space-y-4 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Entity Type</label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={entity}
+                  onChange={(e) => setEntity(e.target.value as ImportEntityInput['entity'])}
+                >
+                  {IMPORT_ENTITIES.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+                </select>
+              </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Row Handling</label>
-          <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm" value={mode} onChange={(e) => setMode(e.target.value as 'partial' | 'strict')}>
-            <option value="partial">Partial — import valid rows, skip invalid ones</option>
-            <option value="strict">Strict — abort entirely if any row is invalid</option>
-          </select>
-        </div>
-
-        <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-300 rounded-lg p-10 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-        >
-          <FileSpreadsheet className="w-10 h-10 text-slate-400 mb-4" />
-          <p className="text-sm font-medium text-slate-700">{file ? file.name : 'Click to select a CSV file'}</p>
-          <p className="text-xs text-muted-foreground mt-1">CSV only, maximum file size 20MB</p>
-        </div>
-
-        <div className="flex gap-2">
-          <Button variant="outline" className="w-full" onClick={() => handleImport(true)} disabled={!file || importEntity.isPending}>
-            {importEntity.isPending ? 'Checking...' : 'Dry Run (Validate Only)'}
-          </Button>
-          <Button className="w-full" onClick={() => handleImport(false)} disabled={!file || importEntity.isPending}>
-            {importEntity.isPending ? 'Importing...' : 'Import'}
-          </Button>
-        </div>
-
-        {importEntity.isError && (
-          <p className="text-sm text-destructive">{importEntity.error.response?.data?.message ?? 'Import failed.'}</p>
-        )}
-
-        {importEntity.data && (
-          <div className="border rounded-lg p-4 space-y-2 bg-slate-50">
-            <div className="flex gap-4 text-sm font-medium">
-              <span className="flex items-center gap-1 text-green-700"><CheckCircle2 className="w-4 h-4" /> {importEntity.data.successCount} succeeded</span>
-              <span className="flex items-center gap-1 text-red-700"><XCircle className="w-4 h-4" /> {importEntity.data.failureCount} failed</span>
-              {importEntity.data.dryRun && <span className="text-slate-500">(dry run — nothing was saved)</span>}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Row Handling</label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" value={mode} onChange={(e) => setMode(e.target.value as 'partial' | 'strict')}>
+                  <option value="partial">Partial (skip invalid)</option>
+                  <option value="strict">Strict (abort on invalid)</option>
+                </select>
+              </div>
             </div>
-            {importEntity.data.failures.length > 0 && (
-              <div className="text-xs text-slate-600 space-y-1 max-h-40 overflow-y-auto">
-                {importEntity.data.failures.map((f, i) => (
-                  <div key={i}>Row {f.row}, {f.field}: {f.message}</div>
-                ))}
+
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-slate-300 rounded-lg p-8 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 hover:border-indigo-300 transition-colors cursor-pointer"
+            >
+              <FileSpreadsheet className="w-8 h-8 text-indigo-400 mb-3" />
+              <p className="text-sm font-medium text-slate-700">{file ? file.name : 'Click to select a CSV file'}</p>
+              <p className="text-[12px] text-muted-foreground mt-1">CSV only, maximum file size 20MB</p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="w-full" onClick={() => handleImport(true)} disabled={!file || importEntity.isPending}>
+                {importEntity.isPending ? 'Checking...' : 'Dry Run (Validate)'}
+              </Button>
+              <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => handleImport(false)} disabled={!file || importEntity.isPending}>
+                {importEntity.isPending ? 'Importing...' : 'Import Now'}
+              </Button>
+            </div>
+
+            {importEntity.isError && (
+              <p className="text-sm text-destructive">{importEntity.error.response?.data?.message ?? 'Import failed.'}</p>
+            )}
+
+            {importEntity.data && (
+              <div className="border border-slate-200 rounded-md p-4 space-y-2 bg-slate-50">
+                <div className="flex gap-4 text-sm font-medium">
+                  <span className="flex items-center gap-1 text-green-700"><CheckCircle2 className="w-4 h-4" /> {importEntity.data.successCount} succeeded</span>
+                  <span className="flex items-center gap-1 text-red-700"><XCircle className="w-4 h-4" /> {importEntity.data.failureCount} failed</span>
+                  {importEntity.data.dryRun && <span className="text-xs text-slate-500 ml-auto">(dry run)</span>}
+                </div>
+                {importEntity.data.failures.length > 0 && (
+                  <div className="text-[12px] text-slate-600 space-y-1 max-h-32 overflow-y-auto mt-2 pt-2 border-t border-slate-200">
+                    {importEntity.data.failures.map((f, i) => (
+                      <div key={i}><span className="font-semibold text-slate-700">Row {f.row}:</span> [{f.field}] {f.message}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -124,39 +131,46 @@ function ExportSection() {
   };
 
   return (
-    <Card className="border-dashed border-2 border-slate-200">
-      <CardHeader className="bg-slate-50/50 pb-4 border-b">
-        <CardTitle className="flex items-center gap-2">
-          <DownloadCloud className="w-5 h-5 text-green-600" /> Master Export
-        </CardTitle>
-        <CardDescription>Extract complete datasets from the system in CSV or Excel format.</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Select Entity Type</label>
-          <select
-            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={entity}
-            onChange={(e) => setEntity(e.target.value as (typeof EXPORT_ENTITIES)[number])}
-          >
-            {EXPORT_ENTITIES.map((e) => <option key={e} value={e}>{EXPORT_ENTITY_LABELS[e]}</option>)}
-          </select>
-        </div>
+    <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
+      <CardContent className="space-y-6 pt-5">
+        <div className="space-y-3">
+          <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <DownloadCloud className="w-4 h-4 text-green-600" /> Master Export
+            </h2>
+            <p className="text-[13px] text-muted-foreground">Extract complete datasets from the system.</p>
+          </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Format</label>
-          <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm" value={format} onChange={(e) => setFormat(e.target.value as 'csv' | 'xlsx')}>
-            <option value="csv">CSV</option>
-            <option value="xlsx">Excel (.xlsx)</option>
-          </select>
-        </div>
+          <div className="space-y-4 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Entity Type</label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={entity}
+                  onChange={(e) => setEntity(e.target.value as (typeof EXPORT_ENTITIES)[number])}
+                >
+                  {EXPORT_ENTITIES.map((e) => <option key={e} value={e}>{EXPORT_ENTITY_LABELS[e]}</option>)}
+                </select>
+              </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Format</label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" value={format} onChange={(e) => setFormat(e.target.value as 'csv' | 'xlsx')}>
+                  <option value="csv">CSV</option>
+                  <option value="xlsx">Excel (.xlsx)</option>
+                </select>
+              </div>
+            </div>
 
-        <div className="pt-8">
-          <Button variant="outline" className="w-full border-green-600 text-green-600 hover:bg-green-50" onClick={handleExport} disabled={isDownloading}>
-            {isDownloading ? 'Generating...' : 'Download Export'}
-          </Button>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <div className="pt-2">
+              <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800" onClick={handleExport} disabled={isDownloading}>
+                {isDownloading ? 'Generating...' : 'Download Export'}
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -165,7 +179,7 @@ function ExportSection() {
 
 export default function ImportExportPage() {
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
           <h1 className="text-lg font-medium tracking-tight text-foreground">Import / Export Wizard</h1>
@@ -173,7 +187,7 @@ export default function ImportExportPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4">
         <ImportSection />
         <ExportSection />
       </div>

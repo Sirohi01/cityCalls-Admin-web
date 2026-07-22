@@ -219,7 +219,7 @@ export default function MastersPage() {
             },
             {
               key: 'actions',
-              header: '',
+              header: 'Action',
               render: (item) => (
                 <div className="flex items-center gap-1">
                   <FormSheet
