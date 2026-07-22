@@ -14,14 +14,12 @@ export default function AISettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Settings</h1>
-          <p className="text-muted-foreground">Configure artificial intelligence features for your workspace.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">AI Settings</h1>
+          <p className="text-[13px] text-muted-foreground">Configure artificial intelligence features for your workspace.</p>
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid gap-6">
         <Card className="border-indigo-100 bg-indigo-50/30">

@@ -61,8 +61,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lead: {lead.contactName || lead.number}</h1>
-          <p className="text-muted-foreground">{lead.number} • Created on {new Date(lead.createdAt).toLocaleDateString()}</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Lead: {lead.contactName || lead.number}</h1>
+          <p className="text-[13px] text-muted-foreground">{lead.number} • Created on {new Date(lead.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge label={lead.stage.replace(/_/g, ' ')} category={lead.stage === 'CONVERTED' ? 'success' : 'info'} />
@@ -86,8 +86,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-1 space-y-6">

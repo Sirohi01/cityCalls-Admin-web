@@ -23,14 +23,12 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">System Audit Logs</h1>
-          <p className="text-muted-foreground">Immutable trail of all actions performed within the system.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">System Audit Logs</h1>
+          <p className="text-[13px] text-muted-foreground">Immutable trail of all actions performed within the system.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Card>
         <CardHeader>
@@ -54,7 +52,7 @@ export default function AuditLogsPage() {
               />
             </div>
             {(module || entityType) && (
-              <Button variant="ghost" size="sm" onClick={() => { setModule(''); setEntityType(''); setPage(1); }}>
+              <Button size="sm" variant="ghost" size="sm" onClick={() => { setModule(''); setEntityType(''); setPage(1); }}>
                 Clear filters
               </Button>
             )}

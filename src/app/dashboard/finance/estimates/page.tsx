@@ -157,14 +157,12 @@ export default function EstimatesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Estimates</h1>
-          <p className="text-muted-foreground">Manage and generate cost estimates for service requests.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Estimates</h1>
+          <p className="text-[13px] text-muted-foreground">Manage and generate cost estimates for service requests.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">
@@ -184,7 +182,7 @@ export default function EstimatesPage() {
                 <div className="flex justify-center p-8 text-destructive">Failed to load estimates.</div>
               ) : (
                 <>
-                <p className="text-sm text-muted-foreground mb-2">{estimates?.length ?? 0} estimates</p>
+                {/* <p className="text-sm text-muted-foreground mb-2">{estimates?.length ?? 0} estimates</p> */}
                 <DataTable<Estimate>
                   data={estimates || []}
                   pageSize={10}

@@ -208,17 +208,15 @@ export default function BranchesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Branches</h1>
-          <p className="text-muted-foreground">Manage main organizational branches.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Branches</h1>
+          <p className="text-[13px] text-muted-foreground">Manage main organizational branches.</p>
         </div>
         <FormSheet triggerLabel="Add Branch" title="Add Branch" description="Create a new branch.">
           {(close) => <BranchForm onClose={close} />}
         </FormSheet>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading branches...</div>
@@ -226,7 +224,7 @@ export default function BranchesPage() {
         <div className="flex justify-center p-8 text-destructive">Failed to load branches.</div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{branches?.length ?? 0} branches</p>
+          {/* <p className="text-sm text-muted-foreground">{branches?.length ?? 0} branches</p> */}
           <DataTable<Branch>
             data={branches || []}
             pageSize={10}

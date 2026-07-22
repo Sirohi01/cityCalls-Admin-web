@@ -82,11 +82,11 @@ export default function LeadsPipelinePage() {
   const leads = allLeads || [];
 
   return (
-    <div className="space-y-6 h-[calc(100vh-10rem)] flex flex-col">
+    <div className="space-y-6">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lead Pipeline</h1>
-          <p className="text-muted-foreground">Manage leads through the sales cycle.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Lead Pipeline</h1>
+          <p className="text-[13px] text-muted-foreground">Manage leads through the sales cycle.</p>
         </div>
         <div className="space-x-2 flex items-center">
           <Button variant="outline" render={<Link href="/dashboard/leads/list" />}>
@@ -101,49 +101,61 @@ export default function LeadsPipelinePage() {
         </div>
       </div>
 
-      <Separator />
-
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex h-full gap-4 min-w-max pb-4">
-          {isLoading ? (
-            <div className="p-8 text-muted-foreground w-full flex justify-center">Loading leads...</div>
-          ) : isError ? (
-            <div className="p-8 text-destructive w-full flex justify-center">Failed to load leads.</div>
-          ) : LEAD_STAGES.map(stage => {
-            const stageLeads = leads.filter(l => l.stage === stage);
-            return (
-              <div key={stage} className="flex flex-col w-80 shrink-0 bg-slate-100/50 rounded-lg border border-slate-200">
-                <div className="p-3 border-b bg-slate-100/80 rounded-t-lg flex justify-between items-center shrink-0">
-                  <h3 className="font-semibold text-sm">{stage.replace(/_/g, ' ')}</h3>
-                  <Badge variant="secondary">{stageLeads.length}</Badge>
+      <div className="space-y-8 pb-12">
+        {isLoading ? (
+          <div className="py-12 text-muted-foreground text-center">Loading leads...</div>
+        ) : isError ? (
+          <div className="py-12 text-destructive text-center">Failed to load leads.</div>
+        ) : LEAD_STAGES.map(stage => {
+          const stageLeads = leads.filter(l => l.stage === stage);
+          return (
+            <div key={stage} className="flex flex-col space-y-3">
+              <div className="flex items-center gap-3 pb-2 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary/70"></div>
+                  <h3 className="font-semibold text-base text-foreground tracking-tight">{stage.replace(/_/g, ' ')}</h3>
                 </div>
-                <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-                  {stageLeads.map(lead => (
-                    <Card key={lead._id} className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <Link href={`/dashboard/leads/${lead._id}`} className="font-semibold hover:underline">
-                            {lead.contactName || 'Unnamed Lead'}
-                          </Link>
-                        </div>
-                        <div className="text-sm text-muted-foreground">{lead.contactMobile || 'No mobile on file'}</div>
-                        <div className="flex justify-between items-center pt-2 mt-2 border-t">
-                          <span className="text-xs text-muted-foreground">{lead.number}</span>
-                          <span className="text-xs font-semibold text-primary">{lead.source}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {stageLeads.length === 0 && (
-                    <div className="text-center p-4 text-xs text-muted-foreground border-2 border-dashed border-slate-200 rounded-lg">
-                      No leads in this stage
-                    </div>
-                  )}
-                </div>
+                <Badge variant="secondary" className="text-[11px] px-2 py-0.5 font-medium bg-muted/60 text-muted-foreground">
+                  {stageLeads.length} {stageLeads.length === 1 ? 'Lead' : 'Leads'}
+                </Badge>
               </div>
-            );
-          })}
-        </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2.5 max-h-[290px] overflow-y-auto pr-2 pb-2">
+                {stageLeads.map(lead => (
+                  <Card key={lead._id} className="cursor-pointer border border-border/70 shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-200 bg-card group flex flex-col relative overflow-hidden">
+                    <div className="absolute inset-x-0 top-0 h-[2px] bg-transparent group-hover:bg-primary/60 transition-colors"></div>
+                    <CardContent className="px-3.5 py-3 flex flex-col gap-2">
+                      <div>
+                        <Link href={`/dashboard/leads/${lead._id}`} className="font-semibold text-[14px] text-foreground group-hover:text-primary transition-colors line-clamp-1 block mb-0.5">
+                          {lead.contactName || 'Unnamed Lead'}
+                        </Link>
+                        <div className="text-[13px] text-muted-foreground">
+                          {lead.contactMobile || 'No mobile number'}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-border/40 mt-auto">
+                        <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                          {lead.number}
+                        </span>
+                        {lead.source && (
+                          <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-primary/10 text-primary">
+                            {lead.source}
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {stageLeads.length === 0 && (
+                  <div className="col-span-full text-center py-6 text-[13px] text-muted-foreground border border-dashed border-border/50 rounded-lg bg-muted/10">
+                    No leads in this stage
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

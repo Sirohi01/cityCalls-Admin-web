@@ -50,78 +50,76 @@ export default function BrandsPage() {
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Brands & Product Types</h1>
-        <p className="text-muted-foreground">Manage the appliance catalog hierarchy.</p>
+    <div className="space-y-4">
+      <div className="pb-1 mb-1.5 border-b border-border/50">
+        <h1 className="text-lg font-medium tracking-tight text-foreground">Brands & Product Types</h1>
+        <p className="text-[13px] text-muted-foreground">Manage the appliance catalog hierarchy.</p>
       </div>
 
-      <Separator />
-
       <Tabs defaultValue="brands" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="brands">Brands</TabsTrigger>
-          <TabsTrigger value="product-types">Product Types</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between ">
+          <TabsList>
+            <TabsTrigger value="brands">Brands</TabsTrigger>
+            <TabsTrigger value="product-types">Product Types</TabsTrigger>
+          </TabsList>
+          <div>
+            <TabsContent value="brands" className="m-0">
+              <FormSheet triggerLabel="Add Brand" title="Add Brand" description="Register a new appliance brand.">
+                {(close) => <AddMasterEntryForm masterType="BRAND" onClose={close} />}
+              </FormSheet>
+            </TabsContent>
+            <TabsContent value="product-types" className="m-0">
+              <FormSheet triggerLabel="Add Product Type" title="Add Product Type" description="Register a new appliance/product type.">
+                {(close) => <AddMasterEntryForm masterType="PRODUCT_TYPE" onClose={close} />}
+              </FormSheet>
+            </TabsContent>
+          </div>
+        </div>
 
         <TabsContent value="brands">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex justify-end">
-                <FormSheet triggerLabel="Add Brand" title="Add Brand" description="Register a new appliance brand.">
-                  {(close) => <AddMasterEntryForm masterType="BRAND" onClose={close} />}
-                </FormSheet>
-              </div>
-              {loadingBrands ? (
-                <div className="text-center text-muted-foreground p-8">Loading brands...</div>
-              ) : (
-                <DataTable<Brand>
-                  data={brandsData || []}
-                  pageSize={10}
-                  onRowClick={(item) => setSelectedBrand(item)}
-                  columns={[
-                    { key: 'name', header: 'Brand Name' },
-                    { key: 'key', header: 'System Key' },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      render: (item) => <StatusBadge label={item.status} category={item.status === 'Active' ? 'success' : 'default'} />,
-                    },
-                  ]}
-                />
-              )}
-              <p className="text-xs text-muted-foreground">Click a brand to manage its photos and videos.</p>
-            </CardContent>
-          </Card>
+          <div className="pt-2 space-y-4">
+            {loadingBrands ? (
+              <div className="text-center text-muted-foreground p-8">Loading brands...</div>
+            ) : (
+              <DataTable<Brand>
+                data={brandsData || []}
+                pageSize={10}
+                onRowClick={(item) => setSelectedBrand(item)}
+                columns={[
+                  { key: 'name', header: 'Brand Name' },
+                  { key: 'key', header: 'System Key' },
+                  {
+                    key: 'status',
+                    header: 'Status',
+                    render: (item) => <StatusBadge label={item.status} category={item.status === 'Active' ? 'success' : 'default'} />,
+                  },
+                ]}
+              />
+            )}
+            <p className="text-xs text-muted-foreground">Click a brand to manage its photos and videos.</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="product-types">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex justify-end">
-                <FormSheet triggerLabel="Add Product Type" title="Add Product Type" description="Register a new appliance/product type.">
-                  {(close) => <AddMasterEntryForm masterType="PRODUCT_TYPE" onClose={close} />}
-                </FormSheet>
-              </div>
-              {loadingProductTypes ? (
-                <div className="text-center text-muted-foreground p-8">Loading product types...</div>
-              ) : (
-                <DataTable<Master>
-                  data={productTypes || []}
-                  pageSize={10}
-                  columns={[
-                    { key: 'label', header: 'Product Type' },
-                    { key: 'key', header: 'System Key' },
-                    {
-                      key: 'active',
-                      header: 'Status',
-                      render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
-                    },
-                  ]}
-                />
-              )}
-            </CardContent>
-          </Card>
+          <div className="pt-2 space-y-4">
+            {loadingProductTypes ? (
+              <div className="text-center text-muted-foreground p-8">Loading product types...</div>
+            ) : (
+              <DataTable<Master>
+                data={productTypes || []}
+                pageSize={10}
+                columns={[
+                  { key: 'label', header: 'Product Type' },
+                  { key: 'key', header: 'System Key' },
+                  {
+                    key: 'active',
+                    header: 'Status',
+                    render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+                  },
+                ]}
+              />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 

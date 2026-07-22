@@ -26,13 +26,13 @@ function ServiceRequestsPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Requests' : 'Service Requests'}</h1>
-          <p className="text-muted-foreground">Manage and track customer tickets.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{vertical === 'BEAUTY' ? 'Beauty & Salon Requests' : 'Service Requests'}</h1>
+          <p className="text-[13px] text-muted-foreground">Manage and track customer tickets.</p>
         </div>
         <div className="space-x-2">
-          <Button variant="outline" render={<Link href="/dashboard/dispatch" />}>
+          <Button size="sm" variant="outline" render={<Link href="/dashboard/dispatch" />}>
             Dispatch Board
           </Button>
           <Button render={<Link href="/dashboard/service-requests/create" />}>
@@ -41,15 +41,13 @@ function ServiceRequestsPageContent() {
         </div>
       </div>
 
-      <Separator />
-
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading service requests...</div>
       ) : isError ? (
         <div className="flex justify-center p-8 text-destructive">Failed to load service requests.</div>
       ) : (
         <>
-        <p className="text-sm text-muted-foreground">{tickets?.length ?? 0} service requests</p>
+        {/* <p className="text-sm text-muted-foreground">{tickets?.length ?? 0} service requests</p> */}
         <DataTable
           data={tickets || []}
           pageSize={10}

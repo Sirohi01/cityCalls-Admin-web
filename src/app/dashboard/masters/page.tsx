@@ -166,17 +166,15 @@ export default function MastersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Masters Configuration</h1>
-          <p className="text-muted-foreground">Manage system master lists — pick a type below to see only that list.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Masters Configuration</h1>
+          <p className="text-[13px] text-muted-foreground">Manage system master lists — pick a type below to see only that list.</p>
         </div>
         <FormSheet triggerLabel="Add Master" title="Add Master Entry" description="Create a new master-list entry.">
           {(close) => <AddMasterForm defaultType={selectedType} siblings={masters || []} onClose={close} />}
         </FormSheet>
       </div>
-
-      <Separator />
 
       <div className="flex flex-wrap gap-2 border-b pb-4">
         {MASTER_TYPES.map((t) => (

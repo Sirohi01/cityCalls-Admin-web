@@ -70,8 +70,8 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Request: {ticket.number}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Request: {ticket.number}</h1>
+          <p className="text-[13px] text-muted-foreground">
             {ticket.service?.name ?? 'Service Ticket'} • Created on {new Date(ticket.createdAt).toLocaleDateString()}
             {ticket.createdByName ? ` by ${ticket.createdByName}` : ''}
           </p>
@@ -83,8 +83,6 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
           <StatusBadge label={ticket.status} category={ticket.status === 'NEW' ? 'error' : isCancelled ? 'error' : 'info'} />
         </div>
       </div>
-
-      <Separator />
 
       {/* Status Transition Ribbon */}
       {isCancelled ? (

@@ -44,8 +44,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-          <p className="text-muted-foreground">Manage service configuration and pricing.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{service.name}</h1>
+          <p className="text-[13px] text-muted-foreground">Manage service configuration and pricing.</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <StatusBadge label={service.active ? 'Active' : 'Inactive'} category={service.active ? 'success' : 'default'} />
@@ -59,8 +59,6 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           </Button>
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

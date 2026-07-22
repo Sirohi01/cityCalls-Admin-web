@@ -26,13 +26,11 @@ export default function DuplicateReviewPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Duplicate Check</h1>
-        <p className="text-muted-foreground">Check whether a name, mobile, GSTIN, or business name already matches an existing customer.</p>
+    <div className="space-y-4">
+      <div className="pb-1 mb-1.5 border-b border-border/50">
+        <h1 className="text-lg font-medium tracking-tight text-foreground">Duplicate Check</h1>
+          <p className="text-[13px] text-muted-foreground">Check whether a name, mobile, GSTIN, or business name already matches an existing customer.</p>
       </div>
-
-      <Separator />
 
       <Card>
         <CardHeader>

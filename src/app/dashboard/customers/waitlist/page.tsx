@@ -27,16 +27,14 @@ export default function ServiceAreaWaitlistPage() {
   const data = customers || [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Service Area Waitlist</h1>
-        <p className="text-muted-foreground">Callers from areas we don&apos;t serve yet — captured so we can reach out once we launch there.</p>
+    <div className="space-y-4">
+      <div className="pb-1 mb-1.5 border-b border-border/50">
+        <h1 className="text-lg font-medium tracking-tight text-foreground">Service Area Waitlist</h1>
+          <p className="text-[13px] text-muted-foreground">Callers from areas we don&apos;t serve yet — captured so we can reach out once we launch there.</p>
       </div>
 
-      <Separator />
-
       <Card className="border-indigo-100 bg-indigo-50/40">
-        <CardContent className="flex items-start gap-3 pt-6 text-sm text-indigo-900">
+        <CardContent className="flex items-start gap-3 text-sm text-indigo-900">
           <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
           <p>
             When a branch launches covering one of these pincodes, target it from{' '}
@@ -46,12 +44,11 @@ export default function ServiceAreaWaitlistPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <div className="space-y-4">
+        {/* <CardHeader>
           <CardTitle className="flex items-center gap-2"><Clock className="w-4 h-4" /> Waiting Customers</CardTitle>
           <CardDescription>{data.length} people waiting across {new Set(data.map(pincodeTagOf)).size} pincode(s).</CardDescription>
-        </CardHeader>
-        <CardContent>
+        </CardHeader> */}
           {isLoading ? (
             <div className="flex justify-center p-8 text-muted-foreground">Loading waitlist...</div>
           ) : isError ? (
@@ -70,8 +67,7 @@ export default function ServiceAreaWaitlistPage() {
               emptyMessage="No one is on the waitlist right now."
             />
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -45,14 +45,12 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoices & Payments</h1>
-          <p className="text-muted-foreground">Manage final billing and record customer payments.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Invoices & Payments</h1>
+          <p className="text-[13px] text-muted-foreground">Manage final billing and record customer payments.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">
@@ -131,7 +129,7 @@ export default function InvoicesPage() {
                           Customer has an outstanding balance of <strong>₹{outstanding(selectedInvoice).toLocaleString('en-IN')}</strong>.
                         </div>
                         <div className="flex gap-2">
-                          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleMarkPaid} disabled={recordPayment.isPending}>
+                          <Button size="sm" className="w-full bg-green-600 hover:bg-green-700" onClick={handleMarkPaid} disabled={recordPayment.isPending}>
                             {recordPayment.isPending ? 'Recording...' : 'Mark as Paid (Cash)'}
                           </Button>
                           <Button className="w-full" variant="outline" onClick={handleShare} disabled={shareInvoice.isPending}>

@@ -55,7 +55,7 @@ function StatCard({
         </div>
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate leading-none">{title}</p>
-          <div className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/80 leading-none">{value}</div>
+          <div className="text-xl font-medium tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/80 leading-none">{value}</div>
           {sub && <p className="text-[10px] font-medium text-muted-foreground/80 truncate inline-block px-1.5 py-0.5 bg-muted/40 rounded-full">{sub}</p>}
         </div>
       </CardContent>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-3 animate-in fade-in duration-500">
       <div className="pb-1 mb-1.5 border-b border-border/50">
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+        <h1 className="text-lg font-medium tracking-tight text-foreground">
           Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{me?.name ?? '...'}</span>
         </h1>
         <p className="text-[13px] text-muted-foreground">Here&apos;s what&apos;s happening across CityCalls today.</p>

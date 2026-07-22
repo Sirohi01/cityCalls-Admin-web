@@ -265,8 +265,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{customer.name}</h1>
-          <p className="text-muted-foreground">ID: {customer._id}</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{customer.name}</h1>
+          <p className="text-[13px] text-muted-foreground">ID: {customer._id}</p>
         </div>
         <div className="ml-auto">
           <FormSheet
@@ -279,8 +279,6 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </FormSheet>
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-6">

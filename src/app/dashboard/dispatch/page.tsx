@@ -45,12 +45,10 @@ export default function DispatchBoardPage() {
     <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dispatch Board</h1>
-          <p className="text-muted-foreground">Assign open service requests to available technicians.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Dispatch Board</h1>
+          <p className="text-[13px] text-muted-foreground">Assign open service requests to available technicians.</p>
         </div>
       </div>
-
-      <Separator />
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
         {/* Left Pane: Unassigned Requests */}

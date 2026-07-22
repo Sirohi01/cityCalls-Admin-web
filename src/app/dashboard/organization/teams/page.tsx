@@ -207,17 +207,15 @@ export default function TeamsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
-          <p className="text-muted-foreground">Manage field and internal teams.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Teams</h1>
+          <p className="text-[13px] text-muted-foreground">Manage field and internal teams.</p>
         </div>
         <FormSheet triggerLabel="Add Team" title="Add Team" description="Create a new team within a branch.">
           {(close) => <AddTeamForm onClose={close} />}
         </FormSheet>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading teams...</div>
@@ -225,7 +223,7 @@ export default function TeamsPage() {
         <div className="flex justify-center p-8 text-destructive">Failed to load teams.</div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{teams?.length ?? 0} teams</p>
+          {/* <p className="text-sm text-muted-foreground">{teams?.length ?? 0} teams</p> */}
           <DataTable<Team>
             data={teams || []}
             pageSize={10}

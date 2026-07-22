@@ -195,8 +195,8 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{vendor.companyName}</h1>
-          <p className="text-muted-foreground">Vendor ID: {vendor._id}</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{vendor.companyName}</h1>
+          <p className="text-[13px] text-muted-foreground">Vendor ID: {vendor._id}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge
@@ -216,8 +216,6 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
           </FormSheet>
         </div>
       </div>
-
-      <Separator />
 
       {vendor.blacklisted && vendor.blacklistReason && (
         <Card className="bg-red-50 border-red-200">

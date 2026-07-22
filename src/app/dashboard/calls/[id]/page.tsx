@@ -69,8 +69,8 @@ export default function CallDetailPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Call: {call.number}</h1>
-          <p className="text-muted-foreground">Recorded on {new Date(call.callDate).toLocaleDateString()} at {call.callTime}</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Call: {call.number}</h1>
+          <p className="text-[13px] text-muted-foreground">Recorded on {new Date(call.callDate).toLocaleDateString()} at {call.callTime}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge label={call.direction} category={call.direction === 'INCOMING' ? 'info' : 'default'} />
@@ -79,8 +79,6 @@ export default function CallDetailPage({ params }: { params: Promise<{ id: strin
           </Button>
         </div>
       </div>
-
-      <Separator />
 
       {editing && (
         <Card>

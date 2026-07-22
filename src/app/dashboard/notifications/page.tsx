@@ -20,14 +20,12 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Notifications</h1>
-          <p className="text-muted-foreground">In-app, SMS, WhatsApp, and email notifications addressed to your account.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">My Notifications</h1>
+          <p className="text-[13px] text-muted-foreground">In-app, SMS, WhatsApp, and email notifications addressed to your account.</p>
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-slate-50 border-slate-200">

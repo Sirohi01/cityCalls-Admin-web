@@ -96,8 +96,8 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports Catalog</h1>
-          <p className="text-muted-foreground">Live operational reports, computed on demand from current data.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Reports Catalog</h1>
+          <p className="text-[13px] text-muted-foreground">Live operational reports, computed on demand from current data.</p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           <select className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
@@ -109,8 +109,6 @@ export default function ReportsPage() {
           <input type="date" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ReportCard

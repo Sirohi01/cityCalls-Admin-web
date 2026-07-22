@@ -29,15 +29,13 @@ export default function LeadImportPage() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bulk Import Leads</h1>
-          <p className="text-muted-foreground">Upload a CSV file to import multiple leads at once.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Bulk Import Leads</h1>
+          <p className="text-[13px] text-muted-foreground">Upload a CSV file to import multiple leads at once.</p>
         </div>
-        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
-
-      <Separator />
 
       <Card>
         <CardHeader>

@@ -41,15 +41,13 @@ function HappyCallEntryForm() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Log Happy Call</h1>
-          <p className="text-muted-foreground">Record customer feedback.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Log Happy Call</h1>
+          <p className="text-[13px] text-muted-foreground">Record customer feedback.</p>
         </div>
-        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
-
-      <Separator />
 
       {!happyCallId && (
         <p className="text-sm text-destructive">No happy call selected — go back to the list and click &quot;Log Call&quot; on a pending entry.</p>

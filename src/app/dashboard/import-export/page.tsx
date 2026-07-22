@@ -166,14 +166,12 @@ function ExportSection() {
 export default function ImportExportPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Import / Export Wizard</h1>
-          <p className="text-muted-foreground">Bulk upload data into the system or extract data for external use.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Import / Export Wizard</h1>
+          <p className="text-[13px] text-muted-foreground">Bulk upload data into the system or extract data for external use.</p>
         </div>
       </div>
-
-      <Separator />
 
       <div className="grid md:grid-cols-2 gap-6">
         <ImportSection />

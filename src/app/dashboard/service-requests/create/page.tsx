@@ -65,15 +65,13 @@ export default function CreateServiceRequestPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create Service Request</h1>
-          <p className="text-muted-foreground">Log a new ticket for a customer.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Create Service Request</h1>
+          <p className="text-[13px] text-muted-foreground">Log a new ticket for a customer.</p>
         </div>
-        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
-
-      <Separator />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>

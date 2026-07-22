@@ -28,18 +28,16 @@ function ServicesPageContent() {
   const categoryLabel = (id?: string) => categories?.find((c) => c._id === id)?.label ?? 'N/A';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Services' : 'Services Catalog'}</h1>
-          <p className="text-muted-foreground">Manage the list of services offered to customers.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{vertical === 'BEAUTY' ? 'Beauty & Salon Services' : 'Services Catalog'}</h1>
+          <p className="text-[13px] text-muted-foreground">Manage the list of services offered to customers.</p>
         </div>
-        <Button render={<Link href="/dashboard/catalog/services/create" />}>
+        <Button size="sm" render={<Link href="/dashboard/catalog/services/create" />}>
           Add Service
         </Button>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading services...</div>
@@ -47,7 +45,7 @@ function ServicesPageContent() {
         <div className="flex justify-center p-8 text-destructive">Failed to load services.</div>
       ) : (
         <>
-        <p className="text-sm text-muted-foreground">{services?.length ?? 0} services</p>
+        {/* <p className="text-sm text-muted-foreground">{services?.length ?? 0} services</p> */}
         <DataTable<CatalogService>
           data={services || []}
           pageSize={10}

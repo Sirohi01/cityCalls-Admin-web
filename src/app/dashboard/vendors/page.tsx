@@ -86,17 +86,15 @@ export default function VendorsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Vendors</h1>
-          <p className="text-muted-foreground">Manage third-party service agencies and partners.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Vendors</h1>
+          <p className="text-[13px] text-muted-foreground">Manage third-party service agencies and partners.</p>
         </div>
         <FormSheet triggerLabel="Onboard Vendor" title="Onboard Vendor" description="Register a new vendor company.">
           {(close) => <OnboardVendorForm onClose={close} />}
         </FormSheet>
       </div>
-
-      <Separator />
 
       <Card>
         <CardHeader>
@@ -109,7 +107,7 @@ export default function VendorsPage() {
             <div className="flex justify-center p-8 text-destructive">Failed to load vendors.</div>
           ) : (
             <>
-            <p className="text-sm text-muted-foreground mb-2">{vendors?.length ?? 0} vendors</p>
+            {/* <p className="text-sm text-muted-foreground mb-2">{vendors?.length ?? 0} vendors</p> */}
             <DataTable<Vendor>
               data={vendors || []}
               pageSize={10}

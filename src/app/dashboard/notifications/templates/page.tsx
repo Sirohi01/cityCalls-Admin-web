@@ -80,14 +80,12 @@ export default function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notification Templates</h1>
-          <p className="text-muted-foreground">Manage messaging templates for SMS, WhatsApp, and Email. Registered per trigger event, seeded at setup.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Notification Templates</h1>
+          <p className="text-[13px] text-muted-foreground">Manage messaging templates for SMS, WhatsApp, and Email. Registered per trigger event, seeded at setup.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Card>
         <CardHeader>

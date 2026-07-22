@@ -29,17 +29,15 @@ function CustomersPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{vertical === 'BEAUTY' ? 'Beauty & Salon Customers' : 'Customers'}</h1>
-          <p className="text-muted-foreground">Manage customer profiles and history.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">{vertical === 'BEAUTY' ? 'Beauty & Salon Customers' : 'Customers'}</h1>
+          <p className="text-[13px] text-muted-foreground">Manage customer profiles and history.</p>
         </div>
-        <Button render={<Link href="/dashboard/customers/create" />}>
+        <Button size="sm" render={<Link href="/dashboard/customers/create" />}>
           Add Customer
         </Button>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading customers...</div>
@@ -47,7 +45,7 @@ function CustomersPageContent() {
         <div className="flex justify-center p-8 text-destructive">Failed to load customers.</div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{customers?.length ?? 0} customers</p>
+          {/* <p className="text-sm text-muted-foreground">{customers?.length ?? 0} customers</p> */}
           <DataTable<Customer>
           data={customers || []}
           pageSize={10}

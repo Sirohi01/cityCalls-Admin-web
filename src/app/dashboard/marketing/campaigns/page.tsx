@@ -145,14 +145,12 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Marketing Campaigns</h1>
-          <p className="text-muted-foreground">Launch targeted WhatsApp/Email campaigns to consented customer segments.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Marketing Campaigns</h1>
+          <p className="text-[13px] text-muted-foreground">Launch targeted WhatsApp/Email campaigns to consented customer segments.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-4">
@@ -172,7 +170,7 @@ export default function CampaignsPage() {
                 <div className="flex justify-center p-8 text-destructive">Failed to load campaigns.</div>
               ) : (
                 <>
-                <p className="text-sm text-muted-foreground mb-2">{campaigns?.length ?? 0} campaigns</p>
+                {/* <p className="text-sm text-muted-foreground mb-2">{campaigns?.length ?? 0} campaigns</p> */}
                 <DataTable<Campaign>
                   data={campaigns || []}
                   pageSize={10}

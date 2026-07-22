@@ -346,14 +346,12 @@ export default function RolesAndUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Roles & Users</h1>
-          <p className="text-muted-foreground">Manage system access, user accounts, and permission matrices.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Roles & Users</h1>
+          <p className="text-[13px] text-muted-foreground">Manage system access, user accounts, and permission matrices.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-4">
@@ -378,7 +376,7 @@ export default function RolesAndUsersPage() {
                 <div className="flex justify-center p-8 text-muted-foreground">Loading users...</div>
               ) : (
                 <>
-                <p className="text-sm text-muted-foreground mb-2">{users?.length ?? 0} users</p>
+                {/* <p className="text-sm text-muted-foreground mb-2">{users?.length ?? 0} users</p> */}
                 <DataTable<User>
                   data={users || []}
                   pageSize={10}
@@ -457,7 +455,7 @@ export default function RolesAndUsersPage() {
                 <div className="flex justify-center p-8 text-muted-foreground">Loading roles...</div>
               ) : (
                 <>
-                <p className="text-sm text-muted-foreground mb-2">{roles?.length ?? 0} roles</p>
+                {/* <p className="text-sm text-muted-foreground mb-2">{roles?.length ?? 0} roles</p> */}
                 <DataTable<Role>
                   data={roles || []}
                   pageSize={10}

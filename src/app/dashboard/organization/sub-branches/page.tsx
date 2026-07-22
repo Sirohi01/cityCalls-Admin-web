@@ -110,17 +110,15 @@ export default function SubBranchesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sub-Branches</h1>
-          <p className="text-muted-foreground">Manage sub-branches under main branches.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Sub-Branches</h1>
+          <p className="text-[13px] text-muted-foreground">Manage sub-branches under main branches.</p>
         </div>
         <FormSheet triggerLabel="Add Sub-Branch" title="Add Sub-Branch" description="Create a new sub-branch under a parent branch.">
           {(close) => <SubBranchForm onClose={close} />}
         </FormSheet>
       </div>
-
-      <Separator />
 
       <div className="flex items-center gap-2">
         <label className="text-sm font-medium text-slate-700">Filter by Parent Branch:</label>
@@ -142,7 +140,7 @@ export default function SubBranchesPage() {
         <div className="flex justify-center p-8 text-destructive">Failed to load sub-branches.</div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{subBranches?.length ?? 0} sub-branches</p>
+          {/* <p className="text-sm text-muted-foreground">{subBranches?.length ?? 0} sub-branches</p> */}
           <DataTable<SubBranch>
             data={subBranches || []}
             pageSize={10}

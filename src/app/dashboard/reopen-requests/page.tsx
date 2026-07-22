@@ -15,14 +15,12 @@ export default function ReopenRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reopen Requests</h1>
-          <p className="text-muted-foreground">History of service requests reopened via customer feedback.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Reopen Requests</h1>
+          <p className="text-[13px] text-muted-foreground">History of service requests reopened via customer feedback.</p>
         </div>
       </div>
-
-      <Separator />
 
       <Card className="border-orange-200">
         <CardHeader className="bg-orange-50/50">
@@ -40,7 +38,7 @@ export default function ReopenRequestsPage() {
             <div className="flex justify-center p-8 text-destructive">Failed to load reopen requests.</div>
           ) : (
             <>
-            <p className="text-sm text-muted-foreground mb-2">{reopenRequests?.length ?? 0} reopened tickets</p>
+            {/* <p className="text-sm text-muted-foreground mb-2">{reopenRequests?.length ?? 0} reopened tickets</p> */}
             <DataTable<ReopenRequest>
               data={reopenRequests || []}
               pageSize={10}

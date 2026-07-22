@@ -14,13 +14,13 @@ export default function LeadsListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leads (List View)</h1>
-          <p className="text-muted-foreground">Tabular view of all leads for bulk operations.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Leads (List View)</h1>
+          <p className="text-[13px] text-muted-foreground">Tabular view of all leads for bulk operations.</p>
         </div>
         <div className="space-x-2">
-          <Button variant="outline" render={<Link href="/dashboard/leads" />}>
+          <Button size="sm" variant="outline" render={<Link href="/dashboard/leads" />}>
             Pipeline View
           </Button>
           <Button render={<Link href="/dashboard/leads/import" />}>
@@ -28,8 +28,6 @@ export default function LeadsListPage() {
           </Button>
         </div>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading leads...</div>

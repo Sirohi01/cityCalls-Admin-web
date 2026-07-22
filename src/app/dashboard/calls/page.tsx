@@ -15,17 +15,15 @@ export default function CallsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Call Logs</h1>
-          <p className="text-muted-foreground">View and manage history of incoming and outgoing calls.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Call Logs</h1>
+          <p className="text-[13px] text-muted-foreground">View and manage history of incoming and outgoing calls.</p>
         </div>
-        <Button render={<Link href="/dashboard/calls/entry" />}>
+        <Button size="sm" render={<Link href="/dashboard/calls/entry" />}>
           Log New Call
         </Button>
       </div>
-
-      <Separator />
 
       {isLoading ? (
         <div className="flex justify-center p-8 text-muted-foreground">Loading calls...</div>
@@ -33,7 +31,7 @@ export default function CallsPage() {
         <div className="flex justify-center p-8 text-destructive">Failed to load calls.</div>
       ) : (
         <>
-        <p className="text-sm text-muted-foreground">{calls?.length ?? 0} calls</p>
+        {/* <p className="text-sm text-muted-foreground">{calls?.length ?? 0} calls</p> */}
         <DataTable<Call>
           data={calls || []}
           pageSize={10}

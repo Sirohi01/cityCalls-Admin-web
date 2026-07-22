@@ -350,22 +350,20 @@ export default function CallEntryPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Log New Call</h1>
-          <p className="text-muted-foreground">Number → area check → customer &amp; service, all in one go.</p>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Log New Call</h1>
+          <p className="text-[13px] text-muted-foreground">Number → area check → customer &amp; service, all in one go.</p>
         </div>
-        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
-
-      <Separator />
 
       {/* Step 1: Number */}
       {step === 'number' && (
-        <Card>
+        <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Phone className="w-4 h-4" /> Caller Number</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base"><Phone className="w-4 h-4 text-primary" /> Caller Number</CardTitle>
             <CardDescription>Start with the customer&apos;s mobile number — we&apos;ll check if they&apos;re already with us.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -387,7 +385,7 @@ export default function CallEntryPage() {
             {lookupMobile.isError && <p className="text-sm text-destructive">Failed to check this number. Try again.</p>}
             {existingCustomerError && <p className="text-sm text-destructive">{existingCustomerError}</p>}
           </CardContent>
-          <CardFooter className="justify-end bg-muted/50 p-6">
+          <CardFooter className="justify-end bg-muted/30 p-4 border-t">
             <Button className="gap-2" onClick={handleCheckNumber} disabled={mobile.length < 10 || lookupMobile.isPending || !!matchedCustomerId}>
               <Search className="w-4 h-4" /> {lookupMobile.isPending || matchedCustomerId ? 'Checking...' : 'Check Number'}
             </Button>
@@ -397,9 +395,9 @@ export default function CallEntryPage() {
 
       {/* Step 2: Pincode */}
       {step === 'pincode' && (
-        <Card>
+        <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Service Area</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base"><MapPin className="w-4 h-4 text-primary" /> Service Area</CardTitle>
             <CardDescription>
               {noMatchFound
                 ? 'No existing customer found for this number. '
@@ -413,7 +411,7 @@ export default function CallEntryPage() {
             <AppFormField label="Pincode" placeholder="e.g. 201017" value={pincode} onChange={(e) => setPincode(e.target.value)} />
             {checkPincode.isError && <p className="text-sm text-destructive">Failed to check this pincode. Try again.</p>}
           </CardContent>
-          <CardFooter className="justify-between bg-muted/50 p-6">
+          <CardFooter className="justify-between bg-muted/30 p-4 border-t">
             <Button variant="ghost" className="gap-2" onClick={() => setStep('number')}><ArrowLeft className="w-4 h-4" /> Back</Button>
             <Button className="gap-2" onClick={handleCheckArea} disabled={pincode.length < 4 || checkPincode.isPending}>
               <Search className="w-4 h-4" /> {checkPincode.isPending ? 'Checking...' : 'Check Area'}
@@ -424,10 +422,10 @@ export default function CallEntryPage() {
 
       {/* Step: Not serviceable -> waitlist */}
       {step === 'waitlist' && (
-        <Card className="border-amber-200">
+        <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2 border-amber-200">
           <CardHeader className="bg-amber-50/50">
-            <CardTitle className="flex items-center gap-2 text-amber-800"><XCircle className="w-4 h-4" /> We Don&apos;t Serve This Area Yet</CardTitle>
-            <CardDescription>
+            <CardTitle className="flex items-center gap-2 text-base text-amber-800"><XCircle className="w-4 h-4" /> We Don&apos;t Serve This Area Yet</CardTitle>
+            <CardDescription className="text-amber-900/70">
               {areaInfo?.city ? `${areaInfo.city}, ${areaInfo.state} (${pincode})` : `Pincode ${pincode}`} isn&apos;t in our service area yet.
               Save their details so we can notify them when we launch here.
             </CardDescription>
@@ -449,7 +447,7 @@ export default function CallEntryPage() {
               </div>
               {(createCustomer.isError || createCall.isError) && <p className="text-sm text-destructive">Failed to save. Please try again.</p>}
             </CardContent>
-            <CardFooter className="justify-between bg-muted/50 p-6">
+            <CardFooter className="justify-between bg-muted/30 p-4 border-t">
               <Button type="button" variant="ghost" className="gap-2" onClick={() => setStep('pincode')}><ArrowLeft className="w-4 h-4" /> Back</Button>
               <Button type="submit" disabled={createCustomer.isPending || createCall.isPending}>
                 {createCustomer.isPending || createCall.isPending ? 'Saving...' : 'Add to Waitlist & Log Call'}
@@ -461,146 +459,139 @@ export default function CallEntryPage() {
 
       {/* Step: Details (existing customer OR newly-serviceable) */}
       {step === 'details' && (
-        <form onSubmit={handleDetailsSubmit(onDetailsSubmit)} className="space-y-6">
-          {matchedCustomer && (
-            <Card className="border-green-200">
-              <CardContent className="pt-6 flex items-center gap-2 text-green-700 text-sm font-medium">
-                <CheckCircle2 className="w-4 h-4" /> Existing customer found — details pre-filled below.
-              </CardContent>
-            </Card>
-          )}
-          {areaInfo?.serviceable ? (
-            <Card className="border-green-200">
-              <CardContent className="pt-6 flex items-center gap-2 text-green-700 text-sm">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>
-                  Serviceable — <strong>{areaInfo.branchName}</strong>
-                  {areaInfo.subBranchName ? ` / ${areaInfo.subBranchName}` : ''}, {areaInfo.state}, {areaInfo.country}
-                </span>
-              </CardContent>
-            </Card>
-          ) : matchedCustomer && areaInfo && !areaInfo.serviceable ? (
-            <Card className="border-amber-200">
-              <CardContent className="pt-6 space-y-3 text-amber-800 text-sm">
-                <div className="flex items-center gap-2">
-                  <XCircle className="w-4 h-4 shrink-0" />
+        <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
+          <form onSubmit={handleDetailsSubmit(onDetailsSubmit)}>
+            <CardHeader className="space-y-4 pb-4">
+              {matchedCustomer && (
+                <div className="px-4 py-3 bg-green-50/50 rounded-lg border border-green-100 flex items-center gap-2 text-green-700 text-sm font-medium">
+                  <CheckCircle2 className="w-4 h-4" /> Existing customer found — details pre-filled below.
+                </div>
+              )}
+              {areaInfo?.serviceable ? (
+                <div className="px-4 py-3 bg-green-50/50 rounded-lg border border-green-100 flex items-center gap-2 text-green-700 text-sm">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>
-                    {areaCityLabel(areaInfo)}, {areaInfo.state} — {pincode} is outside our current service area.
+                    Serviceable — <strong>{areaInfo.branchName}</strong>
+                    {areaInfo.subBranchName ? ` / ${areaInfo.subBranchName}` : ''}, {areaInfo.state}, {areaInfo.country}
                   </span>
                 </div>
-                <p className="text-xs">Continue anyway, or check a different pincode for this visit — either way it stays the same customer, not a new one.</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <AppFormField
-                    label="Different pincode for this visit"
-                    placeholder="e.g. 110001"
-                    value={altPincode}
-                    onChange={(e) => setAltPincode(e.target.value)}
-                  />
-                  <Button type="button" size="sm" variant="outline" onClick={handleCheckAltPincode} disabled={altPincode.length < 4 || checkPincode.isPending}>
-                    {checkPincode.isPending ? 'Checking...' : 'Check This Pincode'}
-                  </Button>
+              ) : matchedCustomer && areaInfo && !areaInfo.serviceable ? (
+                <div className="px-4 py-3 bg-amber-50/50 rounded-lg border border-amber-100 space-y-3 text-amber-800 text-sm">
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    <span>
+                      {areaCityLabel(areaInfo)}, {areaInfo.state} — {pincode} is outside our current service area.
+                    </span>
+                  </div>
+                  <p className="text-xs">Continue anyway, or check a different pincode for this visit — either way it stays the same customer, not a new one.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <AppFormField
+                      label="Different pincode for this visit"
+                      placeholder="e.g. 110001"
+                      value={altPincode}
+                      onChange={(e) => setAltPincode(e.target.value)}
+                    />
+                    <Button type="button" size="sm" variant="outline" onClick={handleCheckAltPincode} disabled={altPincode.length < 4 || checkPincode.isPending}>
+                      {checkPincode.isPending ? 'Checking...' : 'Check This Pincode'}
+                    </Button>
+                  </div>
+                  {checkPincode.isError && <p className="text-xs text-destructive">Couldn&apos;t check that pincode — try again.</p>}
                 </div>
-                {checkPincode.isError && <p className="text-xs text-destructive">Couldn&apos;t check that pincode — try again.</p>}
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer &amp; Address</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <AppFormField label="Customer Name" error={detailsErrors.name?.message} {...registerDetails('name', { required: 'Name is required' })} disabled={!!matchedCustomer} />
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Customer Type</label>
-                  <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={!!matchedCustomer} {...registerDetails('customerType')}>
-                    {customerTypeMasters?.map((t) => <option key={t._id} value={t.key}>{t.label}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <AppFormField label="Address Line 1 (Optional)" error={detailsErrors.line1?.message} {...registerDetails('line1')} />
-                <AppFormField label="Address Line 2 (Optional)" {...registerDetails('line2')} />
-              </div>
-              <AppFormField label="Landmark (Optional)" {...registerDetails('landmark')} />
-              {defaultAddress && !useNewAddress ? (
-                <p className="text-xs text-muted-foreground">{defaultAddress.city}, {defaultAddress.state} — {defaultAddress.pinCode}</p>
-              ) : areaInfo ? (
-                <p className="text-xs text-muted-foreground">
-                  {useNewAddress && 'New address for this visit — '}
-                  {areaCityLabel(areaInfo)}{areaInfo.subBranchName ? `, ${areaInfo.subBranchName}` : ''}, {areaInfo.state} — {pincode}
-                </p>
               ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Details (Optional)</CardTitle>
-              <CardDescription>Which appliance is this about?</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Brand</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('brandId')}>
-                  <option value="">Select...</option>
-                  {(brands || []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Product Type</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('productTypeId')}>
-                  <option value="">Select...</option>
-                  {productTypes.map((p) => <option key={p._id} value={p._id}>{p.label}</option>)}
-                </select>
-              </div>
-              <AppFormField label="Approx. Age (Years)" type="number" min={0} {...registerDetails('ageYears')} />
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Request</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Service</label>
-                  <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('serviceId', { required: 'Select a service' })}>
-                    <option value="">Select a service...</option>
-                    {(services || []).map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-                  </select>
-                  {detailsErrors.serviceId && <p className="text-sm text-destructive">{detailsErrors.serviceId.message}</p>}
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <h2 className="text-base font-semibold text-foreground border-b border-border/50 pb-1 mb-2">Customer &amp; Address</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <AppFormField label="Customer Name" error={detailsErrors.name?.message} {...registerDetails('name', { required: 'Name is required' })} disabled={!!matchedCustomer} />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Customer Type</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={!!matchedCustomer} {...registerDetails('customerType')}>
+                      {customerTypeMasters?.map((t) => <option key={t._id} value={t.key}>{t.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <AppFormField label="Address Line 1 (Optional)" error={detailsErrors.line1?.message} {...registerDetails('line1')} />
+                  <AppFormField label="Address Line 2 (Optional)" {...registerDetails('line2')} />
+                </div>
+                <AppFormField label="Landmark (Optional)" {...registerDetails('landmark')} />
+                {defaultAddress && !useNewAddress ? (
+                  <p className="text-[13px] text-muted-foreground">{defaultAddress.city}, {defaultAddress.state} — {defaultAddress.pinCode}</p>
+                ) : areaInfo ? (
+                  <p className="text-[13px] text-muted-foreground">
+                    {useNewAddress && 'New address for this visit — '}
+                    {areaCityLabel(areaInfo)}{areaInfo.subBranchName ? `, ${areaInfo.subBranchName}` : ''}, {areaInfo.state} — {pincode}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
+                  <h2 className="text-base font-semibold text-foreground">Product Details (Optional)</h2>
+                  <p className="text-[13px] text-muted-foreground">Which appliance is this about?</p>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Brand</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('brandId')}>
+                      <option value="">Select...</option>
+                      {(brands || []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Product Type</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('productTypeId')}>
+                      <option value="">Select...</option>
+                      {productTypes.map((p) => <option key={p._id} value={p._id}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <AppFormField label="Approx. Age (Years)" type="number" min={0} {...registerDetails('ageYears')} />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <h2 className="text-base font-semibold text-foreground border-b border-border/50 pb-1 mb-2">Service Request</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Service</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('serviceId', { required: 'Select a service' })}>
+                      <option value="">Select a service...</option>
+                      {(services || []).map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+                    </select>
+                    {detailsErrors.serviceId && <p className="text-sm text-destructive">{detailsErrors.serviceId.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Priority</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('priority')}>
+                      <option value="LOW">Low</option>
+                      <option value="NORMAL">Normal</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Priority</label>
-                  <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('priority')}>
-                    <option value="LOW">Low</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="HIGH">High</option>
-                    <option value="URGENT">Urgent</option>
+                  <label className="text-sm font-medium">Preferred Appointment Slot (Optional)</label>
+                  <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('appointmentSlot')}>
+                    <option value="">No preference</option>
+                    {appointmentSlots.map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Issue / Symptoms</label>
+                  <textarea
+                    {...registerDetails('symptoms')}
+                    className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="Describe the issue reported by the customer..."
+                  />
+                </div>
+                {submitError && <p className="text-sm text-destructive">{submitError}</p>}
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Preferred Appointment Slot (Optional)</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...registerDetails('appointmentSlot')}>
-                  <option value="">No preference</option>
-                  {appointmentSlots.map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Issue / Symptoms</label>
-                <textarea
-                  {...registerDetails('symptoms')}
-                  className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder="Describe the issue reported by the customer..."
-                />
-              </div>
-              {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             </CardContent>
-            <CardFooter className="justify-between bg-muted/50 p-6">
+
+            <CardFooter className="justify-between bg-muted/30 p-4 border-t">
               <Button
                 type="button"
                 variant="ghost"
@@ -623,8 +614,8 @@ export default function CallEntryPage() {
                 {submitting ? 'Saving...' : 'Save Call & Create Service Request'}
               </Button>
             </CardFooter>
-          </Card>
-        </form>
+          </form>
+        </Card>
       )}
     </div>
   );
