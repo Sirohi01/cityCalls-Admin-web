@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // Picsum is the placeholder image host used by
+      // scripts/backfillServiceDetails.ts / seedSampleOperationalData.ts's
+      // seeded catalog thumbnails (stored with provider: 'CLOUDINARY' since
+      // that's the closer-to-real shape, even though the URL isn't actually
+      // a Cloudinary one) — without this, next/image silently refuses to
+      // render them here even though the mobile app's Image.network has no
+      // such allowlist and displays them fine.
+      { protocol: "https", hostname: "picsum.photos" },
       {
         protocol: apiOrigin.protocol.replace(":", "") as "http" | "https",
         hostname: apiOrigin.hostname,

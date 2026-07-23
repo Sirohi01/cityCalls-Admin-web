@@ -5,9 +5,11 @@ import { AxiosError } from 'axios';
 export interface CatalogService {
   _id: string;
   name: string;
+  description?: string;
   categoryId?: string;
   symptomIds?: string[];
   pricing?: { basePrice: number; visitingCharge: number; inspectionCharge: number; emergencyCharge: number };
+  expectedDurationMinutes?: number;
   warrantyPeriodDays?: number;
   slaMinutes?: number;
   active: boolean;
@@ -36,8 +38,10 @@ export function useCatalogService(id: string) {
 
 export interface CreateCatalogServiceInput {
   name: string;
+  description?: string;
   categoryId: string;
   pricing?: { basePrice?: number; visitingCharge?: number; inspectionCharge?: number; emergencyCharge?: number };
+  expectedDurationMinutes?: number;
   warrantyPeriodDays?: number;
   active?: boolean;
 }

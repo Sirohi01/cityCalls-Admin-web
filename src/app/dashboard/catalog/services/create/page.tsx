@@ -13,8 +13,11 @@ import { useMasters } from '@/lib/hooks/useMasters';
 
 const createServiceSchema = z.object({
   name: z.string().min(2, 'Name is required'),
+  description: z.string().optional(),
   categoryId: z.string().min(1, 'Select a category'),
   basePrice: z.number().min(0),
+  visitingCharge: z.number().min(0),
+  expectedDurationMinutes: z.number().min(1),
   active: z.boolean(),
 });
 type CreateServiceValues = z.infer<typeof createServiceSchema>;
@@ -25,12 +28,19 @@ export default function CreateServicePage() {
   const { data: categories } = useMasters(['SERVICE_CATEGORY']);
   const { register, handleSubmit, formState: { errors } } = useForm<CreateServiceValues>({
     resolver: zodResolver(createServiceSchema),
-    defaultValues: { active: true },
+    defaultValues: { active: true, visitingCharge: 0, expectedDurationMinutes: 60 },
   });
 
   const onSubmit = (values: CreateServiceValues) => {
     createService.mutate(
-      { name: values.name, categoryId: values.categoryId, pricing: { basePrice: values.basePrice }, active: values.active },
+      {
+        name: values.name,
+        description: values.description,
+        categoryId: values.categoryId,
+        pricing: { basePrice: values.basePrice, visitingCharge: values.visitingCharge },
+        expectedDurationMinutes: values.expectedDurationMinutes,
+        active: values.active,
+      },
       { onSuccess: () => router.push('/dashboard/catalog/services') }
     );
   };
@@ -64,6 +74,15 @@ export default function CreateServicePage() {
                   {...register('name')}
                 />
 
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium leading-none">Description</label>
+                  <textarea
+                    placeholder="What's included in this service, what to expect, etc."
+                    className="flex min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    {...register('description')}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Category</label>
@@ -83,6 +102,24 @@ export default function CreateServicePage() {
                     placeholder="499"
                     error={errors.basePrice?.message}
                     {...register('basePrice', { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <AppFormField
+                    label="Visiting Charge (₹)"
+                    type="number"
+                    placeholder="99"
+                    error={errors.visitingCharge?.message}
+                    {...register('visitingCharge', { valueAsNumber: true })}
+                  />
+
+                  <AppFormField
+                    label="Expected Duration (minutes)"
+                    type="number"
+                    placeholder="60"
+                    error={errors.expectedDurationMinutes?.message}
+                    {...register('expectedDurationMinutes', { valueAsNumber: true })}
                   />
                 </div>
 

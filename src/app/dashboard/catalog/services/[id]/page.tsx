@@ -18,8 +18,11 @@ import { useMasters } from '@/lib/hooks/useMasters';
 
 const updateServiceSchema = z.object({
   name: z.string().min(2, 'Name is required'),
+  description: z.string().optional(),
   categoryId: z.string().min(1, 'Select a category'),
   basePrice: z.number().min(0),
+  visitingCharge: z.number().min(0),
+  expectedDurationMinutes: z.number().min(1),
   warrantyPeriodDays: z.number().min(0),
 });
 type UpdateServiceValues = z.infer<typeof updateServiceSchema>;
@@ -57,8 +60,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
   const handleEditClick = () => {
     reset({
       name: service.name,
+      description: service.description ?? '',
       categoryId: service.categoryId ?? '',
       basePrice: service.pricing?.basePrice ?? 0,
+      visitingCharge: service.pricing?.visitingCharge ?? 0,
+      expectedDurationMinutes: service.expectedDurationMinutes ?? 60,
       warrantyPeriodDays: service.warrantyPeriodDays ?? 0,
     });
     setIsEditing(true);
@@ -66,11 +72,13 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
 
   const onUpdateDetails = (values: UpdateServiceValues) => {
     updateService.mutate(
-      { 
-        name: values.name, 
-        categoryId: values.categoryId, 
-        pricing: { ...service.pricing, basePrice: values.basePrice },
-        warrantyPeriodDays: values.warrantyPeriodDays
+      {
+        name: values.name,
+        description: values.description,
+        categoryId: values.categoryId,
+        pricing: { ...service.pricing, basePrice: values.basePrice, visitingCharge: values.visitingCharge },
+        expectedDurationMinutes: values.expectedDurationMinutes,
+        warrantyPeriodDays: values.warrantyPeriodDays,
       },
       { onSuccess: () => setIsEditing(false) }
     );
@@ -114,6 +122,13 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
               <CardContent className="space-y-4">
                 <AppFormField label="Name" error={errors.name?.message} {...register('name')} />
                 <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="flex min-h-[90px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    {...register('description')}
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Category</label>
                   <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('categoryId')}>
                     <option value="">Select category...</option>
@@ -124,6 +139,10 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
                 <div className="grid grid-cols-2 gap-4">
                   <AppFormField label="Base Price (₹)" type="number" error={errors.basePrice?.message} {...register('basePrice', { valueAsNumber: true })} />
                   <AppFormField label="Warranty (Days)" type="number" error={errors.warrantyPeriodDays?.message} {...register('warrantyPeriodDays', { valueAsNumber: true })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <AppFormField label="Visiting Charge (₹)" type="number" error={errors.visitingCharge?.message} {...register('visitingCharge', { valueAsNumber: true })} />
+                  <AppFormField label="Duration (minutes)" type="number" error={errors.expectedDurationMinutes?.message} {...register('expectedDurationMinutes', { valueAsNumber: true })} />
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
@@ -140,9 +159,19 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
                 <span className="font-medium">{categoryLabel}</span>
                 <span className="text-muted-foreground">Base Price:</span>
                 <span className="font-medium">₹{(service.pricing?.basePrice ?? 0).toLocaleString('en-IN')}</span>
+                <span className="text-muted-foreground">Visiting Charge:</span>
+                <span className="font-medium">₹{(service.pricing?.visitingCharge ?? 0).toLocaleString('en-IN')}</span>
+                <span className="text-muted-foreground">Duration:</span>
+                <span className="font-medium">{service.expectedDurationMinutes ?? 60} minutes</span>
                 <span className="text-muted-foreground">Warranty:</span>
                 <span className="font-medium">{service.warrantyPeriodDays ?? 0} days</span>
               </div>
+              {service.description && (
+                <div className="pt-2 border-t">
+                  <span className="text-muted-foreground text-sm">Description:</span>
+                  <p className="text-sm mt-1">{service.description}</p>
+                </div>
+              )}
             </CardContent>
           )}
         </Card>
