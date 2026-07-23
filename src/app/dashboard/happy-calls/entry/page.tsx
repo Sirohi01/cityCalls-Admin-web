@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Star } from 'lucide-react';
-import { Suspense, useState } from 'react';
-import { useRecordHappyCallOutcome } from '@/lib/hooks/useHappyCalls';
+import { Suspense, useEffect, useState } from 'react';
+import { useHappyCall, useRecordHappyCallOutcome } from '@/lib/hooks/useHappyCalls';
 
 export default function HappyCallEntryPage() {
   return (
@@ -20,11 +20,19 @@ function HappyCallEntryForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const happyCallId = searchParams.get('id') ?? '';
+  const { data: existing } = useHappyCall(happyCallId);
   const recordOutcome = useRecordHappyCallOutcome(happyCallId);
 
   const [resolved, setResolved] = useState<'yes' | 'no' | ''>('');
   const [rating, setRating] = useState(0);
   const [remarks, setRemarks] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (existing?.customerSatisfaction) setRating(existing.customerSatisfaction);
+      if (existing?.remarks) setRemarks(existing.remarks);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [existing]);
 
   const handleSubmit = () => {
     if (!happyCallId) return;
@@ -53,9 +61,15 @@ function HappyCallEntryForm() {
         <p className="text-sm text-destructive">No happy call selected — go back to the list and click &quot;Log Call&quot; on a pending entry.</p>
       )}
 
+      {existing?.customerSatisfaction && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+          This customer already submitted a rating and remarks in the app — pre-filled below. Review and submit to close out this follow-up, or adjust if you learned something new on the call.
+        </div>
+      )}
+
       <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
         <CardContent className="space-y-4">
-          
+
           <div className="space-y-3">
             <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
               <h2 className="text-sm font-semibold text-foreground">1. Was your issue completely resolved?</h2>

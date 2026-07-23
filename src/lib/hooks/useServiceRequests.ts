@@ -56,6 +56,8 @@ export interface ServiceRequest {
   completedAt?: string;
   symptoms?: string[];
   notes?: string;
+  scheduledDate?: string;
+  scheduledSlot?: string;
   addressSnapshot?: ServiceRequestAddress;
   customerId?: string;
   serviceId?: string;

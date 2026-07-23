@@ -77,7 +77,14 @@ export default function HappyCallsPage() {
                 {
                   key: 'status',
                   header: 'Status',
-                  render: (item) => <StatusBadge label={item.status} category={item.status === 'COMPLETED' ? 'success' : 'warning'} />,
+                  render: (item) => (
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge label={item.status} category={item.status === 'COMPLETED' ? 'success' : 'warning'} />
+                      {item.status !== 'COMPLETED' && item.customerSatisfaction && (
+                        <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">Customer responded in-app</span>
+                      )}
+                    </div>
+                  ),
                 },
                 {
                   key: 'action',

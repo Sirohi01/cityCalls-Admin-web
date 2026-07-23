@@ -164,6 +164,15 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
                 <span className="font-medium">{applianceLabel}{ticket.customerProduct?.modelNumber ? ` (${ticket.customerProduct.modelNumber})` : ''}</span>
                 <span className="text-muted-foreground">Warranty Status:</span>
                 <span className={`font-medium ${warranty.className}`}>{warranty.text}</span>
+                {ticket.scheduledDate && (
+                  <>
+                    <span className="text-muted-foreground">Scheduled Appointment:</span>
+                    <span className="font-medium">
+                      {new Date(ticket.scheduledDate).toLocaleDateString()}
+                      {ticket.scheduledSlot ? ` • ${ticket.scheduledSlot}` : ''}
+                    </span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
