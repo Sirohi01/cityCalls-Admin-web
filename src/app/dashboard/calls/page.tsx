@@ -1,17 +1,39 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useCalls, Call } from '@/lib/hooks/useCalls';
+import { useCalls, Call, useDeleteCall } from '@/lib/hooks/useCalls';
 
 export default function CallsPage() {
   const router = useRouter();
-  const { data: calls, isLoading, isError } = useCalls();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: calls, isLoading, isError } = useCalls({ q: debouncedSearch || undefined });
+  const deleteCall = useDeleteCall();
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteCall.mutate(id, {
+      onSuccess: () => toast.success('Call log deleted successfully'),
+      onError: () => toast.error('Failed to delete call log'),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -20,9 +42,21 @@ export default function CallsPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Call Logs</h1>
           <p className="text-[13px] text-muted-foreground">View and manage history of incoming and outgoing calls.</p>
         </div>
-        <Button size="sm" render={<Link href="/dashboard/calls/entry" />}>
-          Log New Call
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button size="sm" render={<Link href="/dashboard/calls/entry" />}>
+            Log New Call
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -54,6 +88,23 @@ export default function CallsPage() {
               ),
             },
             { key: 'createdAt', header: 'Date & Time', render: (item) => new Date(item.createdAt).toLocaleString() },
+            {
+              key: 'actions',
+              header: 'Action',
+              render: (item) => (
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/dashboard/calls/${item._id}`);
+                  }}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleDelete(e, item._id)} disabled={deleteCall.isPending}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ),
+            },
           ]}
         />
         </>

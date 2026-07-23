@@ -55,3 +55,26 @@ export function useSendCampaign() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
   });
 }
+
+export function useUpdateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<Campaign, AxiosError<ApiErrorEnvelope>, Partial<CreateCampaignInput> & { id: string }>({
+    mutationFn: async ({ id, ...input }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Campaign>>(`/campaigns/${id}`, input);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
+  });
+}
+
+export function useDeleteCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/campaigns/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}

@@ -7,8 +7,10 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useServiceRequests, stageForStatus } from '@/lib/hooks/useServiceRequests';
+import { useServiceRequests, stageForStatus, useDeleteServiceRequest } from '@/lib/hooks/useServiceRequests';
 
 export default function ServiceRequestsPage() {
   return (
@@ -23,6 +25,16 @@ function ServiceRequestsPageContent() {
   const searchParams = useSearchParams();
   const vertical = searchParams.get('vertical') ?? undefined;
   const { data: tickets, isLoading, isError } = useServiceRequests({ vertical });
+  const deleteServiceRequest = useDeleteServiceRequest();
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteServiceRequest.mutate(id, {
+      onSuccess: () => {
+        toast.success('Service request deleted successfully');
+      }
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -91,6 +103,23 @@ function ServiceRequestsPageContent() {
               key: 'createdAt', 
               header: 'Created On',
               render: (item) => new Date(item.createdAt).toLocaleDateString()
+            },
+            {
+              key: 'actions',
+              header: 'Action',
+              render: (item) => (
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/dashboard/service-requests/${item._id}`);
+                  }}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleDelete(e, item._id)} disabled={deleteServiceRequest.isPending}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ),
             },
           ]}
         />

@@ -49,7 +49,7 @@ function CreateEstimateForm() {
   return (
     <Card className="max-w-4xl">
       <CardHeader>
-        <CardTitle>Generate New Estimate</CardTitle>
+        <CardTitle>2</CardTitle>
         <CardDescription>Select a customer and branch, then add line items for spares and labor.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>

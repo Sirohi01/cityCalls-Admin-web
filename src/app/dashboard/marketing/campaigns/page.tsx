@@ -1,16 +1,20 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppFormField } from '@/components/ui/AppFormField';
+import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Megaphone, Users, Send } from 'lucide-react';
+import { Megaphone, Users, Send, Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign } from '@/lib/hooks/useCampaigns';
+import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { useNotificationTemplates } from '@/lib/hooks/useNotificationTemplates';
 import { useMasters, Master } from '@/lib/hooks/useMasters';
 
@@ -146,10 +150,97 @@ function CreateCampaignForm() {
   );
 }
 
+function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
+  const updateCampaign = useUpdateCampaign();
+  const { data: templates } = useNotificationTemplates();
+  const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
+  const { register, handleSubmit, control } = useForm<CampaignFormValues>({
+    defaultValues: {
+      name: campaign.name,
+      channel: campaign.channel,
+      templateId: campaign.templateId,
+      tags: campaign.audienceFilter.tags?.join(', ') || '',
+      segments: campaign.audienceFilter.segments?.join(', ') || '',
+      customerType: campaign.audienceFilter.customerType || '',
+      scheduledAt: campaign.scheduledAt || '',
+    },
+  });
+  const channel = useWatch({ control, name: 'channel' });
+  const eligibleTemplates = (templates || []).filter((t) => t.channel === channel);
+
+  const onSubmit = (values: CampaignFormValues) => {
+    updateCampaign.mutate(
+      {
+        id: campaign._id,
+        name: values.name,
+        channel: values.channel,
+        templateId: values.templateId,
+        audienceFilter: {
+          tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+          segments: values.segments ? values.segments.split(',').map((s) => s.trim()).filter(Boolean) : [],
+          customerType: values.customerType || undefined,
+        },
+        scheduledAt: values.scheduledAt || undefined,
+      },
+      { onSuccess: onClose }
+    );
+  };
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="Campaign Name" {...register('name', { required: true })} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Channel</label>
+        <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" {...register('channel', { required: true })}>
+          <option value="WHATSAPP">WhatsApp</option>
+          <option value="EMAIL">Email</option>
+        </select>
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Message Template</label>
+        <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" {...register('templateId', { required: true })}>
+          <option value="">Select template...</option>
+          {eligibleTemplates.map((t) => <option key={t._id} value={t._id}>{t.triggerKey}</option>)}
+        </select>
+      </div>
+      <AppFormField label="Tags (comma-separated)" {...register('tags')} />
+      <AppFormField label="Segments (comma-separated)" {...register('segments')} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Customer Type</label>
+        <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
+          <option value="">Any</option>
+          {customerTypes?.map((t) => <option key={t._id} value={t.key}>{t.label}</option>)}
+        </select>
+      </div>
+      <Button type="submit" className="w-full" disabled={updateCampaign.isPending}>
+        {updateCampaign.isPending ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </form>
+  );
+}
+
 export default function CampaignsPage() {
   const { data: campaigns, isLoading, isError } = useCampaigns();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const sendCampaign = useSendCampaign();
+  const deleteCampaign = useDeleteCampaign();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredCampaigns = useMemo(() => {
+    if (!campaigns) return [];
+    if (!searchTerm) return campaigns;
+    const lowerQ = searchTerm.toLowerCase();
+    return campaigns.filter(c => 
+      c.name.toLowerCase().includes(lowerQ) ||
+      c.status.toLowerCase().includes(lowerQ)
+    );
+  }, [campaigns, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    deleteCampaign.mutate(id, {
+      onSuccess: () => toast.success('Campaign deleted successfully'),
+      onError: () => toast.error('Failed to delete campaign'),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -161,10 +252,23 @@ export default function CampaignsPage() {
       </div>
 
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="list">All Campaigns</TabsTrigger>
-          <TabsTrigger value="create">Launch New Campaign</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList>
+            <TabsTrigger value="list">All Campaigns</TabsTrigger>
+            <TabsTrigger value="create">Launch New Campaign</TabsTrigger>
+          </TabsList>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search campaigns..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
 
         <TabsContent value="list">
           <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
@@ -177,7 +281,7 @@ export default function CampaignsPage() {
                 <>
                 {/* <p className="text-sm text-muted-foreground mb-2">{campaigns?.length ?? 0} campaigns</p> */}
                 <DataTable<Campaign>
-                  data={campaigns || []}
+                  data={filteredCampaigns}
                   pageSize={10}
                   columns={[
                     { key: 'name', header: 'Campaign Name' },
@@ -200,20 +304,32 @@ export default function CampaignsPage() {
                     { key: 'createdAt', header: 'Created On', render: (item) => new Date(item.createdAt).toLocaleDateString() },
                     {
                       key: 'action',
-                      header: '',
-                      render: (item) =>
-                        item.status === 'DRAFT' || item.status === 'SCHEDULED' ? (
-                          <Button
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700 gap-1"
-                            onClick={() => sendCampaign.mutate(item._id)}
-                            disabled={sendCampaign.isPending}
+                      header: 'Action',
+                      render: (item) => (
+                        <div className="flex items-center gap-2">
+                          {item.status === 'DRAFT' || item.status === 'SCHEDULED' ? (
+                            <Button
+                              size="sm"
+                              className="bg-indigo-600 hover:bg-indigo-700 gap-1"
+                              onClick={() => sendCampaign.mutate(item._id)}
+                              disabled={sendCampaign.isPending}
+                            >
+                              <Send className="w-3 h-3" /> Send Now
+                            </Button>
+                          ) : null}
+                          <FormSheet
+                            triggerLabel="Edit"
+                            title="Edit Campaign"
+                            description={`Update details for ${item.name}`}
+                            triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
                           >
-                            <Send className="w-3 h-3" /> Send Now
+                            {(close) => <UpdateCampaignForm campaign={item} onClose={close} />}
+                          </FormSheet>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteCampaign.isPending}>
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        ),
+                        </div>
+                      ),
                     },
                   ]}
                 />

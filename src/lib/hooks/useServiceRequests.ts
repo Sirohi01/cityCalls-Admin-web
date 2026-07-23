@@ -181,6 +181,18 @@ export function useServiceRequest(id: string) {
   });
 }
 
+export function useDeleteServiceRequest() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/service-requests/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-requests'] });
+    },
+  });
+}
+
 export interface CreateServiceRequestInput {
   customerId: string;
   customerProductId?: string;

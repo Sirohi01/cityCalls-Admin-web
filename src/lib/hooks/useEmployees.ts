@@ -54,6 +54,7 @@ export function useCreateEmployee() {
 
 export interface UpdateEmployeeInput {
   id: string;
+  userId?: string;
   branchId?: string;
   subBranchId?: string;
   teamId?: string;
@@ -69,6 +70,18 @@ export function useUpdateEmployee() {
     mutationFn: async ({ id, ...input }) => {
       const res = await apiClient.patch<ApiSuccessEnvelope<Employee>>(`/employees/${id}`, input);
       return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useDeleteEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/employees/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });

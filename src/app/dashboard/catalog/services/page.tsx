@@ -7,8 +7,10 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useCatalogServices, CatalogService } from '@/lib/hooks/useCatalogServices';
+import { useCatalogServices, CatalogService, useDeleteCatalogService } from '@/lib/hooks/useCatalogServices';
 import { useMasters } from '@/lib/hooks/useMasters';
 
 export default function ServicesPage() {
@@ -25,7 +27,18 @@ function ServicesPageContent() {
   const vertical = searchParams.get('vertical') ?? undefined;
   const { data: services, isLoading, isError } = useCatalogServices({ vertical });
   const { data: categories } = useMasters(['SERVICE_CATEGORY']);
+  const deleteService = useDeleteCatalogService();
   const categoryLabel = (id?: string) => categories?.find((c) => c._id === id)?.label ?? 'N/A';
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteService.mutate(id);
+  };
+
+  const handleEdit = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    router.push(`/dashboard/catalog/services/${id}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -58,6 +71,20 @@ function ServicesPageContent() {
               key: 'active',
               header: 'Status',
               render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+            },
+            {
+              key: 'actions',
+              header: 'Action',
+              render: (item) => (
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={(e) => handleEdit(e, item._id)}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleDelete(e, item._id)} disabled={deleteService.isPending}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ),
             },
           ]}
         />

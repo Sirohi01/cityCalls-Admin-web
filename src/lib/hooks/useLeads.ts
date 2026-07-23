@@ -35,11 +35,11 @@ export interface Lead {
   createdAt: string;
 }
 
-export function useLeads(params?: { stage?: (typeof LEAD_STAGES)[number]; limit?: number }, options?: { enabled?: boolean }) {
+export function useLeads(params?: { stage?: (typeof LEAD_STAGES)[number]; limit?: number; q?: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['leads', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Lead[]>>('/leads', { params });
+      const res = await apiClient.get<ApiSuccessEnvelope<Lead[]>>('/leads', { params: { limit: 100, ...params } });
       return res.data.data;
     },
     enabled: options?.enabled ?? true,
@@ -89,6 +89,29 @@ export function useCreateLead() {
   });
 }
 
+export interface UpdateLeadInput {
+  contactName?: string;
+  contactMobile?: string;
+  source?: string;
+  priority?: string;
+  productInterest?: string;
+  requirement?: string;
+}
+
+export function useUpdateLead(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation<Lead, AxiosError<ApiErrorEnvelope>, UpdateLeadInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Lead>>(`/leads/${id}`, input);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', id] });
+    },
+  });
+}
+
 export function useChangeLeadStage(id: string) {
   const queryClient = useQueryClient();
   return useMutation<Lead, AxiosError<ApiErrorEnvelope>, { toStage: string; lostReason?: string }>({
@@ -134,6 +157,18 @@ export function useConvertLead(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', id] });
+    },
+  });
+}
+
+export function useDeleteLead() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/leads/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
   });
 }

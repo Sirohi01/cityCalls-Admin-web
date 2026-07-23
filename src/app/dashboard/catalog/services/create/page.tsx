@@ -36,7 +36,7 @@ export default function CreateServicePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6">
       <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
         <div>
           <h1 className="text-lg font-medium tracking-tight text-foreground">Add Service</h1>
@@ -45,40 +45,81 @@ export default function CreateServicePage() {
         <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Service Details</CardTitle>
-            <CardDescription>Enter the service name, pricing, and category.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <AppFormField label="Service Name" placeholder="e.g. AC Gas Refill" error={errors.name?.message} {...register('name')} />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Category</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('categoryId')}>
-                  <option value="">Select a category...</option>
-                  {(categories || []).map((c) => <option key={c._id} value={c._id}>{c.label}</option>)}
-                </select>
-                {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <div className="max-w-3xl mx-auto">
+          <Card className="border shadow-sm overflow-hidden">
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-1 pb-3 border-b">
+                <h2 className="text-lg font-semibold text-foreground">General Details</h2>
+                <p className="text-sm text-muted-foreground">
+                  Provide basic information about the service including its name, pricing, and category.
+                </p>
               </div>
-              <AppFormField label="Base Price (₹)" type="number" placeholder="499" error={errors.basePrice?.message} {...register('basePrice', { valueAsNumber: true })} />
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="w-4 h-4" {...register('active')} />
-              Active (visible to customers immediately)
-            </label>
-            {createService.isError && (
-              <p className="text-sm text-destructive">{createService.error.response?.data?.message ?? 'Failed to create service.'}</p>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={createService.isPending}>
-              {createService.isPending ? 'Saving...' : 'Save Service'}
-            </Button>
-          </CardFooter>
-        </Card>
+
+              <div className="space-y-4">
+                <AppFormField
+                  label="Service Name"
+                  placeholder="e.g. AC Gas Refill"
+                  error={errors.name?.message}
+                  {...register('name')}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Category</label>
+                    <select
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      {...register('categoryId')}
+                    >
+                      <option value="">Select a category...</option>
+                      {(categories || []).map((c) => <option key={c._id} value={c._id}>{c.label}</option>)}
+                    </select>
+                    {errors.categoryId && <p className="text-[0.8rem] font-medium text-destructive">{errors.categoryId.message}</p>}
+                  </div>
+
+                  <AppFormField
+                    label="Base Price (₹)"
+                    type="number"
+                    placeholder="499"
+                    error={errors.basePrice?.message}
+                    {...register('basePrice', { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className="flex flex-row items-center justify-between rounded-md border bg-slate-50/50 p-3 shadow-sm mt-2">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium text-foreground">Active Status</label>
+                    <p className="text-[13px] text-muted-foreground">
+                      Make this service visible to customers immediately.
+                    </p>
+                  </div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-input cursor-pointer accent-primary"
+                      {...register('active')}
+                    />
+                  </div>
+                </div>
+
+                {createService.isError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                    <p className="text-sm text-destructive font-medium">{createService.error.response?.data?.message ?? 'Failed to create service.'}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+
+            <CardFooter className="bg-muted/40 border-t px-6 py-4 flex items-center justify-end gap-3">
+              <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={createService.isPending} className="min-w-[100px]">
+                {createService.isPending ? 'Saving...' : 'Save Service'}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       </form>
     </div>
   );

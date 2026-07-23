@@ -165,8 +165,8 @@ export default function MastersPage() {
   const updateMaster = useUpdateMaster();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between pb-1 mb-2 border-b border-border/50">
         <div>
           <h1 className="text-lg font-medium tracking-tight text-foreground">Masters Configuration</h1>
           <p className="text-[13px] text-muted-foreground">Manage system master lists — pick a type below to see only that list.</p>
@@ -176,15 +176,15 @@ export default function MastersPage() {
         </FormSheet>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b pb-4">
+      <div className="flex flex-wrap gap-1.5">
         {MASTER_TYPES.map((t) => (
           <button
             key={t}
             onClick={() => setSelectedType(t)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
               selectedType === t
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             {MASTER_TYPE_LABELS[t]}
@@ -192,58 +192,67 @@ export default function MastersPage() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <h2 className="text-xl font-semibold">{MASTER_TYPE_LABELS[selectedType]}</h2>
-        {!isLoading && !isError && <span className="text-sm text-muted-foreground">({masters?.length ?? 0} entries)</span>}
-      </div>
+      <div className="pt-2">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-slate-800">{MASTER_TYPE_LABELS[selectedType]}</h2>
+          {!isLoading && !isError && (
+            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+              {masters?.length ?? 0} entries
+            </span>
+          )}
+        </div>
 
-      {isLoading ? (
-        <div className="flex justify-center p-8 text-muted-foreground">Loading {MASTER_TYPE_LABELS[selectedType].toLowerCase()}...</div>
-      ) : isError ? (
-        <div className="flex justify-center p-8 text-destructive">Failed to load masters.</div>
-      ) : (
-        <DataTable<Master>
-          data={masters || []}
-          pageSize={10}
-          emptyMessage={`No ${MASTER_TYPE_LABELS[selectedType].toLowerCase()} yet.`}
-          columns={[
-            { key: 'label', header: 'Name' },
-            { key: 'key', header: 'System Key' },
-            ...(selectedType === 'SERVICE_CATEGORY'
-              ? [{ key: 'vertical', header: 'Vertical', render: (item: Master) => (typeof item.meta?.vertical === 'string' ? item.meta.vertical : '—') }]
-              : []),
-            {
-              key: 'active',
-              header: 'Status',
-              render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
-            },
-            {
-              key: 'actions',
-              header: 'Action',
-              render: (item) => (
-                <div className="flex items-center gap-1">
-                  <FormSheet
-                    triggerLabel="Edit"
-                    title="Edit Master Entry"
-                    description={`Update ${item.label}.`}
-                    triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
-                  >
-                    {(close) => <EditMasterForm master={item} siblings={masters || []} onClose={close} />}
-                  </FormSheet>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={updateMaster.isPending}
-                    onClick={() => updateMaster.mutate({ masterType: item.masterType, id: item._id, active: !item.active })}
-                  >
-                    {item.active ? 'Deactivate' : 'Activate'}
-                  </Button>
-                </div>
-              ),
-            },
-          ]}
-        />
-      )}
+        {isLoading ? (
+          <div className="flex justify-center p-8 text-muted-foreground">Loading {MASTER_TYPE_LABELS[selectedType].toLowerCase()}...</div>
+        ) : isError ? (
+          <div className="flex justify-center p-8 text-destructive">Failed to load masters.</div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <DataTable<Master>
+              data={masters || []}
+              pageSize={10}
+              emptyMessage={`No ${MASTER_TYPE_LABELS[selectedType].toLowerCase()} yet.`}
+              columns={[
+                { key: 'label', header: 'Name' },
+                { key: 'key', header: 'System Key' },
+                ...(selectedType === 'SERVICE_CATEGORY'
+                  ? [{ key: 'vertical', header: 'Vertical', render: (item: Master) => (typeof item.meta?.vertical === 'string' ? item.meta.vertical : '—') }]
+                  : []),
+                {
+                  key: 'active',
+                  header: 'Status',
+                  render: (item) => <StatusBadge label={item.active ? 'Active' : 'Inactive'} category={item.active ? 'success' : 'default'} />,
+                },
+                {
+                  key: 'actions',
+                  header: <div className="text-center">Action</div>,
+                  render: (item) => (
+                    <div className="flex items-center justify-center gap-1">
+                      <FormSheet
+                        triggerLabel="Edit"
+                        title="Edit Master Entry"
+                        description={`Update ${item.label}.`}
+                        triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                      >
+                        {(close) => <EditMasterForm master={item} siblings={masters || []} onClose={close} />}
+                      </FormSheet>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`h-8 text-xs ${item.active ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
+                        disabled={updateMaster.isPending}
+                        onClick={() => updateMaster.mutate({ masterType: item.masterType, id: item._id, active: !item.active })}
+                      >
+                        {item.active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

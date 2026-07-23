@@ -2,15 +2,27 @@
 
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { MediaGallery } from '@/components/media/MediaGallery';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 import { useCatalogService, useUpdateCatalogService } from '@/lib/hooks/useCatalogServices';
 import { useMasters } from '@/lib/hooks/useMasters';
+
+const updateServiceSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  categoryId: z.string().min(1, 'Select a category'),
+  basePrice: z.number().min(0),
+  warrantyPeriodDays: z.number().min(0),
+});
+type UpdateServiceValues = z.infer<typeof updateServiceSchema>;
 
 export default function ServiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -20,6 +32,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
   const { data: symptoms } = useMasters(['SYMPTOM']);
   const updateService = useUpdateCatalogService(id);
   const [addingSymptom, setAddingSymptom] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<UpdateServiceValues>({
+    resolver: zodResolver(updateServiceSchema),
+  });
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading service...</div>;
   if (isError || !service) return <div className="p-8 text-center text-destructive">Failed to load service.</div>;
@@ -35,6 +52,28 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
   const addSymptom = () => {
     if (!addingSymptom) return;
     updateService.mutate({ symptomIds: [...(service.symptomIds ?? []), addingSymptom] }, { onSuccess: () => setAddingSymptom('') });
+  };
+
+  const handleEditClick = () => {
+    reset({
+      name: service.name,
+      categoryId: service.categoryId ?? '',
+      basePrice: service.pricing?.basePrice ?? 0,
+      warrantyPeriodDays: service.warrantyPeriodDays ?? 0,
+    });
+    setIsEditing(true);
+  };
+
+  const onUpdateDetails = (values: UpdateServiceValues) => {
+    updateService.mutate(
+      { 
+        name: values.name, 
+        categoryId: values.categoryId, 
+        pricing: { ...service.pricing, basePrice: values.basePrice },
+        warrantyPeriodDays: values.warrantyPeriodDays
+      },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   return (
@@ -62,21 +101,50 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle>Service Details</CardTitle>
+            {!isEditing && (
+              <Button variant="ghost" size="sm" onClick={handleEditClick}>
+                <Pencil className="w-4 h-4 mr-2" /> Edit
+              </Button>
+            )}
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-y-4 text-sm">
-              <span className="text-muted-foreground">Name:</span>
-              <span className="font-medium">{service.name}</span>
-              <span className="text-muted-foreground">Category:</span>
-              <span className="font-medium">{categoryLabel}</span>
-              <span className="text-muted-foreground">Base Price:</span>
-              <span className="font-medium">₹{(service.pricing?.basePrice ?? 0).toLocaleString('en-IN')}</span>
-              <span className="text-muted-foreground">Warranty:</span>
-              <span className="font-medium">{service.warrantyPeriodDays ?? 0} days</span>
-            </div>
-          </CardContent>
+          {isEditing ? (
+            <form onSubmit={handleSubmit(onUpdateDetails)}>
+              <CardContent className="space-y-4">
+                <AppFormField label="Name" error={errors.name?.message} {...register('name')} />
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Category</label>
+                  <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('categoryId')}>
+                    <option value="">Select category...</option>
+                    {(categories || []).map((c) => <option key={c._id} value={c._id}>{c.label}</option>)}
+                  </select>
+                  {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <AppFormField label="Base Price (₹)" type="number" error={errors.basePrice?.message} {...register('basePrice', { valueAsNumber: true })} />
+                  <AppFormField label="Warranty (Days)" type="number" error={errors.warrantyPeriodDays?.message} {...register('warrantyPeriodDays', { valueAsNumber: true })} />
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" size="sm" disabled={updateService.isPending}>Save</Button>
+              </CardFooter>
+            </form>
+          ) : (
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-y-4 text-sm">
+                <span className="text-muted-foreground">Name:</span>
+                <span className="font-medium">{service.name}</span>
+                <span className="text-muted-foreground">Category:</span>
+                <span className="font-medium">{categoryLabel}</span>
+                <span className="text-muted-foreground">Base Price:</span>
+                <span className="font-medium">₹{(service.pricing?.basePrice ?? 0).toLocaleString('en-IN')}</span>
+                <span className="text-muted-foreground">Warranty:</span>
+                <span className="font-medium">{service.warrantyPeriodDays ?? 0} days</span>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <Card>

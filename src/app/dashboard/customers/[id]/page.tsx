@@ -73,6 +73,7 @@ function AddAddressForm({ customerId, onClose }: { customerId: string; onClose: 
 
 const editCustomerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
+  mobile: z.string().min(10, 'Enter a valid mobile number'),
   businessName: z.string().optional(),
   gstin: z.string().optional(),
   email: z.string().email('Enter a valid email').optional().or(z.literal('')),
@@ -87,6 +88,7 @@ function EditCustomerForm({ customer, onClose }: { customer: Customer; onClose: 
     resolver: zodResolver(editCustomerSchema),
     defaultValues: {
       name: customer.name,
+      mobile: customer.contacts?.[0]?.mobile ?? '',
       businessName: customer.businessName ?? '',
       gstin: customer.gstin ?? '',
       email: customer.email ?? '',
@@ -96,7 +98,12 @@ function EditCustomerForm({ customer, onClose }: { customer: Customer; onClose: 
 
   const onSubmit = (values: EditCustomerValues) => {
     updateCustomer.mutate(
-      { customerId: customer._id, ...values, email: values.email || undefined },
+      { 
+        customerId: customer._id, 
+        ...values, 
+        email: values.email || undefined,
+        contacts: [{ name: values.name, mobile: values.mobile, isPrimary: true }]
+      },
       { onSuccess: onClose }
     );
   };
@@ -104,6 +111,7 @@ function EditCustomerForm({ customer, onClose }: { customer: Customer; onClose: 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <AppFormField label="Full Name" error={errors.name?.message} {...register('name')} />
+      <AppFormField label="Mobile Number" error={errors.mobile?.message} {...register('mobile')} />
       <AppFormField label="Business Name (Optional)" {...register('businessName')} />
       <AppFormField label="GSTIN (Optional)" {...register('gstin')} />
       <AppFormField label="Email (Optional)" type="email" error={errors.email?.message} {...register('email')} />

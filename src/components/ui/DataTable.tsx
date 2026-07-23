@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 
 export interface Column<T> {
   key: string;
-  header: string;
+  header: React.ReactNode;
   render?: (item: T) => React.ReactNode;
 }
 

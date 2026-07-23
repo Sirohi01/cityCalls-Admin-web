@@ -8,9 +8,82 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Phone, Sparkles } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLead, useAddLeadNote, useConvertLead, useChangeLeadStage, LEAD_STAGES } from '@/lib/hooks/useLeads';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Pencil } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { useLead, useAddLeadNote, useConvertLead, useChangeLeadStage, LEAD_STAGES, useUpdateLead, Lead } from '@/lib/hooks/useLeads';
 import { useCalls } from '@/lib/hooks/useCalls';
 import { useClassifyComplaint } from '@/lib/hooks/useAISettings';
+
+const updateLeadSchema = z.object({
+  contactName: z.string().optional(),
+  contactMobile: z.string().optional(),
+  source: z.string().optional(),
+  priority: z.string().optional(),
+  productInterest: z.string().optional(),
+  requirement: z.string().optional(),
+});
+type UpdateLeadValues = z.infer<typeof updateLeadSchema>;
+
+function EditLeadSheet({ lead, open, onOpenChange }: { lead: Lead; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const updateLead = useUpdateLead(lead._id);
+  const { register, handleSubmit, formState: { errors } } = useForm<UpdateLeadValues>({
+    resolver: zodResolver(updateLeadSchema),
+    defaultValues: {
+      contactName: lead.contactName || '',
+      contactMobile: lead.contactMobile || '',
+      source: lead.source || '',
+      priority: lead.priority || '',
+      productInterest: lead.productInterest || '',
+      requirement: lead.requirement || '',
+    },
+  });
+
+  const onSubmit = (values: UpdateLeadValues) => {
+    updateLead.mutate(values, {
+      onSuccess: () => {
+        toast.success('Lead updated successfully');
+        onOpenChange(false);
+      },
+      onError: () => toast.error('Failed to update lead'),
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="overflow-y-auto w-[400px]">
+        <SheetHeader className="mb-4">
+          <SheetTitle>Edit Lead</SheetTitle>
+          <SheetDescription>Update lead details and requirements.</SheetDescription>
+        </SheetHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-1">
+          <AppFormField label="Contact Name" {...register('contactName')} error={errors.contactName?.message} />
+          <AppFormField label="Contact Mobile" {...register('contactMobile')} error={errors.contactMobile?.message} />
+          <AppFormField label="Source" {...register('source')} error={errors.source?.message} />
+          <AppFormField label="Priority" {...register('priority')} error={errors.priority?.message} />
+          <AppFormField label="Product Interest" {...register('productInterest')} error={errors.productInterest?.message} />
+          
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Requirement</label>
+            <textarea
+              {...register('requirement')}
+              className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+
+          <Button type="submit" className="w-full mt-4" disabled={updateLead.isPending}>
+            {updateLead.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -22,6 +95,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const changeStage = useChangeLeadStage(id);
   const classifyComplaint = useClassifyComplaint();
   const [noteText, setNoteText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading lead details...</div>;
   if (isError || !lead) return <div className="p-8 text-center text-destructive">Failed to load lead details.</div>;
@@ -61,7 +135,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-lg font-medium tracking-tight text-foreground">Lead: {lead.contactName || lead.number}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-medium tracking-tight text-foreground">Lead: {lead.contactName || lead.number}</h1>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <p className="text-[13px] text-muted-foreground">{lead.number} • Created on {new Date(lead.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -205,6 +284,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           </Tabs>
         </div>
       </div>
+      
+      {lead && <EditLeadSheet lead={lead} open={isEditing} onOpenChange={setIsEditing} />}
     </div>
   );
 }

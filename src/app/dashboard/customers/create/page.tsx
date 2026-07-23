@@ -11,6 +11,7 @@ import { AppFormField } from '@/components/ui/AppFormField';
 import { useCreateCustomer } from '@/lib/hooks/useCustomers';
 import { useMasters } from '@/lib/hooks/useMasters';
 import { useCheckPincode, areaCityLabel } from '@/lib/hooks/useGeo';
+import { UserPlus, MapPin } from 'lucide-react';
 
 const createCustomerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -64,66 +65,90 @@ export default function CreateCustomerPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
-        <div>
-          <h1 className="text-lg font-medium tracking-tight text-foreground">Add Customer</h1>
-          <p className="text-[13px] text-muted-foreground">Create a new customer profile.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between pb-2 mb-4 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-md">
+            <UserPlus className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">Add New Customer</h1>
+            <p className="text-[13px] text-muted-foreground">Register a new customer profile into the system.</p>
+          </div>
         </div>
-        <Button size="sm" variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button size="sm" variant="outline" onClick={() => router.back()}>Back to List</Button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer Details</CardTitle>
-            <CardDescription>Enter the primary contact information.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <AppFormField label="Full Name" placeholder="e.g. Ramesh Singh" error={errors.name?.message} {...register('name')} />
-              <AppFormField label="Mobile Number" placeholder="e.g. 9876543210" error={errors.mobile?.message} {...register('mobile')} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <AppFormField label="Email Address (Optional)" placeholder="e.g. ramesh@example.com" error={errors.email?.message} {...register('email')} />
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Customer Type</label>
-                <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
-                  {customerTypes?.map((t) => (
-                    <option key={t._id} value={t.key}>{t.label}</option>
-                  ))}
-                </select>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <Card className="border shadow-sm overflow-hidden">
+            <CardContent className="p-8 space-y-8">
+              {/* Contact Information Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <UserPlus className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Contact Information</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <AppFormField label="Full Name" placeholder="e.g. Ramesh Singh" error={errors.name?.message} {...register('name')} />
+                  <AppFormField label="Mobile Number" placeholder="e.g. 9876543210" error={errors.mobile?.message} {...register('mobile')} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <AppFormField label="Email Address (Optional)" placeholder="e.g. ramesh@example.com" error={errors.email?.message} {...register('email')} />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Customer Type</label>
+                    <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('customerType')}>
+                      {customerTypes?.map((t) => (
+                        <option key={t._id} value={t.key}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Address (Optional)</label>
-              <p className="text-xs text-muted-foreground">Enter a pin code to auto-fill City/State, or leave all blank to skip the address for now.</p>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <AppFormField
-                label="Pin Code"
-                placeholder="e.g. 110001"
-                {...register('pinCode', {
-                  onBlur: handlePincodeBlur,
-                })}
-              />
-              <AppFormField label="City" placeholder="Auto-filled from pin code" {...register('city')} />
-              <AppFormField label="State" placeholder="Auto-filled from pin code" {...register('state')} />
-            </div>
-            {checkPincode.isPending && <p className="text-xs text-muted-foreground">Looking up City/State for this pin code...</p>}
-            {checkPincode.isError && <p className="text-xs text-destructive">Couldn&apos;t look up this pin code — enter City/State manually.</p>}
-            <AppFormField label="Address Line 1 (Optional)" placeholder="e.g. House No. 12, Sector 5" {...register('addressLine1')} />
-            {createCustomer.isError && (
-              <p className="text-sm text-destructive">{createCustomer.error.response?.data?.message ?? 'Failed to create customer.'}</p>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={createCustomer.isPending}>
-              {createCustomer.isPending ? 'Saving...' : 'Save Customer'}
-            </Button>
-          </CardFooter>
-        </Card>
+
+              {/* Address Information Section */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Address Details (Optional)</h3>
+                  <span className="text-xs text-muted-foreground ml-2">Enter Pin Code to auto-fill</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-1">
+                    <AppFormField
+                      label="Pin Code"
+                      placeholder="e.g. 110001"
+                      {...register('pinCode', {
+                        onBlur: handlePincodeBlur,
+                      })}
+                    />
+                    {checkPincode.isPending && <p className="text-[11px] text-muted-foreground mt-1 animate-pulse">Fetching area details...</p>}
+                    {checkPincode.isError && <p className="text-[11px] text-destructive mt-1">Unable to locate Pin Code.</p>}
+                  </div>
+                  <AppFormField label="City" placeholder="Auto-filled" {...register('city')} />
+                  <AppFormField label="State" placeholder="Auto-filled" {...register('state')} />
+                </div>
+                
+                <AppFormField label="Address Line 1" placeholder="e.g. House No. 12, Sector 5, Landmark" {...register('addressLine1')} />
+                
+                {createCustomer.isError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                    <p className="text-sm text-destructive font-medium">{createCustomer.error.response?.data?.message ?? 'Failed to create customer.'}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+
+            <CardFooter className="bg-muted/30 px-8 py-5 border-t flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+              <Button type="submit" disabled={createCustomer.isPending} className="min-w-[140px]">
+                {createCustomer.isPending ? 'Saving...' : 'Save Customer'}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       </form>
     </div>
   );

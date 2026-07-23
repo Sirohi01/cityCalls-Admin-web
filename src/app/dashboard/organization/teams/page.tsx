@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Pencil } from 'lucide-react';
-import { useTeams, useCreateTeam, useUpdateTeam, useBranches, useSubBranches, Team } from '@/lib/hooks/useOrganization';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useBranches, useSubBranches, Team } from '@/lib/hooks/useOrganization';
 import { useEmployees, Employee } from '@/lib/hooks/useEmployees';
 
 const teamFormSchema = z.object({
@@ -194,6 +196,8 @@ function EditTeamForm({ team, onClose }: { team: Team; onClose: () => void }) {
 
 export default function TeamsPage() {
   const { data: teams, isLoading, isError } = useTeams();
+  const deleteTeam = useDeleteTeam();
+  const [searchTerm, setSearchTerm] = useState('');
   const { data: branches } = useBranches();
   const { data: subBranches } = useSubBranches();
   const { data: employees } = useEmployees();
@@ -205,6 +209,24 @@ export default function TeamsPage() {
       ? '—'
       : ids.map((id) => employees?.find((e) => e.userId._id === id)?.userId.name ?? 'Unknown').join(', ');
 
+  const filteredTeams = useMemo(() => {
+    if (!teams) return [];
+    if (!searchTerm) return teams;
+    const lowerQ = searchTerm.toLowerCase();
+    return teams.filter(t => 
+      t.name.toLowerCase().includes(lowerQ)
+    );
+  }, [teams, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this team?')) {
+      deleteTeam.mutate(id, {
+        onSuccess: () => toast.success('Team deleted successfully'),
+        onError: () => toast.error('Failed to delete team'),
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-border/50">
@@ -212,9 +234,21 @@ export default function TeamsPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Teams</h1>
           <p className="text-[13px] text-muted-foreground">Manage field and internal teams.</p>
         </div>
-        <FormSheet triggerLabel="Add Team" title="Add Team" description="Create a new team within a branch.">
-          {(close) => <AddTeamForm onClose={close} />}
-        </FormSheet>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search teams..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormSheet triggerLabel="Add Team" title="Add Team" description="Create a new team within a branch.">
+            {(close) => <AddTeamForm onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       {isLoading ? (
@@ -225,7 +259,7 @@ export default function TeamsPage() {
         <>
           {/* <p className="text-sm text-muted-foreground">{teams?.length ?? 0} teams</p> */}
           <DataTable<Team>
-            data={teams || []}
+            data={filteredTeams}
             pageSize={10}
             columns={[
               { key: 'name', header: 'Team Name' },
@@ -247,20 +281,21 @@ export default function TeamsPage() {
               },
               {
                 key: 'actions',
-                header: '',
+                header: 'Action',
                 render: (item) => (
-                  <FormSheet
-                    triggerLabel="Edit"
-                    title="Edit Team"
-                    description={`Update ${item.name}'s branch, sub-branch, or members.`}
-                    triggerElement={
-                      <Button size="sm" variant="ghost">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    }
-                  >
-                    {(close) => <EditTeamForm team={item} onClose={close} />}
-                  </FormSheet>
+                  <div className="flex items-center gap-2">
+                    <FormSheet
+                      triggerLabel="Edit"
+                      title="Edit Team"
+                      description={`Update ${item.name}'s branch, sub-branch, or members.`}
+                      triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                    >
+                      {(close) => <EditTeamForm team={item} onClose={close} />}
+                    </FormSheet>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteTeam.isPending}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ),
               },
             ]}

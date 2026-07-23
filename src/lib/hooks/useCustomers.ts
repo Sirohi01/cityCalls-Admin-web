@@ -36,7 +36,7 @@ export interface Customer {
   consent?: { whatsapp: ConsentState; email: ConsentState; sms: ConsentState };
 }
 
-export function useCustomers(params?: { tag?: string; vertical?: string }, options?: { enabled?: boolean }) {
+export function useCustomers(params?: { tag?: string; vertical?: string; q?: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['customers', params],
     queryFn: async () => {
@@ -148,6 +148,7 @@ export interface UpdateCustomerInput {
   gstin?: string;
   email?: string;
   tags?: string[];
+  contacts?: { name?: string; mobile: string; isPrimary: boolean }[];
 }
 
 export function useUpdateCustomer() {
@@ -242,5 +243,20 @@ export function useAddCustomerProduct() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: ['customer-products', variables.customerId] }),
+  });
+}
+
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/customers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      // The apiClient interceptor handles the toast if a message is returned, 
+      // but manually toasting ensures the user gets immediate feedback.
+      // Assuming toast is available globally or we will import it if needed.
+    },
   });
 }

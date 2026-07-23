@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,12 +8,14 @@ import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useEmployees, useCreateEmployee, useUpdateEmployee, Employee } from '@/lib/hooks/useEmployees';
+import { useEmployees, useCreateEmployee, useUpdateEmployee, Employee, useDeleteEmployee } from '@/lib/hooks/useEmployees';
 import { useUsers } from '@/lib/hooks/useUsers';
 import { useBranches, useSubBranches, useTeams } from '@/lib/hooks/useOrganization';
 
@@ -59,6 +62,7 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
 
   const onSubmit = (values: EmployeeFormValues) => {
     const payload = {
+      userId: values.userId,
       branchId: values.branchId,
       subBranchId: values.subBranchId || undefined,
       teamId: values.teamId || undefined,
@@ -70,7 +74,7 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
     if (isEdit && employee) {
       updateEmployee.mutate({ id: employee._id, ...payload }, { onSuccess: onClose });
     } else {
-      createEmployee.mutate({ userId: values.userId, ...payload }, { onSuccess: onClose });
+      createEmployee.mutate(payload, { onSuccess: onClose });
     }
   };
 
@@ -78,7 +82,7 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
         <label className="text-sm font-medium">User Account</label>
-        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" disabled={isEdit} {...register('userId')}>
+        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('userId')}>
           <option value="">Select a user...</option>
           {(users || []).map((u) => (
             <option key={u._id} value={u._id}>{u.name} ({u.role.replace(/_/g, ' ')})</option>
@@ -134,6 +138,27 @@ function EmployeeForm({ employee, onClose }: { employee?: Employee; onClose: () 
 
 export default function EmployeesPage() {
   const { data: employees, isLoading, isError } = useEmployees();
+  const deleteEmployee = useDeleteEmployee();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredEmployees = useMemo(() => {
+    if (!employees) return [];
+    if (!searchTerm) return employees;
+    const lowerQ = searchTerm.toLowerCase();
+    return employees.filter(e => 
+      e.userId?.name?.toLowerCase().includes(lowerQ) ||
+      e.userId?.email?.toLowerCase().includes(lowerQ) ||
+      e.userId?.mobile?.toLowerCase().includes(lowerQ) ||
+      e.skills?.some(s => s.toLowerCase().includes(lowerQ))
+    );
+  }, [employees, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    deleteEmployee.mutate(id, {
+      onSuccess: () => toast.success('Employee deleted successfully'),
+      onError: () => toast.error('Failed to delete employee'),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -142,9 +167,21 @@ export default function EmployeesPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Employees</h1>
           <p className="text-[13px] text-muted-foreground">Manage internal staff and field technicians.</p>
         </div>
-        <FormSheet triggerLabel="Add Employee" title="Add Employee" description="Link an existing user account to an employee record.">
-          {(close) => <EmployeeForm onClose={close} />}
-        </FormSheet>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search employees..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormSheet triggerLabel="Add Employee" title="Add Employee" description="Link an existing user account to an employee record.">
+            {(close) => <EmployeeForm onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       <Card>
@@ -158,9 +195,8 @@ export default function EmployeesPage() {
             <div className="flex justify-center p-8 text-destructive">Failed to load employees.</div>
           ) : (
             <>
-            {/* <p className="text-sm text-muted-foreground mb-2">{employees?.length ?? 0} employees</p> */}
             <DataTable<Employee>
-              data={employees || []}
+              data={filteredEmployees}
               pageSize={10}
               columns={[
                 { key: 'userId.name', header: 'Name', render: (item) => item.userId?.name ?? '—' },
@@ -175,16 +211,21 @@ export default function EmployeesPage() {
                 },
                 {
                   key: 'actions',
-                  header: '',
+                  header: 'Action',
                   render: (item) => (
-                    <FormSheet
-                      triggerLabel="Edit"
-                      title="Edit Employee"
-                      description={`Update ${item.userId?.name ?? 'employee'}'s assignment.`}
-                      triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
-                    >
-                      {(close) => <EmployeeForm employee={item} onClose={close} />}
-                    </FormSheet>
+                    <div className="flex items-center gap-2">
+                      <FormSheet
+                        triggerLabel="Edit"
+                        title="Edit Employee"
+                        description={`Update ${item.userId?.name ?? 'employee'}'s assignment.`}
+                        triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                      >
+                        {(close) => <EmployeeForm employee={item} onClose={close} />}
+                      </FormSheet>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteEmployee.isPending}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ),
                 },
               ]}

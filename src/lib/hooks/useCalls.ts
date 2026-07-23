@@ -25,11 +25,11 @@ export interface Call {
   createdAt: string;
 }
 
-export function useCalls() {
+export function useCalls(params?: { q?: string }) {
   return useQuery({
-    queryKey: ['calls'],
+    queryKey: ['calls', params],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls', { params: { limit: 100 } });
+      const res = await apiClient.get<ApiSuccessEnvelope<Call[]>>('/calls', { params: { limit: 100, ...params } });
       return res.data.data;
     },
   });
@@ -98,6 +98,18 @@ export function useUpdateCall() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['calls'] });
       queryClient.invalidateQueries({ queryKey: ['call', variables.id] });
+    },
+  });
+}
+
+export function useDeleteCall() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/calls/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calls'] });
     },
   });
 }

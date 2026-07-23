@@ -66,3 +66,16 @@ export function useUpdateMaster() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['masters'] }),
   });
 }
+
+export function useDeleteMaster() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, { masterType: string; id: string }>({
+    mutationFn: async ({ masterType, id }) => {
+      await apiClient.delete(`/masters/${masterType}/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters'] });
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+}

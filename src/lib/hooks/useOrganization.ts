@@ -99,6 +99,16 @@ export function useUpdateBranch() {
   });
 }
 
+export function useDeleteBranch() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/branches/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
+  });
+}
+
 export function useSubBranches(branchId?: string) {
   return useQuery({
     queryKey: ['sub-branches', branchId],
@@ -136,6 +146,16 @@ export function useUpdateSubBranch() {
     mutationFn: async ({ id, ...input }) => {
       const res = await apiClient.patch<ApiSuccessEnvelope<SubBranch>>(`/sub-branches/${id}`, input);
       return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-branches'] }),
+  });
+}
+
+export function useDeleteSubBranch() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/sub-branches/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-branches'] }),
   });
@@ -185,6 +205,16 @@ export function useUpdateTeam() {
     mutationFn: async ({ id, ...input }) => {
       const res = await apiClient.patch<ApiSuccessEnvelope<Team>>(`/teams/${id}`, input);
       return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] }),
+  });
+}
+
+export function useDeleteTeam() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/teams/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teams'] }),
   });

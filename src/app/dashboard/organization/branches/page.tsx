@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Pencil } from 'lucide-react';
-import { useBranches, useCreateBranch, useUpdateBranch, Branch, WorkingHoursRow } from '@/lib/hooks/useOrganization';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useBranches, useCreateBranch, useUpdateBranch, useDeleteBranch, Branch, WorkingHoursRow } from '@/lib/hooks/useOrganization';
 import { useMasters } from '@/lib/hooks/useMasters';
 import { useUsers } from '@/lib/hooks/useUsers';
 
@@ -205,6 +207,27 @@ function BranchForm({ branch, onClose }: { branch?: Branch; onClose: () => void 
 
 export default function BranchesPage() {
   const { data: branches, isLoading, isError } = useBranches();
+  const deleteBranch = useDeleteBranch();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredBranches = useMemo(() => {
+    if (!branches) return [];
+    if (!searchTerm) return branches;
+    const lowerQ = searchTerm.toLowerCase();
+    return branches.filter(b => 
+      b.name.toLowerCase().includes(lowerQ) ||
+      b.code.toLowerCase().includes(lowerQ)
+    );
+  }, [branches, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this branch?')) {
+      deleteBranch.mutate(id, {
+        onSuccess: () => toast.success('Branch deleted successfully'),
+        onError: () => toast.error('Failed to delete branch'),
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -213,9 +236,21 @@ export default function BranchesPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Branches</h1>
           <p className="text-[13px] text-muted-foreground">Manage main organizational branches.</p>
         </div>
-        <FormSheet triggerLabel="Add Branch" title="Add Branch" description="Create a new branch.">
-          {(close) => <BranchForm onClose={close} />}
-        </FormSheet>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search branches..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormSheet triggerLabel="Add Branch" title="Add Branch" description="Create a new branch.">
+            {(close) => <BranchForm onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       {isLoading ? (
@@ -226,7 +261,7 @@ export default function BranchesPage() {
         <>
           {/* <p className="text-sm text-muted-foreground">{branches?.length ?? 0} branches</p> */}
           <DataTable<Branch>
-            data={branches || []}
+            data={filteredBranches}
             pageSize={10}
             columns={[
               { key: 'code', header: 'Code' },
@@ -248,16 +283,21 @@ export default function BranchesPage() {
               },
               {
                 key: 'actions',
-                header: '',
+                header: 'Action',
                 render: (item) => (
-                  <FormSheet
-                    triggerLabel="Edit"
-                    title="Edit Branch"
-                    description={`Update ${item.name}.`}
-                    triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
-                  >
-                    {(close) => <BranchForm branch={item} onClose={close} />}
-                  </FormSheet>
+                  <div className="flex items-center gap-2">
+                    <FormSheet
+                      triggerLabel="Edit"
+                      title="Edit Branch"
+                      description={`Update ${item.name}.`}
+                      triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                    >
+                      {(close) => <BranchForm branch={item} onClose={close} />}
+                    </FormSheet>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteBranch.isPending}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ),
               },
             ]}

@@ -66,3 +66,13 @@ export function useUpdateCatalogService(id: string) {
     },
   });
 }
+
+export function useDeleteCatalogService() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/services/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalogServices'] }),
+  });
+}

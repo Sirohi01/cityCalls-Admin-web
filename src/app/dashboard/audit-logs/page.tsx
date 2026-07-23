@@ -31,22 +31,24 @@ export default function AuditLogsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Activity Log</CardTitle>
-          <CardDescription>Showing recent system actions. This table is strictly read-only.</CardDescription>
-          <div className="flex flex-wrap items-end gap-3 pt-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Module</label>
-              <select className="h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={module} onChange={updateFilter(setModule)}>
+        <CardHeader className="flex flex-row items-center justify-between pb-1">
+          <div>
+            <CardTitle>Activity Log</CardTitle>
+            <CardDescription className="mt-1">Showing recent system actions. This table is strictly read-only.</CardDescription>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Module</label>
+              <select className="h-9 w-[180px] rounded-md border border-input bg-transparent px-3 text-sm" value={module} onChange={updateFilter(setModule)}>
                 <option value="">All modules</option>
                 {AUDIT_LOG_MODULES.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Entity Type</label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Entity Type</label>
               <input
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                placeholder="e.g. LEAD, CUSTOMER, SERVICE_REQUEST"
+                className="h-9 w-[250px] rounded-md border border-input bg-transparent px-3 text-sm"
+                placeholder="e.g. LEAD, CUSTOMER"
                 value={entityType}
                 onChange={updateFilter(setEntityType)}
               />
@@ -65,7 +67,7 @@ export default function AuditLogsPage() {
             <div className="flex justify-center p-8 text-destructive">Failed to load audit logs.</div>
           ) : (
             <>
-            <p className="text-sm text-muted-foreground mb-2">{meta?.total ?? logs.length} entries</p>
+            {/* <p className="text-sm text-muted-foreground mb-2">{meta?.total ?? logs.length} entries</p> */}
             <div className="rounded-md border bg-white">
               <Table>
                 <TableHeader>

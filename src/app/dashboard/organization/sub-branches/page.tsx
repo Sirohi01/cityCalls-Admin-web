@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Pencil } from 'lucide-react';
-import { useSubBranches, useCreateSubBranch, useUpdateSubBranch, useBranches, SubBranch } from '@/lib/hooks/useOrganization';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useSubBranches, useCreateSubBranch, useUpdateSubBranch, useDeleteSubBranch, useBranches, SubBranch } from '@/lib/hooks/useOrganization';
 import { useUsers } from '@/lib/hooks/useUsers';
 
 const subBranchFormSchema = z.object({
@@ -105,8 +107,30 @@ function SubBranchForm({ subBranch, onClose }: { subBranch?: SubBranch; onClose:
 export default function SubBranchesPage() {
   const { data: branches } = useBranches();
   const [branchFilter, setBranchFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { data: subBranches, isLoading, isError } = useSubBranches(branchFilter || undefined);
+  const deleteSubBranch = useDeleteSubBranch();
+
   const branchName = (id: string) => branches?.find((b) => b._id === id)?.name ?? id;
+
+  const filteredSubBranches = useMemo(() => {
+    if (!subBranches) return [];
+    if (!searchTerm) return subBranches;
+    const lowerQ = searchTerm.toLowerCase();
+    return subBranches.filter(sb => 
+      sb.name.toLowerCase().includes(lowerQ) ||
+      sb.code.toLowerCase().includes(lowerQ)
+    );
+  }, [subBranches, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this sub-branch?')) {
+      deleteSubBranch.mutate(id, {
+        onSuccess: () => toast.success('Sub-branch deleted successfully'),
+        onError: () => toast.error('Failed to delete sub-branch'),
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -115,9 +139,21 @@ export default function SubBranchesPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Sub-Branches</h1>
           <p className="text-[13px] text-muted-foreground">Manage sub-branches under main branches.</p>
         </div>
-        <FormSheet triggerLabel="Add Sub-Branch" title="Add Sub-Branch" description="Create a new sub-branch under a parent branch.">
-          {(close) => <SubBranchForm onClose={close} />}
-        </FormSheet>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search sub-branches..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormSheet triggerLabel="Add Sub-Branch" title="Add Sub-Branch" description="Create a new sub-branch under a parent branch.">
+            {(close) => <SubBranchForm onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -142,7 +178,7 @@ export default function SubBranchesPage() {
         <>
           {/* <p className="text-sm text-muted-foreground">{subBranches?.length ?? 0} sub-branches</p> */}
           <DataTable<SubBranch>
-            data={subBranches || []}
+            data={filteredSubBranches}
             pageSize={10}
             columns={[
               { key: 'code', header: 'Code' },
@@ -155,16 +191,21 @@ export default function SubBranchesPage() {
               },
               {
                 key: 'actions',
-                header: '',
+                header: 'Action',
                 render: (item) => (
-                  <FormSheet
-                    triggerLabel="Edit"
-                    title="Edit Sub-Branch"
-                    description={`Update ${item.name}.`}
-                    triggerElement={<Button size="sm" variant="ghost"><Pencil className="w-4 h-4" /></Button>}
-                  >
-                    {(close) => <SubBranchForm subBranch={item} onClose={close} />}
-                  </FormSheet>
+                  <div className="flex items-center gap-2">
+                    <FormSheet
+                      triggerLabel="Edit"
+                      title="Edit Sub-Branch"
+                      description={`Update ${item.name}.`}
+                      triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                    >
+                      {(close) => <SubBranchForm subBranch={item} onClose={close} />}
+                    </FormSheet>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteSubBranch.isPending}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ),
               },
             ]}

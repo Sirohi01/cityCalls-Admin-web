@@ -109,6 +109,18 @@ export function useUpdateVendor() {
   });
 }
 
+export function useDeleteVendor() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/vendors/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+    },
+  });
+}
+
 export function useSetVendorBlacklist() {
   const queryClient = useQueryClient();
   return useMutation<Vendor, AxiosError<ApiErrorEnvelope>, { id: string; blacklisted: boolean; blacklistReason?: string }>({

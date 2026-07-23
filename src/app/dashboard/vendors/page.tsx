@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,12 +8,15 @@ import { z } from 'zod';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
+import { Pencil, Trash2, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useVendors, useCreateVendor, Vendor } from '@/lib/hooks/useVendors';
+import { useVendors, useCreateVendor, Vendor, useDeleteVendor } from '@/lib/hooks/useVendors';
 
 function splitList(value?: string): string[] {
   return (value ?? '').split(',').map((v) => v.trim()).filter(Boolean);
@@ -83,6 +87,27 @@ function OnboardVendorForm({ onClose }: { onClose: () => void }) {
 export default function VendorsPage() {
   const router = useRouter();
   const { data: vendors, isLoading, isError } = useVendors();
+  const deleteVendor = useDeleteVendor();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredVendors = useMemo(() => {
+    if (!vendors) return [];
+    if (!searchTerm) return vendors;
+    const lowerQ = searchTerm.toLowerCase();
+    return vendors.filter(v => 
+      v.companyName.toLowerCase().includes(lowerQ) ||
+      v.contactPersons?.some(p => p.name.toLowerCase().includes(lowerQ) || p.mobile.includes(lowerQ)) ||
+      v.serviceAreas?.pinCodes?.some(pin => pin.includes(lowerQ))
+    );
+  }, [vendors, searchTerm]);
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteVendor.mutate(id, {
+      onSuccess: () => toast.success('Vendor deleted successfully'),
+      onError: () => toast.error('Failed to delete vendor'),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -91,9 +116,21 @@ export default function VendorsPage() {
           <h1 className="text-lg font-medium tracking-tight text-foreground">Vendors</h1>
           <p className="text-[13px] text-muted-foreground">Manage third-party service agencies and partners.</p>
         </div>
-        <FormSheet triggerLabel="Onboard Vendor" title="Onboard Vendor" description="Register a new vendor company.">
-          {(close) => <OnboardVendorForm onClose={close} />}
-        </FormSheet>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search vendors..."
+              className="w-64 pl-9 bg-background h-8 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <FormSheet triggerLabel="Onboard Vendor" title="Onboard Vendor" description="Register a new vendor company.">
+            {(close) => <OnboardVendorForm onClose={close} />}
+          </FormSheet>
+        </div>
       </div>
 
       <Card>
@@ -107,9 +144,8 @@ export default function VendorsPage() {
             <div className="flex justify-center p-8 text-destructive">Failed to load vendors.</div>
           ) : (
             <>
-            {/* <p className="text-sm text-muted-foreground mb-2">{vendors?.length ?? 0} vendors</p> */}
             <DataTable<Vendor>
-              data={vendors || []}
+              data={filteredVendors}
               pageSize={10}
               onRowClick={(item) => router.push(`/dashboard/vendors/${item._id}`)}
               columns={[
@@ -125,6 +161,20 @@ export default function VendorsPage() {
                       label={item.blacklisted ? 'BLACKLISTED' : item.active ? 'ACTIVE' : 'INACTIVE'}
                       category={item.blacklisted ? 'error' : item.active ? 'success' : 'default'}
                     />
+                  ),
+                },
+                {
+                  key: 'actions',
+                  header: 'Action',
+                  render: (item) => (
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/vendors/${item._id}`); }}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleDelete(e, item._id)} disabled={deleteVendor.isPending}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ),
                 },
               ]}
