@@ -52,7 +52,7 @@ export default function AuditLogsPage() {
               />
             </div>
             {(module || entityType) && (
-              <Button size="sm" variant="ghost" size="sm" onClick={() => { setModule(''); setEntityType(''); setPage(1); }}>
+              <Button size="sm" variant="ghost" onClick={() => { setModule(''); setEntityType(''); setPage(1); }}>
                 Clear filters
               </Button>
             )}

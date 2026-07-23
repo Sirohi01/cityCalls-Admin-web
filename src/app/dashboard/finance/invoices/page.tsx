@@ -1,16 +1,56 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { IndianRupee } from 'lucide-react';
+import { AppFormField } from '@/components/ui/AppFormField';
+import { FormSheet } from '@/components/ui/FormSheet';
+import { IndianRupee, FileMinus, FilePlus } from 'lucide-react';
 
-import { useInvoices, useRecordPayment, useShareInvoice, useCancelInvoice, usePaymentHistory, Invoice } from '@/lib/hooks/useInvoices';
+import {
+  useInvoices,
+  useRecordPayment,
+  useShareInvoice,
+  useCancelInvoice,
+  usePaymentHistory,
+  useInvoiceNotes,
+  useIssueCreditNote,
+  useIssueDebitNote,
+  Invoice,
+} from '@/lib/hooks/useInvoices';
 import { useCustomers } from '@/lib/hooks/useCustomers';
+
+function IssueNoteForm({ invoiceId, kind, close }: { invoiceId: string; kind: 'credit' | 'debit'; close: () => void }) {
+  const issueCreditNote = useIssueCreditNote();
+  const issueDebitNote = useIssueDebitNote();
+  const mutation = kind === 'credit' ? issueCreditNote : issueDebitNote;
+  const { register, handleSubmit } = useForm<{ amount: number; reason: string }>();
+
+  const onSubmit = (values: { amount: number; reason: string }) => {
+    mutation.mutate(
+      { invoiceId, amount: Number(values.amount), reason: values.reason },
+      { onSuccess: () => close() }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <AppFormField label="Amount (₹)" type="number" step="0.01" required {...register('amount', { required: true, valueAsNumber: true, min: 0.01 })} />
+      <AppFormField label="Reason" required {...register('reason', { required: true })} />
+      {mutation.isError && (
+        <p className="text-sm text-destructive">{mutation.error.response?.data?.message ?? `Failed to issue ${kind} note.`}</p>
+      )}
+      <Button type="submit" className="w-full" disabled={mutation.isPending}>
+        {mutation.isPending ? 'Issuing...' : `Issue ${kind === 'credit' ? 'Credit' : 'Debit'} Note`}
+      </Button>
+    </form>
+  );
+}
 
 export default function InvoicesPage() {
   const { data: invoices, isLoading, isError } = useInvoices();
@@ -23,6 +63,7 @@ export default function InvoicesPage() {
   const data = invoices || [];
   const selectedInvoice = data.find(i => i._id === selectedInvoiceId) || data[0];
   const { data: payments } = usePaymentHistory(selectedInvoice?._id ?? '');
+  const { data: notes } = useInvoiceNotes(selectedInvoice?._id ?? '');
   const customerName = (id?: string) => customers?.find((c) => c._id === id)?.name ?? 'Unknown';
   const outstanding = (inv: Invoice) => inv.total - inv.amountPaid;
 
@@ -171,6 +212,62 @@ export default function InvoicesPage() {
                         </div>
                       )}
                     </div>
+
+                    {(selectedInvoice.status === 'PAID' || selectedInvoice.status === 'PARTIALLY_PAID') && (
+                      <div className="border-t pt-6 mt-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-semibold">Adjustments (Credit/Debit Notes)</h4>
+                          <div className="flex gap-2">
+                            <FormSheet
+                              triggerLabel="Issue Credit Note"
+                              title="Issue Credit Note"
+                              description="Reduces the effective value of this invoice without editing it in place."
+                              triggerElement={<Button size="sm" variant="outline" className="gap-1"><FileMinus className="w-4 h-4" /> Credit Note</Button>}
+                            >
+                              {(close) => <IssueNoteForm invoiceId={selectedInvoice._id} kind="credit" close={close} />}
+                            </FormSheet>
+                            <FormSheet
+                              triggerLabel="Issue Debit Note"
+                              title="Issue Debit Note"
+                              description="Increases the effective value of this invoice without editing it in place."
+                              triggerElement={<Button size="sm" variant="outline" className="gap-1"><FilePlus className="w-4 h-4" /> Debit Note</Button>}
+                            >
+                              {(close) => <IssueNoteForm invoiceId={selectedInvoice._id} kind="debit" close={close} />}
+                            </FormSheet>
+                          </div>
+                        </div>
+                        {(!notes || (notes.creditNotes.length === 0 && notes.debitNotes.length === 0)) ? (
+                          <p className="text-sm text-muted-foreground">No credit or debit notes issued yet.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {notes.creditNotes.map((n) => (
+                              <div key={n._id} className="flex items-center justify-between text-sm border-b pb-2">
+                                <div>
+                                  <p className="font-medium">{n.number} <span className="text-xs text-green-600">(Credit)</span></p>
+                                  <p className="text-xs text-muted-foreground">{n.reason}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold">₹{n.amount.toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-muted-foreground">{new Date(n.createdAt).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                            ))}
+                            {notes.debitNotes.map((n) => (
+                              <div key={n._id} className="flex items-center justify-between text-sm border-b pb-2">
+                                <div>
+                                  <p className="font-medium">{n.number} <span className="text-xs text-red-600">(Debit)</span></p>
+                                  <p className="text-xs text-muted-foreground">{n.reason}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold">₹{n.amount.toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-muted-foreground">{new Date(n.createdAt).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">Select an invoice from the list to view details.</div>

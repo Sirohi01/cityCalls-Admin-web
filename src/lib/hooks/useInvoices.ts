@@ -81,3 +81,51 @@ export function usePaymentHistory(invoiceId: string) {
     enabled: !!invoiceId,
   });
 }
+
+export interface FinanceNote {
+  _id: string;
+  number: string;
+  invoiceId: string;
+  amount: number;
+  reason: string;
+  createdAt: string;
+}
+
+export function useInvoiceNotes(invoiceId: string) {
+  return useQuery({
+    queryKey: ['invoice-notes', invoiceId],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<{ creditNotes: FinanceNote[]; debitNotes: FinanceNote[] }>>(`/invoices/${invoiceId}/notes`);
+      return res.data.data;
+    },
+    enabled: !!invoiceId,
+  });
+}
+
+export interface IssueNoteInput {
+  invoiceId: string;
+  amount: number;
+  reason: string;
+}
+
+export function useIssueCreditNote() {
+  const queryClient = useQueryClient();
+  return useMutation<FinanceNote, AxiosError<ApiErrorEnvelope>, IssueNoteInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<FinanceNote>>('/credit-notes', input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: ['invoice-notes', variables.invoiceId] }),
+  });
+}
+
+export function useIssueDebitNote() {
+  const queryClient = useQueryClient();
+  return useMutation<FinanceNote, AxiosError<ApiErrorEnvelope>, IssueNoteInput>({
+    mutationFn: async (input) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<FinanceNote>>('/debit-notes', input);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: ['invoice-notes', variables.invoiceId] }),
+  });
+}

@@ -45,6 +45,7 @@ import {
   BrainCircuit,
   BarChart4,
   FileKey,
+  FileStack,
   Database,
   Sparkles
 } from 'lucide-react';
@@ -119,6 +120,7 @@ const navItems: { group: string; items: NavItem[] }[] = [
     group: 'Finance',
     items: [
       { title: 'Estimates', url: '/dashboard/finance/estimates', icon: Receipt, module: 'finance' },
+      { title: 'Proforma Invoices', url: '/dashboard/finance/proforma', icon: FileStack, module: 'finance' },
       { title: 'Invoices', url: '/dashboard/finance/invoices', icon: IndianRupee, module: 'finance' },
     ],
   },

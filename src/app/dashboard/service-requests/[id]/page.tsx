@@ -11,10 +11,13 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
   useServiceRequest,
   useAssignmentHistory,
+  useServiceVisits,
   AssignmentHistoryEntry,
+  ServiceVisit,
   SERVICE_REQUEST_STAGE_NAMES,
   stageIndexForStatus,
 } from '@/lib/hooks/useServiceRequests';
+import { Wrench } from 'lucide-react';
 
 function warrantyLabel(warrantyExpiresAt?: string): { text: string; className: string } {
   if (!warrantyExpiresAt) return { text: 'Not recorded', className: 'text-muted-foreground' };
@@ -23,6 +26,37 @@ function warrantyLabel(warrantyExpiresAt?: string): { text: string; className: s
   return expired
     ? { text: `Out of Warranty (expired ${date})`, className: 'text-red-600' }
     : { text: `In Warranty (until ${date})`, className: 'text-green-600' };
+}
+
+function ServiceVisitItem({ visit }: { visit: ServiceVisit }) {
+  const partsTotal = visit.parts.reduce((sum, p) => sum + p.qty * p.unitPrice, 0);
+  return (
+    <div className="rounded border border-slate-200 bg-white p-4 space-y-2 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-slate-900">Visit #{visit.visitNumber}</span>
+        <StatusBadge label={visit.completedAt ? 'COMPLETED' : 'IN PROGRESS'} category={visit.completedAt ? 'success' : 'info'} />
+      </div>
+      <div className="grid grid-cols-2 gap-y-1 text-xs text-slate-600">
+        <span>Arrived:</span>
+        <span className="text-right">{visit.arrivedAt ? new Date(visit.arrivedAt).toLocaleString() : 'Not recorded'}</span>
+        <span>Completed:</span>
+        <span className="text-right">{visit.completedAt ? new Date(visit.completedAt).toLocaleString() : '—'}</span>
+      </div>
+      {visit.inspection?.defectFound && (
+        <p className="text-xs text-slate-600"><span className="font-medium">Defect:</span> {visit.inspection.defectFound}</p>
+      )}
+      {visit.parts.length > 0 && (
+        <div className="text-xs text-slate-600">
+          <span className="font-medium">Parts used:</span> {visit.parts.map((p) => `${p.name} x${p.qty}`).join(', ')} (₹{partsTotal.toLocaleString('en-IN')})
+        </div>
+      )}
+      {visit.labourCharge != null && (
+        <p className="text-xs text-slate-600"><span className="font-medium">Labour charge:</span> ₹{visit.labourCharge.toLocaleString('en-IN')}</p>
+      )}
+      {visit.workNotes && <p className="text-xs text-slate-600"><span className="font-medium">Notes:</span> {visit.workNotes}</p>}
+      <p className="text-xs text-muted-foreground">{visit.beforeImages.length} before / {visit.afterImages.length} after photo(s)</p>
+    </div>
+  );
 }
 
 function AssignmentHistoryItem({ entry, isFirst }: { entry: AssignmentHistoryEntry; isFirst: boolean }) {
@@ -51,6 +85,7 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
   const { id } = use(params);
   const { data: ticket, isLoading, isError } = useServiceRequest(id);
   const { data: history } = useAssignmentHistory(id);
+  const { data: visits } = useServiceVisits(id);
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading ticket details...</div>;
   if (isError || !ticket) return <div className="p-8 text-center text-destructive">Failed to load ticket details or ticket not found.</div>;
@@ -130,6 +165,26 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
                 <span className="text-muted-foreground">Warranty Status:</span>
                 <span className={`font-medium ${warranty.className}`}>{warranty.text}</span>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-primary" />
+                Service Visits
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!visits || visits.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No technician visits recorded yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {visits.map((v) => (
+                    <ServiceVisitItem key={v._id} visit={v} />
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

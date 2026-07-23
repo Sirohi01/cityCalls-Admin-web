@@ -92,6 +92,40 @@ export function useAssignmentHistory(id: string) {
   });
 }
 
+export interface ServiceVisitPart {
+  name: string;
+  qty: number;
+  unitPrice: number;
+}
+
+export interface ServiceVisit {
+  _id: string;
+  visitNumber: number;
+  technicianId: string;
+  startedAt?: string;
+  arrivedAt?: string;
+  inspection: { defectFound?: string; symptoms: string[]; solutionType?: string };
+  parts: ServiceVisitPart[];
+  labourCharge?: number;
+  beforeImages: string[];
+  afterImages: string[];
+  workNotes?: string;
+  completedAt?: string;
+  nextVisitDate?: string;
+  createdAt: string;
+}
+
+export function useServiceVisits(id: string) {
+  return useQuery({
+    queryKey: ['service-request-visits', id],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiSuccessEnvelope<ServiceVisit[]>>(`/service-requests/${id}/visits`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 interface ListParams {
   status?: string;
   status_in?: string;

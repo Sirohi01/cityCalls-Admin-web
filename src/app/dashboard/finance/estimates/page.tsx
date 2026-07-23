@@ -213,7 +213,7 @@ export default function EstimatesPage() {
                           )}
                           {item.status === 'APPROVED' && (
                             <Button size="sm" disabled={anyActionPending} onClick={() => convertEstimate.mutate(item._id)}>
-                              Convert to Invoice
+                              Convert to Proforma
                             </Button>
                           )}
                         </div>
