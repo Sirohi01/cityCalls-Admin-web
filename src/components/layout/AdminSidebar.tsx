@@ -47,7 +47,8 @@ import {
   FileKey,
   FileStack,
   Database,
-  Sparkles
+  Sparkles,
+  MessageSquareWarning
 } from 'lucide-react';
 import { useBeautyMode } from '@/lib/hooks/useBeautyMode';
 
@@ -136,6 +137,7 @@ const navItems: { group: string; items: NavItem[] }[] = [
     items: [
       { title: 'Happy Calls', url: '/dashboard/happy-calls', icon: SmilePlus, module: 'happyCalls' },
       { title: 'Reopen Requests', url: '/dashboard/reopen-requests', icon: RefreshCcw, module: 'happyCalls' },
+      { title: 'Complaints', url: '/dashboard/complaints', icon: MessageSquareWarning, module: 'complaints' },
     ],
   },
   {
