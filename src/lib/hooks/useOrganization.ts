@@ -24,6 +24,7 @@ export interface Branch {
   serviceCategoryIds?: string[];
   workingHours?: WorkingHoursRow[];
   holidays?: string[];
+  dailyCapacityPerSlot?: number;
   managerId?: string;
   registeredAddress?: RegisteredAddress;
   gstin?: string;
@@ -70,6 +71,7 @@ export interface BranchInput {
   serviceCategoryIds?: string[];
   workingHours?: WorkingHoursRow[];
   holidays?: string[];
+  dailyCapacityPerSlot?: number;
   managerId?: string;
   registeredAddress?: RegisteredAddress;
   gstin?: string;

@@ -36,6 +36,7 @@ const branchFormSchema = z.object({
   addressState: z.string().optional(),
   addressPinCode: z.string().optional(),
   holidays: z.string().optional(),
+  dailyCapacityPerSlot: z.number().int().min(1, 'Must be at least 1'),
   active: z.boolean(),
 });
 type BranchFormValues = z.infer<typeof branchFormSchema>;
@@ -108,6 +109,7 @@ function BranchForm({ branch, onClose }: { branch?: Branch; onClose: () => void 
       addressState: branch?.registeredAddress?.state ?? '',
       addressPinCode: branch?.registeredAddress?.pinCode ?? '',
       holidays: branch?.holidays?.map((h) => new Date(h).toISOString().slice(0, 10)).join(', ') ?? '',
+      dailyCapacityPerSlot: branch?.dailyCapacityPerSlot ?? 5,
       active: branch?.active ?? true,
     },
   });
@@ -127,6 +129,7 @@ function BranchForm({ branch, onClose }: { branch?: Branch; onClose: () => void 
       serviceCategoryIds: categoryIds,
       workingHours,
       holidays: splitList(values.holidays),
+      dailyCapacityPerSlot: values.dailyCapacityPerSlot,
       managerId: values.managerId || undefined,
       gstin: values.gstin || undefined,
       registeredAddress: hasAddress
@@ -189,6 +192,15 @@ function BranchForm({ branch, onClose }: { branch?: Branch; onClose: () => void 
       </div>
 
       <AppFormField label="Holidays (comma-separated dates, YYYY-MM-DD)" placeholder="2026-01-26, 2026-08-15" {...register('holidays')} />
+
+      <AppFormField
+        label="Daily Capacity Per Time Slot"
+        type="number"
+        min={1}
+        error={errors.dailyCapacityPerSlot?.message}
+        {...register('dailyCapacityPerSlot', { valueAsNumber: true })}
+      />
+      <p className="text-xs text-muted-foreground -mt-2">Max Service Requests the customer app will let customers book into the same appointment slot per day.</p>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="w-4 h-4" {...register('active')} />
