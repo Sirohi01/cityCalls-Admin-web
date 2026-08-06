@@ -48,9 +48,11 @@ import {
   FileStack,
   Database,
   Sparkles,
-  MessageSquareWarning
+  MessageSquareWarning,
+  ChevronDown
 } from 'lucide-react';
 import { useBeautyMode } from '@/lib/hooks/useBeautyMode';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // module/action values here match citycalls-api's real RBAC vocabulary
 // exactly (src/modules/*/​*.routes.ts's requirePermission(module, action)
@@ -220,34 +222,52 @@ function AdminSidebarContent() {
         <Image src="/logo.png" alt="CityCalls Logo" width={668} height={190} className="h-10 w-auto object-contain" priority />
       </SidebarHeader>
       <SidebarContent>
-        {navItems.map((group) => (
-          <SidebarGroup key={group.group} className="py-0">
-            <SidebarGroupLabel className={isBeautyMode ? 'text-pink-400 font-semibold' : 'text-gray-400 font-semibold'}>{group.group}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <PermissionGate key={item.title} module={item.module} action={item.action} anyOf={item.anyOf} alwaysVisible={item.alwaysVisible}>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={item.url} />}
-                        isActive={currentUrl === item.url}
-                        className={
-                          isBeautyMode
-                            ? 'text-pink-950 hover:bg-pink-50 hover:text-pink-950 data-[active]:bg-pink-500 data-[active]:text-white transition-colors'
-                            : 'text-white hover:bg-gray-800 hover:text-white data-[active]:bg-[#8cc63f] data-[active]:text-black transition-colors'
-                        }
-                        style={{ color: currentUrl === item.url ? (isBeautyMode ? '#fff' : '#000') : (isBeautyMode ? '#500724' : '#fff') }}
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </PermissionGate>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {navItems.map((group) => {
+          const isMain = group.group === 'Main';
+          return (
+          <Collapsible key={group.group} defaultOpen={isMain} className="group/collapsible">
+            <SidebarGroup className="py-0">
+              <CollapsibleTrigger 
+                nativeButton={false}
+                render={
+                  <SidebarGroupLabel 
+                    className={`w-full flex items-center justify-between cursor-pointer ${isBeautyMode ? 'text-pink-400 font-semibold hover:text-pink-500' : 'text-gray-400 font-semibold hover:text-gray-300'}`} 
+                  />
+                }
+              >
+                {group.group}
+                {group.group !== 'Main' && (
+                  <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => (
+                      <PermissionGate key={item.title} module={item.module} action={item.action} anyOf={item.anyOf} alwaysVisible={item.alwaysVisible}>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            render={<Link href={item.url} />}
+                            isActive={currentUrl === item.url}
+                            className={
+                              isBeautyMode
+                                ? 'text-pink-950 hover:bg-pink-50 hover:text-pink-950 data-[active]:bg-pink-500 data-[active]:text-white transition-colors'
+                                : 'text-white hover:bg-gray-800 hover:text-white data-[active]:bg-[#8cc63f] data-[active]:text-black transition-colors'
+                            }
+                            style={{ color: currentUrl === item.url ? (isBeautyMode ? '#fff' : '#000') : (isBeautyMode ? '#500724' : '#fff') }}
+                          >
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      </PermissionGate>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )})}
       </SidebarContent>
     </Sidebar>
   );
