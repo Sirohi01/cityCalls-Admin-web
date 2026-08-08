@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Megaphone, Users, Send, Pencil, Trash2, Search } from 'lucide-react';
+import { Megaphone, Users, Send, Pencil, Trash2, Search, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign, useCampaignAudiencePreview, CampaignRecipientType } from '@/lib/hooks/useCampaigns';
+import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign, useDuplicateCampaign, useCampaignAudiencePreview, CampaignRecipientType } from '@/lib/hooks/useCampaigns';
 import { useNotificationTemplates } from '@/lib/hooks/useNotificationTemplates';
 import { useMasters, Master } from '@/lib/hooks/useMasters';
 import { useBranches } from '@/lib/hooks/useOrganization';
@@ -394,6 +394,7 @@ export default function CampaignsPage() {
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const sendCampaign = useSendCampaign();
   const deleteCampaign = useDeleteCampaign();
+  const duplicateCampaign = useDuplicateCampaign();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredCampaigns = useMemo(() => {
@@ -410,6 +411,13 @@ export default function CampaignsPage() {
     deleteCampaign.mutate(id, {
       onSuccess: () => toast.success('Campaign deleted successfully'),
       onError: () => toast.error('Failed to delete campaign'),
+    });
+  };
+
+  const handleDuplicate = (id: string) => {
+    duplicateCampaign.mutate(id, {
+      onSuccess: () => toast.success('Campaign duplicated as a new draft — edit and send it whenever ready.'),
+      onError: () => toast.error('Failed to duplicate campaign'),
     });
   };
 
@@ -488,14 +496,26 @@ export default function CampaignsPage() {
                                 <Send className="w-3 h-3" /> Send Now
                               </Button>
                             ) : null}
-                            <FormSheet
-                              triggerLabel="Edit"
-                              title="Edit Campaign"
-                              description={`Update details for ${item.name}`}
-                              triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                            {item.status === 'COMPLETED' || item.status === 'CANCELLED' ? null : (
+                              <FormSheet
+                                triggerLabel="Edit"
+                                title="Edit Campaign"
+                                description={`Update details for ${item.name}`}
+                                triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
+                              >
+                                {(close) => <UpdateCampaignForm campaign={item} onClose={close} />}
+                              </FormSheet>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                              title="Duplicate as a new draft — useful for recurring sends like an annual festival greeting"
+                              onClick={() => handleDuplicate(item._id)}
+                              disabled={duplicateCampaign.isPending}
                             >
-                              {(close) => <UpdateCampaignForm campaign={item} onClose={close} />}
-                            </FormSheet>
+                              <Copy className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteCampaign.isPending}>
                               <Trash2 className="w-4 h-4" />
                             </Button>

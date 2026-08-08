@@ -106,6 +106,17 @@ export function useUpdateCampaign() {
   });
 }
 
+export function useDuplicateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation<Campaign, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.post<ApiSuccessEnvelope<Campaign>>(`/campaigns/${id}/duplicate`);
+      return res.data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
+  });
+}
+
 export function useDeleteCampaign() {
   const queryClient = useQueryClient();
   return useMutation<void, AxiosError<ApiErrorEnvelope>, string>({
