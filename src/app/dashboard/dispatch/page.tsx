@@ -17,13 +17,16 @@ import { useBranches, useSubBranches } from '@/lib/hooks/useOrganization';
 const CLOSED_STATUSES = new Set(['CLOSED', 'CANCELLED']);
 const DIRECT_TO_EMPLOYEE_STATUSES = new Set(['ASSIGNED_TO_BRANCH', 'ASSIGNED_TO_SUB_BRANCH', 'ASSIGNED_TO_TEAM', 'REASSIGNMENT_REQUIRED']);
 const NEEDS_BRANCH_FIRST_STATUSES = new Set(['NEW', 'NEEDS_MANUAL_BRANCH_ASSIGNMENT']);
+function dispatchReason(status: string): string | null {
+  if (NEEDS_BRANCH_FIRST_STATUSES.has(status)) return 'Needs branch assignment';
+  if (status === 'REASSIGNMENT_REQUIRED') return 'Needs re-assignment';
+  if (DIRECT_TO_EMPLOYEE_STATUSES.has(status)) return 'Needs technician assignment';
+  return null;
+}
 
 export default function DispatchBoardPage() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
-  // Only used when the SR has no branch on file yet (NEEDS_MANUAL_BRANCH_ASSIGNMENT) —
-  // an already-branch-assigned SR's branch isn't editable here, there's no
-  // "move to a different branch" transition to reuse for that.
   const [branchOverride, setBranchOverride] = useState<string | null>(null);
   const [subBranchChoice, setSubBranchChoice] = useState<string | null>(null);
 
@@ -63,8 +66,8 @@ export default function DispatchBoardPage() {
   // different branch.
   const scopedEmployees = effectiveBranchId
     ? (allEmployees || []).filter(
-        (e) => e.active && e.branchId === effectiveBranchId && (!subBranchChoice || e.subBranchId === subBranchChoice)
-      )
+      (e) => e.active && e.branchId === effectiveBranchId && (!subBranchChoice || e.subBranchId === subBranchChoice)
+    )
     : [];
 
   const handleAssign = async (employeeId: string) => {
@@ -135,11 +138,19 @@ export default function DispatchBoardPage() {
                   <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                     <Wrench className="w-3 h-3" /> Status: {req.status}
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
                     {req.assignee ? (
-                      <StatusBadge label={`Assigned: ${req.assignee.name} (${req.assignee.type.replace(/_/g, ' ')})`} category="info" />
+                      <StatusBadge
+                        label={`Assigned: ${req.assignee.name} (${req.assignee.type.replace(/_/g, ' ')})`}
+                        category={req.assignee.type === 'EMPLOYEE' ? 'success' : 'info'}
+                      />
                     ) : (
                       <StatusBadge label="Unassigned" category="error" />
+                    )}
+                    {dispatchReason(req.status) && (
+                      <span className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                        {dispatchReason(req.status)}
+                      </span>
                     )}
                   </div>
                 </div>
