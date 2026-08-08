@@ -24,11 +24,11 @@ export interface Estimate {
   createdAt: string;
 }
 
-export function useEstimates() {
+export function useEstimates(serviceRequestId?: string) {
   return useQuery({
-    queryKey: ['estimates'],
+    queryKey: ['estimates', { serviceRequestId }],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Estimate[]>>('/estimates', { params: { limit: 100 } });
+      const res = await apiClient.get<ApiSuccessEnvelope<Estimate[]>>('/estimates', { params: { limit: 100, serviceRequestId } });
       return res.data.data;
     },
   });

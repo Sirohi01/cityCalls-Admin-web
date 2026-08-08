@@ -14,20 +14,23 @@ export interface Invoice {
   createdAt: string;
 }
 
-export function useInvoices() {
+export function useInvoices(serviceRequestId?: string) {
   return useQuery({
-    queryKey: ['invoices'],
+    queryKey: ['invoices', { serviceRequestId }],
     queryFn: async () => {
-      const res = await apiClient.get<ApiSuccessEnvelope<Invoice[]>>('/invoices', { params: { limit: 100 } });
+      const res = await apiClient.get<ApiSuccessEnvelope<Invoice[]>>('/invoices', { params: { limit: 100, serviceRequestId } });
       return res.data.data;
     },
   });
 }
 
+export const PAYMENT_METHODS = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'GATEWAY', 'CHEQUE', 'CREDIT'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
 export interface RecordPaymentInput {
   invoiceId: string;
   amount: number;
-  method: 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER' | 'GATEWAY' | 'CHEQUE' | 'CREDIT';
+  method: PaymentMethod;
   reference?: string;
 }
 

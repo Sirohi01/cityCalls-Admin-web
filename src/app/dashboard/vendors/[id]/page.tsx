@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useRef, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +15,17 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 
 import { useVendor, useUpdateVendor, useSetVendorBlacklist, useVendorTechnicians, useAddVendorTechnician, Vendor } from '@/lib/hooks/useVendors';
 import { useUsers } from '@/lib/hooks/useUsers';
+import { useFileList, useUploadFile, useDeleteFile, resolveFileUrl } from '@/lib/hooks/useFiles';
+import { useServiceRequests } from '@/lib/hooks/useServiceRequests';
+import {
+  useVendorInvoices,
+  useCreateVendorInvoice,
+  useApproveVendorInvoice,
+  useVendorPayouts,
+  useCreateVendorPayout,
+  useMarkPayoutPaid,
+} from '@/lib/hooks/useVendorFinance';
+import { FileText, Trash2, IndianRupee } from 'lucide-react';
 
 function splitList(value?: string): string[] {
   return (value ?? '').split(',').map((v) => v.trim()).filter(Boolean);
@@ -168,6 +179,250 @@ function AddTechnicianForm({ vendorId, onClose }: { vendorId: string; onClose: (
   );
 }
 
+function VendorDocumentsCard({ vendorId }: { vendorId: string }) {
+  const { data: files, isLoading } = useFileList('VENDOR', vendorId);
+  const { upload, isPending } = useUploadFile('VENDOR', vendorId);
+  const deleteFile = useDeleteFile();
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    try {
+      await upload(file, 'VENDOR_DOCUMENT');
+    } catch {
+      setError('Failed to upload document.');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle>Documents</CardTitle>
+        <Button size="sm" variant="outline" disabled={isPending} onClick={() => fileInputRef.current?.click()}>
+          {isPending ? 'Uploading...' : 'Upload Document'}
+        </Button>
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} disabled={isPending} />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading documents...</p>
+        ) : !files || files.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
+        ) : (
+          files.map((f) => (
+            <div key={f._id} className="flex items-center justify-between border-b pb-2 text-sm">
+              <a href={resolveFileUrl(f)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary hover:underline">
+                <FileText className="w-4 h-4" /> {f.key.split('/').pop()}
+              </a>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">{new Date(f.createdAt).toLocaleDateString()}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => deleteFile.mutate({ id: f._id, entityType: 'VENDOR', entityId: vendorId })}
+                  disabled={deleteFile.isPending}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// No ratings concept exists on this platform (checked serviceRequests.model.ts
+// and vendors.model.ts) — "performance" is a job-count breakdown by status,
+// computed client-side from this vendor's own assigned requests.
+function VendorPerformanceCard({ vendorId }: { vendorId: string }) {
+  const { data: requests, isLoading } = useServiceRequests({ assigneeId: vendorId, limit: 100 });
+  const list = requests || [];
+  const completedStatuses = new Set(['SERVICE_COMPLETED', 'CUSTOMER_CONFIRMATION_PENDING', 'PAYMENT_PENDING', 'PARTIALLY_PAID', 'PAID', 'CLOSED']);
+  const cancelledStatuses = new Set(['CANCELLED', 'REASSIGNMENT_REQUIRED']);
+  const total = list.length;
+  const completed = list.filter((r) => completedStatuses.has(r.status)).length;
+  const cancelled = list.filter((r) => cancelledStatuses.has(r.status)).length;
+  const inProgress = total - completed - cancelled;
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Performance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading performance data...</p>
+        ) : (
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{total}</p>
+              <p className="text-xs text-muted-foreground">Total Jobs</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-green-600">{completed}</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-600">{inProgress}</p>
+              <p className="text-xs text-muted-foreground">In Progress</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-600">{cancelled}</p>
+              <p className="text-xs text-muted-foreground">Cancelled</p>
+            </div>
+            <div className="col-span-4 pt-2 border-t text-sm">
+              <span className="text-muted-foreground">Completion rate: </span>
+              <span className="font-semibold">{completionRate}%</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CreateVendorInvoiceForm({ vendorId, onClose }: { vendorId: string; onClose: () => void }) {
+  const { data: requests } = useServiceRequests({ assigneeId: vendorId, limit: 100 });
+  const createInvoice = useCreateVendorInvoice();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [grossAmount, setGrossAmount] = useState('');
+
+  const toggle = (id: string) => setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const onSubmit = () => {
+    const amount = Number(grossAmount);
+    if (selected.length === 0 || !amount || amount <= 0) return;
+    createInvoice.mutate({ vendorId, serviceRequestIds: selected, grossAmount: amount }, { onSuccess: onClose });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Service Requests to Bill</label>
+        <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+          {(requests || []).map((r) => (
+            <label key={r._id} className="flex items-center gap-2 text-sm py-1">
+              <input type="checkbox" checked={selected.includes(r._id)} onChange={() => toggle(r._id)} />
+              {r.number} <span className="text-muted-foreground text-xs">({r.status})</span>
+            </label>
+          ))}
+          {(!requests || requests.length === 0) && <p className="text-xs text-muted-foreground">No service requests assigned to this vendor yet.</p>}
+        </div>
+      </div>
+      <AppFormField label="Gross Amount (₹)" type="number" value={grossAmount} onChange={(e) => setGrossAmount(e.target.value)} />
+      {createInvoice.isError && <p className="text-sm text-destructive">{createInvoice.error.response?.data?.message ?? 'Failed to create invoice.'}</p>}
+      <Button className="w-full" onClick={onSubmit} disabled={createInvoice.isPending || selected.length === 0 || !grossAmount}>
+        {createInvoice.isPending ? 'Creating...' : 'Create Invoice'}
+      </Button>
+    </div>
+  );
+}
+
+function VendorFinanceCard({ vendorId }: { vendorId: string }) {
+  const { data: invoices } = useVendorInvoices(vendorId);
+  const { data: payouts } = useVendorPayouts(vendorId);
+  const approveInvoice = useApproveVendorInvoice();
+  const createPayout = useCreateVendorPayout();
+  const markPaid = useMarkPayoutPaid();
+
+  const approvedUnpaidInvoices = (invoices || []).filter((i) => i.status === 'APPROVED');
+
+  const handleCreatePayout = () => {
+    if (approvedUnpaidInvoices.length === 0) return;
+    createPayout.mutate({ vendorId, vendorInvoiceIds: approvedUnpaidInvoices.map((i) => i._id) });
+  };
+
+  const handleMarkPaid = (payoutId: string) => {
+    const reference = window.prompt('Payment reference (transaction ID / UTR)?');
+    if (!reference) return;
+    markPaid.mutate({ id: payoutId, vendorId, reference });
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="flex items-center gap-2">
+          <IndianRupee className="w-4 h-4 text-primary" /> Invoices &amp; Payouts
+        </CardTitle>
+        <div className="flex gap-2">
+          <FormSheet
+            triggerLabel="Bill Service Requests"
+            title="Create Vendor Invoice"
+            description="Bill this vendor's completed service requests to compute their net payable amount."
+          >
+            {(close) => <CreateVendorInvoiceForm vendorId={vendorId} onClose={close} />}
+          </FormSheet>
+          <Button size="sm" onClick={handleCreatePayout} disabled={approvedUnpaidInvoices.length === 0 || createPayout.isPending}>
+            {createPayout.isPending ? 'Creating...' : `Create Payout (${approvedUnpaidInvoices.length} approved)`}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Invoices</p>
+          {(!invoices || invoices.length === 0) ? (
+            <p className="text-sm text-muted-foreground">No invoices billed yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {invoices.map((inv) => (
+                <div key={inv._id} className="flex items-center justify-between border-b pb-2 text-sm">
+                  <div>
+                    <p className="font-medium">{inv.number}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Gross ₹{inv.commissionBreakup.grossAmount.toLocaleString('en-IN')} − {inv.commissionBreakup.commissionRate}% commission = Net ₹{inv.amount.toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge label={inv.status} category={inv.status === 'PAID' ? 'success' : inv.status === 'DISPUTED' ? 'error' : 'warning'} />
+                    {inv.status === 'PENDING' && (
+                      <Button size="sm" variant="outline" onClick={() => approveInvoice.mutate({ id: inv._id, vendorId })} disabled={approveInvoice.isPending}>
+                        Approve
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Payouts</p>
+          {(!payouts || payouts.length === 0) ? (
+            <p className="text-sm text-muted-foreground">No payouts created yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {payouts.map((p) => (
+                <div key={p._id} className="flex items-center justify-between border-b pb-2 text-sm">
+                  <div>
+                    <p className="font-medium">{p.number}</p>
+                    <p className="text-xs text-muted-foreground">₹{p.amount.toLocaleString('en-IN')}{p.reference ? ` · ${p.reference}` : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge label={p.status} category={p.status === 'PAID' ? 'success' : p.status === 'FAILED' ? 'error' : 'warning'} />
+                    {p.status !== 'PAID' && (
+                      <Button size="sm" variant="outline" onClick={() => handleMarkPaid(p._id)} disabled={markPaid.isPending}>
+                        Mark Paid
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function VendorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
@@ -297,6 +552,10 @@ export default function VendorDetailPage({ params }: { params: Promise<{ id: str
           )}
         </CardContent>
       </Card>
+
+      <VendorPerformanceCard vendorId={id} />
+      <VendorDocumentsCard vendorId={id} />
+      <VendorFinanceCard vendorId={id} />
     </div>
   );
 }

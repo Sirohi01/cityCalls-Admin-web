@@ -8,37 +8,48 @@ import { Separator } from '@/components/ui/separator';
 import { User, MapPin, Wrench } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
-import { useServiceRequests, useAssignServiceRequest } from '@/lib/hooks/useServiceRequests';
+import { useServiceRequests, useAssignServiceRequest, useUpdateServiceRequestStatus, ServiceRequest } from '@/lib/hooks/useServiceRequests';
 import { useEmployees } from '@/lib/hooks/useEmployees';
 
 // Statuses where the job is still active (counts toward a technician's
 // current load) — mirrors the "not yet CLOSED/CANCELLED" idea without
 // hardcoding every one of the 37 statuses individually.
 const CLOSED_STATUSES = new Set(['CLOSED', 'CANCELLED']);
+const DIRECT_TO_EMPLOYEE_STATUSES = new Set(['ASSIGNED_TO_BRANCH', 'ASSIGNED_TO_SUB_BRANCH', 'ASSIGNED_TO_TEAM', 'REASSIGNMENT_REQUIRED']);
+const NEEDS_BRANCH_FIRST_STATUSES = new Set(['NEW', 'NEEDS_MANUAL_BRANCH_ASSIGNMENT']);
 
 export default function DispatchBoardPage() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
+  const [assignError, setAssignError] = useState<string | null>(null);
 
   const { data: allRequests, isLoading: loadingReqs } = useServiceRequests();
   const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const assignRequest = useAssignServiceRequest();
-
-  const unassignedRequests = allRequests?.filter((req) => !req.assigneeId) || [];
-  // Technicians assign as EMPLOYEE (assigneeType), using the Employee
-  // record's own _id — not the linked User's _id (a real bug this replaces:
-  // the backend's AssigneeType enum has no 'USER' value at all).
+  const updateStatus = useUpdateServiceRequestStatus();
+  const isBusy = assignRequest.isPending || updateStatus.isPending;
+  const openRequests = allRequests?.filter((req) => !CLOSED_STATUSES.has(req.status)) || [];
+  const selectedSr = openRequests.find((r) => r._id === selectedRequest) || null;
   const availableTechnicians = employees?.filter((e) => e.active) || [];
 
   const loadFor = (employeeId: string) =>
     (allRequests || []).filter((r) => r.assigneeId === employeeId && !CLOSED_STATUSES.has(r.status)).length;
 
-  const handleAssign = (employeeId: string) => {
-    if (!selectedRequest) return;
-
-    assignRequest.mutate(
-      { id: selectedRequest, assigneeType: 'EMPLOYEE', assigneeId: employeeId },
-      { onSuccess: () => setSelectedRequest(null) }
-    );
+  const handleAssign = async (employeeId: string) => {
+    if (!selectedRequest || !selectedSr) return;
+    setAssignError(null);
+    try {
+      if (NEEDS_BRANCH_FIRST_STATUSES.has(selectedSr.status)) {
+        if (!selectedSr.branchId) throw new Error('This request has no branch on file — set one before assigning.');
+        await assignRequest.mutateAsync({ id: selectedRequest, assigneeType: 'BRANCH', assigneeId: selectedSr.branchId });
+      } else if (!DIRECT_TO_EMPLOYEE_STATUSES.has(selectedSr.status)) {
+        await updateStatus.mutateAsync({ id: selectedRequest, toStatus: 'REASSIGNMENT_REQUIRED', reason: 'Reassigned via Dispatch Board' });
+      }
+      await assignRequest.mutateAsync({ id: selectedRequest, assigneeType: 'EMPLOYEE', assigneeId: employeeId });
+      setSelectedRequest(null);
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } };
+      setAssignError(err.response?.data?.message ?? (e instanceof Error ? e.message : 'Failed to assign this request.'));
+    }
   };
 
   return (
@@ -51,27 +62,29 @@ export default function DispatchBoardPage() {
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
-        {/* Left Pane: Unassigned Requests */}
+        {/* Left Pane: All Open Requests (unassigned or already assigned — reassignable) */}
         <Card className="flex flex-col h-full shadow-sm">
           <CardHeader className="border-b bg-slate-50/50 pb-4 shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
-                <StatusBadge label="Unassigned" category="error" />
                 Service Requests
               </CardTitle>
-              <Badge variant="secondary">{unassignedRequests.length} pending</Badge>
+              <Badge variant="secondary">{openRequests.length} open</Badge>
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
             {loadingReqs ? (
               <div className="text-center text-muted-foreground p-8">Loading requests...</div>
-            ) : unassignedRequests.length === 0 ? (
-              <div className="text-center text-muted-foreground p-8">No unassigned requests.</div>
+            ) : openRequests.length === 0 ? (
+              <div className="text-center text-muted-foreground p-8">No open requests.</div>
             ) : (
-              unassignedRequests.map((req) => (
+              openRequests.map((req: ServiceRequest) => (
                 <div
                   key={req._id}
-                  onClick={() => setSelectedRequest(req._id)}
+                  onClick={() => {
+                    setSelectedRequest(req._id);
+                    setAssignError(null);
+                  }}
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedRequest === req._id ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50'}`}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -87,6 +100,13 @@ export default function DispatchBoardPage() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                     <Wrench className="w-3 h-3" /> Status: {req.status}
+                  </div>
+                  <div className="mt-2">
+                    {req.assignee ? (
+                      <StatusBadge label={`Assigned: ${req.assignee.name} (${req.assignee.type.replace(/_/g, ' ')})`} category="info" />
+                    ) : (
+                      <StatusBadge label="Unassigned" category="error" />
+                    )}
                   </div>
                 </div>
               ))
@@ -114,6 +134,10 @@ export default function DispatchBoardPage() {
               </div>
             )}
 
+            {assignError && (
+              <div className="p-3 rounded-md bg-red-50 border border-red-100 text-sm text-red-700">{assignError}</div>
+            )}
+
             {loadingEmployees ? (
               <div className="text-center text-muted-foreground p-8">Loading technicians...</div>
             ) : availableTechnicians.length === 0 ? (
@@ -135,7 +159,7 @@ export default function DispatchBoardPage() {
                       size="sm"
                       className="bg-primary hover:bg-primary/90"
                       onClick={() => handleAssign(tech._id)}
-                      disabled={!selectedRequest || assignRequest.isPending}
+                      disabled={!selectedRequest || isBusy}
                     >
                       Assign
                     </Button>

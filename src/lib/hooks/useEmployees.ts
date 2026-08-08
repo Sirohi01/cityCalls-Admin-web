@@ -2,6 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
 import { AxiosError } from 'axios';
 
+export interface AvailabilityDay {
+  day: number; // 0=Sunday .. 6=Saturday, matches JS Date#getDay()
+  available: boolean;
+}
+
 // GET /employees populates userId with { name, mobile, email } (real backend
 // shape, src/modules/employees/employees.service.ts's listEmployees) — an
 // Employee record itself has no name/email/role, those live on the linked User.
@@ -15,6 +20,7 @@ export interface Employee {
   certifications: string[];
   dailyCapacity: number;
   active: boolean;
+  availability?: AvailabilityDay[];
   createdAt: string;
 }
 
@@ -69,6 +75,19 @@ export function useUpdateEmployee() {
   return useMutation<Employee, AxiosError<ApiErrorEnvelope>, UpdateEmployeeInput>({
     mutationFn: async ({ id, ...input }) => {
       const res = await apiClient.patch<ApiSuccessEnvelope<Employee>>(`/employees/${id}`, input);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useUpdateEmployeeAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation<Employee, AxiosError<ApiErrorEnvelope>, { id: string; availability: AvailabilityDay[] }>({
+    mutationFn: async ({ id, availability }) => {
+      const res = await apiClient.patch<ApiSuccessEnvelope<Employee>>(`/employees/${id}/availability`, { availability });
       return res.data.data;
     },
     onSuccess: () => {

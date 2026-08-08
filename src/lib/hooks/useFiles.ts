@@ -6,7 +6,7 @@ import axios from 'axios';
 export const FILE_CATEGORIES = [
   'ISSUE_IMAGE', 'PRODUCT_IMAGE', 'BEFORE_SERVICE_IMAGE', 'AFTER_SERVICE_IMAGE', 'PART_IMAGE',
   'VENDOR_DOCUMENT', 'EMPLOYEE_DOCUMENT', 'INVOICE_ATTACHMENT', 'RECORDING', 'VIDEO',
-  'SIGNATURE', 'PROFILE_IMAGE', 'CATALOG_IMAGE',
+  'SIGNATURE', 'PROFILE_IMAGE', 'CATALOG_IMAGE', 'MARKETING_MEDIA',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
@@ -22,11 +22,6 @@ export interface UploadedFile {
   sizeBytes: number;
   createdAt: string;
 }
-
-// LOCAL-provider urls are API-relative (e.g. "/uploads/...") — they're
-// served by citycalls-api, not this Next.js app, so rendering them directly
-// as-is would resolve against the wrong origin (this app's own port).
-// CLOUDINARY urls are already absolute and pass through unchanged.
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1').replace(/\/api\/v1\/?$/, '');
 
 export function resolveFileUrl(file: UploadedFile): string {
@@ -110,13 +105,6 @@ export function useDeleteFile() {
     },
   });
 }
-
-// Orchestrates the full upload: request signed params -> upload directly to
-// Cloudinary from the browser (bypassing our API for the file bytes
-// themselves) -> confirm with our API so a File row gets created; falls back
-// to the direct multipart /files/upload endpoint when Cloudinary is
-// disabled (requestSignedUpload returns mode: 'LOCAL' in that case) — same
-// two-path split already implemented server-side in lib/fileStorage.ts.
 export function useUploadFile(entityType: string, entityId: string) {
   const queryClient = useQueryClient();
   const requestSignedUpload = useRequestSignedUpload();
@@ -125,8 +113,8 @@ export function useUploadFile(entityType: string, entityId: string) {
 
   const isPending = requestSignedUpload.isPending || confirmUpload.isPending || directUpload.isPending;
 
-  const upload = async (file: File, category: FileCategory): Promise<UploadedFile> => {
-    const signed = await requestSignedUpload.mutateAsync({ category, entityType, entityId });
+  const upload = async (file: File, category: FileCategory, targetEntityId = entityId): Promise<UploadedFile> => {
+    const signed = await requestSignedUpload.mutateAsync({ category, entityType, entityId: targetEntityId });
 
     let result: UploadedFile;
     if (signed.mode === 'CLOUDINARY') {
@@ -142,17 +130,17 @@ export function useUploadFile(entityType: string, entityId: string) {
       result = await confirmUpload.mutateAsync({
         category,
         entityType,
-        entityId,
+        entityId: targetEntityId,
         publicId: cloudinaryRes.data.public_id,
         url: cloudinaryRes.data.secure_url,
         mimeType: file.type,
         sizeBytes: file.size,
       });
     } else {
-      result = await directUpload.mutateAsync({ category, entityType, entityId, file });
+      result = await directUpload.mutateAsync({ category, entityType, entityId: targetEntityId, file });
     }
 
-    queryClient.invalidateQueries({ queryKey: ['files', entityType, entityId] });
+    queryClient.invalidateQueries({ queryKey: ['files', entityType, targetEntityId] });
     return result;
   };
 

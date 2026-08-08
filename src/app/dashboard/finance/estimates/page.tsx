@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, FileText } from 'lucide-react';
 
-import { useEstimates, useCreateEstimate, useShareEstimate, useConvertEstimate, Estimate, LineItem } from '@/lib/hooks/useEstimates';
+import { useEstimates, useCreateEstimate, useShareEstimate, useConvertEstimate, useApproveEstimate, useRejectEstimate, Estimate, LineItem } from '@/lib/hooks/useEstimates';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 import { useBranches } from '@/lib/hooks/useOrganization';
 import { useServiceRequests } from '@/lib/hooks/useServiceRequests';
@@ -49,7 +49,7 @@ function CreateEstimateForm() {
   return (
     <Card className="max-w-4xl">
       <CardHeader>
-        <CardTitle>2</CardTitle>
+        <CardTitle>New Estimate</CardTitle>
         <CardDescription>Select a customer and branch, then add line items for spares and labor.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -153,7 +153,9 @@ export default function EstimatesPage() {
   const customerName = (id: string) => customers?.find((c) => c._id === id)?.name ?? 'Unknown';
   const shareEstimate = useShareEstimate();
   const convertEstimate = useConvertEstimate();
-  const anyActionPending = shareEstimate.isPending || convertEstimate.isPending;
+  const approveEstimate = useApproveEstimate();
+  const rejectEstimate = useRejectEstimate();
+  const anyActionPending = shareEstimate.isPending || convertEstimate.isPending || approveEstimate.isPending || rejectEstimate.isPending;
 
   return (
     <div className="space-y-6">
@@ -209,7 +211,14 @@ export default function EstimatesPage() {
                             </Button>
                           )}
                           {item.status === 'SHARED' && (
-                            <span className="text-xs text-muted-foreground">Awaiting customer approval</span>
+                            <>
+                              <Button size="sm" disabled={anyActionPending} title="Admin override — customer hasn't responded yet" onClick={() => approveEstimate.mutate(item._id)}>
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="outline" disabled={anyActionPending} title="Admin override — customer hasn't responded yet" onClick={() => rejectEstimate.mutate(item._id)}>
+                                Reject
+                              </Button>
+                            </>
                           )}
                           {item.status === 'APPROVED' && (
                             <Button size="sm" disabled={anyActionPending} onClick={() => convertEstimate.mutate(item._id)}>

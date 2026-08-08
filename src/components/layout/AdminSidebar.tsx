@@ -34,6 +34,7 @@ import {
   MapPin,
   Clock,
   Briefcase,
+  CalendarDays,
   Store,
   Receipt,
   IndianRupee,
@@ -116,6 +117,7 @@ const navItems: { group: string; items: NavItem[] }[] = [
     group: 'Workforce',
     items: [
       { title: 'Employees', url: '/dashboard/employees', icon: Briefcase, module: 'employees' },
+      { title: 'Availability', url: '/dashboard/employees/availability', icon: CalendarDays, module: 'employees' },
       { title: 'Vendors', url: '/dashboard/vendors', icon: Store, module: 'vendors' },
     ],
   },

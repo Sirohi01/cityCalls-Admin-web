@@ -14,14 +14,27 @@ import { Separator } from '@/components/ui/separator';
 import { Megaphone, Users, Send, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign } from '@/lib/hooks/useCampaigns';
+import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign, useCampaignAudiencePreview, CampaignRecipientType } from '@/lib/hooks/useCampaigns';
 import { useNotificationTemplates } from '@/lib/hooks/useNotificationTemplates';
 import { useMasters, Master } from '@/lib/hooks/useMasters';
+import { useBranches } from '@/lib/hooks/useOrganization';
+import { useVendors } from '@/lib/hooks/useVendors';
+import { STAFF_ROLES } from '@/lib/hooks/useUsers';
+import { useUploadFile } from '@/lib/hooks/useFiles';
 
 interface CampaignFormValues {
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
   templateId: string;
+  providerCampaignName: string;
+  templateParams: string;
+  festivalMessage: string;
+  recipientTypes: CampaignRecipientType[];
+  roles: string[];
+  branchIds: string[];
+  vendorIds: string[];
+  excludeMobiles: string;
+  manualMobiles: string;
   tags: string;
   segments: string;
   customerType: string;
@@ -41,35 +54,111 @@ function audienceSummary(campaign: Campaign, customerTypes?: Master[]) {
 
 function CreateCampaignForm() {
   const createCampaign = useCreateCampaign();
+  const sendCampaign = useSendCampaign();
+  const updateCampaign = useUpdateCampaign();
+  const mediaUpload = useUploadFile('CAMPAIGN', 'new');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { data: templates } = useNotificationTemplates();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
+  const { data: branches } = useBranches();
+  const { data: vendors } = useVendors();
   const { register, handleSubmit, control, reset } = useForm<CampaignFormValues>({
-    defaultValues: { channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '' },
+    defaultValues: {
+      channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '',
+      providerCampaignName: 'citycalls_festival_greeting_api', templateParams: '{{firstName}}, {{firstName}}',
+      festivalMessage: '',
+      recipientTypes: ['CUSTOMER'], roles: [], branchIds: [], vendorIds: [], excludeMobiles: '', manualMobiles: '',
+    },
   });
   const channel = useWatch({ control, name: 'channel' });
   const eligibleTemplates = (templates || []).filter((t) => t.channel === channel);
-
-  const onSubmit = (values: CampaignFormValues) => {
-    createCampaign.mutate(
-      {
-        name: values.name,
-        channel: values.channel,
-        templateId: values.templateId,
-        audienceFilter: {
-          tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-          segments: values.segments ? values.segments.split(',').map((s) => s.trim()).filter(Boolean) : [],
-          customerType: values.customerType || undefined,
-        },
-        scheduledAt: values.scheduledAt || undefined,
-      },
-      { onSuccess: () => reset({ channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '', name: '', templateId: '' }) }
-    );
+  const onSubmit = async (values: CampaignFormValues) => {
+    try {
+      const campaign = await createCampaign.mutateAsync(
+        showAdvanced
+          ? {
+            name: values.name,
+            channel: values.channel,
+            templateId: values.templateId || undefined,
+            providerCampaignName: values.channel === 'WHATSAPP' ? values.providerCampaignName : undefined,
+            templateParams: values.templateParams ? values.templateParams.split(',').map((item) => item.trim()) : [],
+            audienceFilter: {
+              recipientTypes: values.recipientTypes,
+              roles: values.roles,
+              branchIds: values.branchIds,
+              vendorIds: values.vendorIds,
+              tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+              segments: values.segments ? values.segments.split(',').map((s) => s.trim()).filter(Boolean) : [],
+              customerType: values.customerType || undefined,
+              excludeMobiles: values.excludeMobiles ? values.excludeMobiles.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean) : [],
+              manualMobiles: values.manualMobiles ? values.manualMobiles.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean) : [],
+            },
+          }
+          : {
+            name: values.name,
+            channel: 'WHATSAPP',
+            templateParams: ['{{firstName}}', values.festivalMessage],
+            audienceFilter: {
+              recipientTypes: values.recipientTypes,
+              manualMobiles: values.manualMobiles ? values.manualMobiles.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean) : [],
+            },
+          }
+      );
+      if (mediaFile) {
+        const uploaded = await mediaUpload.upload(mediaFile, 'MARKETING_MEDIA', campaign._id);
+        await updateCampaign.mutateAsync({ id: campaign._id, media: { fileId: uploaded._id, url: uploaded.url, filename: mediaFile.name } });
+      }
+      await sendCampaign.mutateAsync(campaign._id);
+      toast.success('Campaign queued for sending.');
+      reset(); setMediaFile(null);
+    } catch { toast.error('Could not create campaign'); }
   };
   return (
     <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-6 pt-5">
-          
+        {!showAdvanced && (
+          <CardContent className="space-y-5 pt-5">
+            <AppFormField label="Festival campaign name" placeholder="e.g. Diwali Greeting" {...register('name', { required: true })} />
+            <AppFormField
+              label="Festival message ({{2}} in the AiSensy template)"
+              placeholder="e.g. Get 20% off all AC services this Independence Day!"
+              {...register('festivalMessage', { required: true })}
+            />
+            <p className="text-xs text-muted-foreground -mt-3">{'{{1}} is filled in automatically with each recipient’s first name — this is {{2}}.'}</p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Send message to</label>
+              <div className="flex flex-wrap gap-3 rounded-md border p-3">
+                {([['CUSTOMER', 'Customers'], ['USER', 'Users'], ['EMPLOYEE', 'Employees'], ['VENDOR', 'Vendors'], ['VENDOR_TECHNICIAN', 'Vendor technicians'], ['MANUAL', 'Other numbers']] as [CampaignRecipientType, string][]).map(([type, label]) => (
+                  <label key={type} className="flex items-center gap-2 text-sm"><input type="checkbox" value={type} {...register('recipientTypes')} />{label}</label>
+                ))}
+              </div>
+            </div>
+            <AppFormField label="Other WhatsApp numbers (comma separated)" placeholder="8448245145, 9876543210" {...register('manualMobiles')} />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Festival image</label>
+              <Input type="file" accept="image/*" required onChange={(event) => setMediaFile(event.target.files?.[0] || null)} />
+              <p className="text-xs text-muted-foreground">Image automatically Cloudinary par upload hokar approved AiSensy template ke saath jayegi.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(true)}
+              className="text-xs text-indigo-600 hover:underline"
+            >
+              Sending a different approved template, or need finer audience targeting? Switch to advanced mode →
+            </button>
+          </CardContent>
+        )}
+        <CardContent className={showAdvanced ? '' : 'hidden'}>
+          {showAdvanced && (
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(false)}
+              className="text-xs text-indigo-600 hover:underline mb-3"
+            >
+              ← Back to simple festival-message mode
+            </button>
+          )}
           <div className="space-y-3">
             <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -77,11 +166,33 @@ function CreateCampaignForm() {
               </h2>
               <p className="text-[13px] text-muted-foreground">Filter your audience by tag, segment, or customer type.</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-medium">Send to</label>
+                <div className="flex flex-wrap gap-3 rounded-md border p-3">
+                  {(['CUSTOMER', 'USER', 'EMPLOYEE', 'VENDOR', 'VENDOR_TECHNICIAN', 'MANUAL'] as CampaignRecipientType[]).map((type) => (
+                    <label key={type} className="flex items-center gap-2 text-sm"><input type="checkbox" value={type} {...register('recipientTypes')} />{type.replaceAll('_', ' ')}</label>
+                  ))}
+                </div>
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-medium">Employee/User roles (optional)</label>
+                <div className="flex flex-wrap gap-3 rounded-md border p-3">
+                  {STAFF_ROLES.map((role) => <label key={role} className="flex items-center gap-2 text-sm"><input type="checkbox" value={role} {...register('roles')} />{role.replaceAll('_', ' ')}</label>)}
+                </div>
+              </div>
+              <div className="space-y-2"><label className="text-sm font-medium">Branches (optional)</label><div className="max-h-32 space-y-2 overflow-auto rounded-md border p-3">
+                {(branches || []).map((branch) => <label key={branch._id} className="flex items-center gap-2 text-sm"><input type="checkbox" value={branch._id} {...register('branchIds')} />{branch.name}</label>)}
+              </div></div>
+              <div className="space-y-2"><label className="text-sm font-medium">Vendors (optional)</label><div className="max-h-32 space-y-2 overflow-auto rounded-md border p-3">
+                {(vendors || []).map((vendor) => <label key={vendor._id} className="flex items-center gap-2 text-sm"><input type="checkbox" value={vendor._id} {...register('vendorIds')} />{vendor.companyName}</label>)}
+              </div></div>
               <AppFormField label="Tags (comma-separated, optional)" placeholder="e.g., out-of-warranty, amc-expiring" {...register('tags')} />
               <AppFormField label="Segments (comma-separated, optional)" placeholder="e.g., delhi-ncr" {...register('segments')} />
-              
+              <AppFormField label="Exclude mobiles (comma/newline separated)" placeholder="9188..., 9199..." {...register('excludeMobiles')} />
+              <AppFormField label="Manual WhatsApp numbers (comma/newline separated)" placeholder="8448245145, 9199..." {...register('manualMobiles')} />
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Customer Type (Optional)</label>
                 <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('customerType')}>
@@ -107,10 +218,10 @@ function CreateCampaignForm() {
               </h2>
               <p className="text-[13px] text-muted-foreground">Set campaign name and approved message template.</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <AppFormField label="Campaign Name" placeholder="e.g., Summer Discount Push" {...register('name', { required: true })} />
-              
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>
                 <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('channel', { required: true })}>
@@ -119,9 +230,17 @@ function CreateCampaignForm() {
                 </select>
               </div>
 
+              {channel === 'WHATSAPP' && <>
+                <AppFormField label="AiSensy API campaign name" placeholder="citycalls_festival_greeting_api" {...register('providerCampaignName', { required: true })} />
+                <AppFormField label="Template params (exact AiSensy order)" placeholder="{{firstName}}, {{firstName}}" {...register('templateParams')} />
+                <div className="col-span-2 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100">
+                  Festival image/video: first save this campaign, then open its <strong>Edit</strong> action and upload the media under <strong>Festival image/video (Cloudinary)</strong>.
+                </div>
+              </>}
+
               <div className="col-span-2 space-y-1.5">
                 <label className="text-sm font-medium">Message Template</label>
-                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('templateId', { required: true })}>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('templateId')}>
                   <option value="">Select an approved template...</option>
                   {eligibleTemplates.map((t) => (
                     <option key={t._id} value={t._id}>{t.triggerKey}</option>
@@ -141,8 +260,11 @@ function CreateCampaignForm() {
         </CardContent>
         <div className="flex justify-end gap-2 bg-muted/30 p-4 border-t border-border/50">
           <Button type="button" variant="ghost" onClick={() => reset()}>Reset</Button>
-          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending}>
-            <Send className="w-4 h-4" /> {createCampaign.isPending ? 'Saving...' : 'Save Campaign'}
+          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending || mediaUpload.isPending || updateCampaign.isPending || sendCampaign.isPending}>
+            <Send className="w-4 h-4" />
+            {(createCampaign.isPending || mediaUpload.isPending || sendCampaign.isPending)
+              ? 'Sending...'
+              : showAdvanced ? 'Send Campaign' : 'Send Festival WhatsApp'}
           </Button>
         </div>
       </form>
@@ -152,6 +274,7 @@ function CreateCampaignForm() {
 
 function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
   const updateCampaign = useUpdateCampaign();
+  const mediaUpload = useUploadFile('CAMPAIGN', campaign._id);
   const { data: templates } = useNotificationTemplates();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const { register, handleSubmit, control } = useForm<CampaignFormValues>({
@@ -159,6 +282,14 @@ function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose
       name: campaign.name,
       channel: campaign.channel,
       templateId: campaign.templateId,
+      providerCampaignName: campaign.providerCampaignName || '',
+      templateParams: campaign.templateParams?.join(', ') || '',
+      recipientTypes: campaign.audienceFilter.recipientTypes || ['CUSTOMER'],
+      roles: campaign.audienceFilter.roles || [],
+      branchIds: campaign.audienceFilter.branchIds || [],
+      vendorIds: campaign.audienceFilter.vendorIds || [],
+      excludeMobiles: campaign.audienceFilter.excludeMobiles?.join(', ') || '',
+      manualMobiles: campaign.audienceFilter.manualMobiles?.join(', ') || '',
       tags: campaign.audienceFilter.tags?.join(', ') || '',
       segments: campaign.audienceFilter.segments?.join(', ') || '',
       customerType: campaign.audienceFilter.customerType || '',
@@ -175,7 +306,15 @@ function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose
         name: values.name,
         channel: values.channel,
         templateId: values.templateId,
+        providerCampaignName: values.channel === 'WHATSAPP' ? values.providerCampaignName : undefined,
+        templateParams: values.templateParams ? values.templateParams.split(',').map((item) => item.trim()) : [],
         audienceFilter: {
+          recipientTypes: values.recipientTypes,
+          roles: values.roles,
+          branchIds: values.branchIds,
+          vendorIds: values.vendorIds,
+          excludeMobiles: values.excludeMobiles ? values.excludeMobiles.split(/[\s,]+/).filter(Boolean) : [],
+          manualMobiles: values.manualMobiles ? values.manualMobiles.split(/[\s,]+/).filter(Boolean) : [],
           tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
           segments: values.segments ? values.segments.split(',').map((s) => s.trim()).filter(Boolean) : [],
           customerType: values.customerType || undefined,
@@ -195,6 +334,14 @@ function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose
           <option value="EMAIL">Email</option>
         </select>
       </div>
+      {channel === 'WHATSAPP' && <>
+        <AppFormField label="AiSensy API campaign name" {...register('providerCampaignName', { required: true })} />
+        <AppFormField label="Template params (exact order)" {...register('templateParams')} />
+      </>}
+      <div className="space-y-2"><label className="text-sm font-medium">Send to</label><div className="flex flex-wrap gap-3 rounded-md border p-3">
+        {(['CUSTOMER', 'USER', 'EMPLOYEE', 'VENDOR', 'VENDOR_TECHNICIAN', 'MANUAL'] as CampaignRecipientType[]).map((type) => <label key={type} className="flex items-center gap-2 text-sm"><input type="checkbox" value={type} {...register('recipientTypes')} />{type.replaceAll('_', ' ')}</label>)}
+      </div></div>
+      <AppFormField label="Manual WhatsApp numbers" {...register('manualMobiles')} />
       <div className="space-y-1.5">
         <label className="text-sm font-medium">Message Template</label>
         <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" {...register('templateId', { required: true })}>
@@ -204,6 +351,19 @@ function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose
       </div>
       <AppFormField label="Tags (comma-separated)" {...register('tags')} />
       <AppFormField label="Segments (comma-separated)" {...register('segments')} />
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Festival image/video (Cloudinary)</label>
+        <Input type="file" accept="image/*,video/*" disabled={mediaUpload.isPending} onChange={async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          try {
+            const uploaded = await mediaUpload.upload(file, 'MARKETING_MEDIA');
+            await updateCampaign.mutateAsync({ id: campaign._id, media: { fileId: uploaded._id, url: uploaded.url, filename: file.name } });
+            toast.success('Campaign media uploaded');
+          } catch { toast.error('Media upload failed'); }
+        }} />
+        {campaign.media?.url && <p className="text-xs text-muted-foreground">Current: {campaign.media.filename}</p>}
+      </div>
       <div className="space-y-1.5">
         <label className="text-sm font-medium">Customer Type</label>
         <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" {...register('customerType')}>
@@ -218,6 +378,14 @@ function UpdateCampaignForm({ campaign, onClose }: { campaign: Campaign; onClose
   );
 }
 
+function AudiencePreviewButton({ campaign }: { campaign: Campaign }) {
+  const preview = useCampaignAudiencePreview();
+  return <Button size="sm" variant="outline" onClick={() => preview.mutate(campaign._id, {
+    onSuccess: (data) => toast.success(`${data.eligible} eligible of ${data.matchedRecords}; ${data.noConsent} without consent, ${data.noContact} missing contact`),
+    onError: () => toast.error('Could not preview audience'),
+  })} disabled={preview.isPending}><Users className="mr-1 h-3 w-3" />{preview.isPending ? 'Checking...' : 'Preview'}</Button>;
+}
+
 export default function CampaignsPage() {
   const { data: campaigns, isLoading, isError } = useCampaigns();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
@@ -229,7 +397,7 @@ export default function CampaignsPage() {
     if (!campaigns) return [];
     if (!searchTerm) return campaigns;
     const lowerQ = searchTerm.toLowerCase();
-    return campaigns.filter(c => 
+    return campaigns.filter(c =>
       c.name.toLowerCase().includes(lowerQ) ||
       c.status.toLowerCase().includes(lowerQ)
     );
@@ -255,7 +423,7 @@ export default function CampaignsPage() {
         <div className="flex items-center justify-between mb-4">
           <TabsList>
             <TabsTrigger value="list">All Campaigns</TabsTrigger>
-            <TabsTrigger value="create">Launch New Campaign</TabsTrigger>
+            <TabsTrigger value="create">Send Festival WhatsApp</TabsTrigger>
           </TabsList>
 
           <div className="relative">
@@ -279,60 +447,60 @@ export default function CampaignsPage() {
                 <div className="flex justify-center p-8 text-destructive">Failed to load campaigns.</div>
               ) : (
                 <>
-                {/* <p className="text-sm text-muted-foreground mb-2">{campaigns?.length ?? 0} campaigns</p> */}
-                <DataTable<Campaign>
-                  data={filteredCampaigns}
-                  pageSize={10}
-                  columns={[
-                    { key: 'name', header: 'Campaign Name' },
-                    { key: 'audience', header: 'Audience', render: (item) => <span className="text-sm">{audienceSummary(item, customerTypes)}</span> },
-                    {
-                      key: 'sent',
-                      header: 'Sent / Failed',
-                      render: (item) => <span className="font-semibold text-slate-700">{item.stats.sent} / {item.stats.failed}</span>,
-                    },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      render: (item) => (
-                        <StatusBadge
-                          label={item.status}
-                          category={item.status === 'COMPLETED' ? 'success' : item.status === 'CANCELLED' ? 'error' : 'default'}
-                        />
-                      ),
-                    },
-                    { key: 'createdAt', header: 'Created On', render: (item) => new Date(item.createdAt).toLocaleDateString() },
-                    {
-                      key: 'action',
-                      header: 'Action',
-                      render: (item) => (
-                        <div className="flex items-center gap-2">
-                          {item.status === 'DRAFT' || item.status === 'SCHEDULED' ? (
-                            <Button
-                              size="sm"
-                              className="bg-indigo-600 hover:bg-indigo-700 gap-1"
-                              onClick={() => sendCampaign.mutate(item._id)}
-                              disabled={sendCampaign.isPending}
+                  <DataTable<Campaign>
+                    data={filteredCampaigns}
+                    pageSize={10}
+                    columns={[
+                      { key: 'name', header: 'Campaign Name' },
+                      { key: 'audience', header: 'Audience', render: (item) => <span className="text-sm">{audienceSummary(item, customerTypes)}</span> },
+                      {
+                        key: 'sent',
+                        header: 'Sent / Failed',
+                        render: (item) => <span className="font-semibold text-slate-700">{item.stats.sent} / {item.stats.failed}</span>,
+                      },
+                      {
+                        key: 'status',
+                        header: 'Status',
+                        render: (item) => (
+                          <StatusBadge
+                            label={item.status}
+                            category={item.status === 'COMPLETED' ? 'success' : item.status === 'CANCELLED' ? 'error' : 'default'}
+                          />
+                        ),
+                      },
+                      { key: 'createdAt', header: 'Created On', render: (item) => new Date(item.createdAt).toLocaleDateString() },
+                      {
+                        key: 'action',
+                        header: 'Action',
+                        render: (item) => (
+                          <div className="flex items-center gap-2">
+                            <AudiencePreviewButton campaign={item} />
+                            {item.status === 'DRAFT' || item.status === 'SCHEDULED' ? (
+                              <Button
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-700 gap-1"
+                                onClick={() => sendCampaign.mutate(item._id)}
+                                disabled={sendCampaign.isPending}
+                              >
+                                <Send className="w-3 h-3" /> Send Now
+                              </Button>
+                            ) : null}
+                            <FormSheet
+                              triggerLabel="Edit"
+                              title="Edit Campaign"
+                              description={`Update details for ${item.name}`}
+                              triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
                             >
-                              <Send className="w-3 h-3" /> Send Now
+                              {(close) => <UpdateCampaignForm campaign={item} onClose={close} />}
+                            </FormSheet>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteCampaign.isPending}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
-                          ) : null}
-                          <FormSheet
-                            triggerLabel="Edit"
-                            title="Edit Campaign"
-                            description={`Update details for ${item.name}`}
-                            triggerElement={<Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"><Pencil className="w-4 h-4" /></Button>}
-                          >
-                            {(close) => <UpdateCampaignForm campaign={item} onClose={close} />}
-                          </FormSheet>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(item._id)} disabled={deleteCampaign.isPending}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
                 </>
               )}
             </CardContent>

@@ -60,6 +60,7 @@ export interface ServiceRequest {
   scheduledSlot?: string;
   addressSnapshot?: ServiceRequestAddress;
   customerId?: string;
+  branchId?: string;
   serviceId?: string;
   assigneeType?: string;
   assigneeId?: string;
@@ -213,6 +214,20 @@ export function useCreateServiceRequest() {
     mutationFn: async (input) => {
       const res = await apiClient.post<ApiSuccessEnvelope<ServiceRequest>>('/service-requests', input);
       return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-requests'] });
+    },
+  });
+}
+
+export function useUpdateServiceRequestStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, AxiosError<ApiErrorEnvelope>, { id: string; toStatus: string; reason?: string }>({
+    mutationFn: async ({ id, toStatus, reason }) => {
+      const res = await apiClient.patch(`/service-requests/${id}/status`, { toStatus, reason });
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-requests'] });

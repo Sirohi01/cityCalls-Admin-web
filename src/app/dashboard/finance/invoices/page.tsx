@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -22,6 +22,8 @@ import {
   useIssueCreditNote,
   useIssueDebitNote,
   Invoice,
+  PaymentMethod,
+  PAYMENT_METHODS,
 } from '@/lib/hooks/useInvoices';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 
@@ -52,6 +54,70 @@ function IssueNoteForm({ invoiceId, kind, close }: { invoiceId: string; kind: 'c
   );
 }
 
+function RecordPaymentForm({ invoiceId, outstanding, recordPayment }: { invoiceId: string; outstanding: number; recordPayment: ReturnType<typeof useRecordPayment> }) {
+  const [amount, setAmount] = useState(outstanding);
+  const [method, setMethod] = useState<PaymentMethod>('CASH');
+  const [reference, setReference] = useState('');
+
+  // Keeps the default amount in sync after a partial payment reduces the
+  // outstanding balance for the same invoice (component stays mounted,
+  // keyed only by invoice id, not by outstanding amount).
+  useEffect(() => setAmount(outstanding), [outstanding]);
+
+  const amountValid = amount > 0 && amount <= outstanding;
+
+  const handleSubmit = () => {
+    if (!amountValid) return;
+    recordPayment.mutate({ invoiceId, amount, method, reference: reference.trim() || undefined });
+  };
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Amount (₹)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            max={outstanding}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Method</label>
+          <select
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            value={method}
+            onChange={(e) => setMethod(e.target.value as PaymentMethod)}
+          >
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>{m.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="space-y-1.5 mb-4">
+        <label className="text-sm font-medium">Reference (optional)</label>
+        <input
+          className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          placeholder="Transaction ID / cheque no."
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+        />
+      </div>
+      {!amountValid && (
+        <p className="text-sm text-destructive mb-2">Amount must be between ₹0.01 and ₹{outstanding.toLocaleString('en-IN')}.</p>
+      )}
+      <Button size="sm" className="w-full bg-green-600 hover:bg-green-700" onClick={handleSubmit} disabled={recordPayment.isPending || !amountValid}>
+        {recordPayment.isPending ? 'Recording...' : `Record Payment (₹${amount.toLocaleString('en-IN')})`}
+      </Button>
+    </>
+  );
+}
+
 export default function InvoicesPage() {
   const { data: invoices, isLoading, isError } = useInvoices();
   const { data: customers } = useCustomers();
@@ -66,11 +132,6 @@ export default function InvoicesPage() {
   const { data: notes } = useInvoiceNotes(selectedInvoice?._id ?? '');
   const customerName = (id?: string) => customers?.find((c) => c._id === id)?.name ?? 'Unknown';
   const outstanding = (inv: Invoice) => inv.total - inv.amountPaid;
-
-  const handleMarkPaid = () => {
-    if (!selectedInvoice) return;
-    recordPayment.mutate({ invoiceId: selectedInvoice._id, amount: outstanding(selectedInvoice), method: 'CASH' });
-  };
 
   const handleShare = () => {
     if (!selectedInvoice) return;
@@ -169,15 +230,18 @@ export default function InvoicesPage() {
                         <div className="bg-orange-50 border border-orange-100 p-4 rounded-md mb-4 text-sm text-orange-800">
                           Customer has an outstanding balance of <strong>₹{outstanding(selectedInvoice).toLocaleString('en-IN')}</strong>.
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" className="w-full bg-green-600 hover:bg-green-700" onClick={handleMarkPaid} disabled={recordPayment.isPending}>
-                            {recordPayment.isPending ? 'Recording...' : 'Mark as Paid (Cash)'}
-                          </Button>
-                          <Button className="w-full" variant="outline" onClick={handleShare} disabled={shareInvoice.isPending}>
-                            {shareInvoice.isPending ? 'Sending...' : 'Share via Email/WhatsApp'}
-                          </Button>
-                        </div>
-                        {recordPayment.isError && <p className="text-sm text-destructive mt-2">Failed to record payment.</p>}
+                        <RecordPaymentForm
+                          key={selectedInvoice._id}
+                          invoiceId={selectedInvoice._id}
+                          outstanding={outstanding(selectedInvoice)}
+                          recordPayment={recordPayment}
+                        />
+                        {recordPayment.isError && (
+                          <p className="text-sm text-destructive mt-2">{recordPayment.error.response?.data?.message ?? 'Failed to record payment.'}</p>
+                        )}
+                        <Button className="w-full mt-2" variant="outline" onClick={handleShare} disabled={shareInvoice.isPending}>
+                          {shareInvoice.isPending ? 'Sending...' : 'Share via Email/WhatsApp'}
+                        </Button>
                         {shareInvoice.isSuccess && <p className="text-sm text-green-600 mt-2">Invoice shared.</p>}
                         {selectedInvoice.amountPaid === 0 && (
                           <Button variant="destructive" className="w-full mt-2" onClick={handleCancel} disabled={cancelInvoice.isPending}>

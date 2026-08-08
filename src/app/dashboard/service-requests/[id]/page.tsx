@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, User, UserCog, XCircle } from 'lucide-react';
+import { ArrowLeft, User, UserCog, XCircle, IndianRupee } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 import {
@@ -17,7 +17,25 @@ import {
   SERVICE_REQUEST_STAGE_NAMES,
   stageIndexForStatus,
 } from '@/lib/hooks/useServiceRequests';
+import { useEstimates, Estimate } from '@/lib/hooks/useEstimates';
+import { useInvoices, Invoice } from '@/lib/hooks/useInvoices';
 import { Wrench } from 'lucide-react';
+
+function FinancialDocRow({ label, status, total, onClick }: { label: string; status: string; total: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center justify-between rounded border border-slate-200 bg-white p-3 text-sm text-left hover:bg-slate-50 transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{label}</span>
+        <StatusBadge label={status} category={status === 'APPROVED' || status === 'PAID' ? 'success' : status === 'REJECTED' || status === 'CANCELLED' ? 'error' : 'warning'} />
+      </div>
+      <span className="font-semibold">₹{total.toLocaleString('en-IN')}</span>
+    </button>
+  );
+}
 
 function warrantyLabel(warrantyExpiresAt?: string): { text: string; className: string } {
   if (!warrantyExpiresAt) return { text: 'Not recorded', className: 'text-muted-foreground' };
@@ -86,6 +104,8 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
   const { data: ticket, isLoading, isError } = useServiceRequest(id);
   const { data: history } = useAssignmentHistory(id);
   const { data: visits } = useServiceVisits(id);
+  const { data: estimates } = useEstimates(id);
+  const { data: invoices } = useInvoices(id);
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading ticket details...</div>;
   if (isError || !ticket) return <div className="p-8 text-center text-destructive">Failed to load ticket details or ticket not found.</div>;
@@ -194,6 +214,41 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IndianRupee className="w-4 h-4 text-primary" />
+                Financial
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Estimates</p>
+                {!estimates || estimates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No estimates for this request yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {estimates.map((e: Estimate) => (
+                      <FinancialDocRow key={e._id} label={e.number} status={e.status} total={e.total} onClick={() => router.push('/dashboard/finance/estimates')} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Invoices</p>
+                {!invoices || invoices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No invoices for this request yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {invoices.map((inv: Invoice) => (
+                      <FinancialDocRow key={inv._id} label={inv.number} status={inv.status} total={inv.total} onClick={() => router.push('/dashboard/finance/invoices')} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

@@ -3,13 +3,29 @@ import { apiClient, ApiSuccessEnvelope, ApiErrorEnvelope } from '../api/client';
 import { AxiosError } from 'axios';
 
 export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'CANCELLED';
+export type CampaignRecipientType = 'CUSTOMER' | 'USER' | 'EMPLOYEE' | 'VENDOR' | 'VENDOR_TECHNICIAN' | 'MANUAL';
+
+export interface CampaignAudienceFilter {
+  recipientTypes: CampaignRecipientType[];
+  tags?: string[];
+  segments?: string[];
+  customerType?: string;
+  roles?: string[];
+  branchIds?: string[];
+  vendorIds?: string[];
+  excludeMobiles?: string[];
+  manualMobiles?: string[];
+}
 
 export interface Campaign {
   _id: string;
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
   templateId: string;
-  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: string };
+  providerCampaignName?: string;
+  templateParams: string[];
+  media?: { fileId?: string; url: string; filename: string };
+  audienceFilter: CampaignAudienceFilter;
   scheduledAt?: string;
   status: CampaignStatus;
   stats: { sent: number; delivered: number; read: number; failed: number };
@@ -29,9 +45,32 @@ export function useCampaigns() {
 export interface CreateCampaignInput {
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
-  templateId: string;
-  audienceFilter: { tags?: string[]; segments?: string[]; customerType?: string };
+  templateId?: string;
+  providerCampaignName?: string;
+  templateParams?: string[];
+  media?: { fileId?: string; url: string; filename: string };
+  audienceFilter: CampaignAudienceFilter;
   scheduledAt?: string;
+}
+
+export interface AudiencePreview {
+  matchedRecords: number;
+  uniqueContacts: number;
+  eligible: number;
+  noConsent: number;
+  noContact: number;
+  manuallyExcluded: number;
+  duplicatesRemoved: number;
+  sample: Array<{ recipientType: CampaignRecipientType; recipientId: string; name: string; mobile?: string; email?: string }>;
+}
+
+export function useCampaignAudiencePreview() {
+  return useMutation<AudiencePreview, AxiosError<ApiErrorEnvelope>, string>({
+    mutationFn: async (id) => {
+      const res = await apiClient.get<ApiSuccessEnvelope<AudiencePreview>>(`/campaigns/${id}/audience-preview`);
+      return res.data.data;
+    },
+  });
 }
 
 export function useCreateCampaign() {
