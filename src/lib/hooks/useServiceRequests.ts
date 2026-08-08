@@ -61,6 +61,7 @@ export interface ServiceRequest {
   addressSnapshot?: ServiceRequestAddress;
   customerId?: string;
   branchId?: string;
+  subBranchId?: string;
   serviceId?: string;
   assigneeType?: string;
   assigneeId?: string;
