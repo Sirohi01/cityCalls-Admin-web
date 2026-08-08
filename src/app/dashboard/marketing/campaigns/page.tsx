@@ -121,11 +121,14 @@ function CreateCampaignForm() {
           <CardContent className="space-y-5 pt-5">
             <AppFormField label="Festival campaign name" placeholder="e.g. Diwali Greeting" {...register('name', { required: true })} />
             <AppFormField
-              label="Festival message ({{2}} in the AiSensy template)"
-              placeholder="e.g. Get 20% off all AC services this Independence Day!"
+              label="Occasion / Festival name"
+              placeholder="e.g. Independence Day, Diwali, Raksha Bandhan"
               {...register('festivalMessage', { required: true })}
             />
-            <p className="text-xs text-muted-foreground -mt-3">{'{{1}} is filled in automatically with each recipient’s first name — this is {{2}}.'}</p>
+            <p className="text-xs text-muted-foreground -mt-3">
+              {'The approved message reads: "Hello '}<strong>{'{{1}}'}</strong>{', wishing you and your family a very Happy '}<strong>{'{{2}}'}</strong>
+              {' from City Calls." {{1}} is filled in automatically with each recipient’s first name — this field is just the occasion name for {{2}}, not a full message or offer text.'}
+            </p>
             <div className="space-y-2">
               <label className="text-sm font-medium">Send message to</label>
               <div className="flex flex-wrap gap-3 rounded-md border p-3">
