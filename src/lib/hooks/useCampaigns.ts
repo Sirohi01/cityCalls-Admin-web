@@ -47,6 +47,7 @@ export interface CreateCampaignInput {
   channel: 'WHATSAPP' | 'EMAIL';
   templateId?: string;
   providerCampaignName?: string;
+  campaignPreset?: 'FESTIVAL' | 'INDEPENDENCE_DAY';
   templateParams?: string[];
   media?: { fileId?: string; url: string; filename: string };
   audienceFilter: CampaignAudienceFilter;

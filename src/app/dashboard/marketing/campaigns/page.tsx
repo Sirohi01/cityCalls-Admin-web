@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
-import { Megaphone, Users, Send, Pencil, Trash2, Search, Copy } from 'lucide-react';
+import { Megaphone, Users, Send, Pencil, Trash2, Search, Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCampaigns, useCreateCampaign, useSendCampaign, Campaign, useUpdateCampaign, useDeleteCampaign, useDuplicateCampaign, useCampaignAudiencePreview, CampaignRecipientType } from '@/lib/hooks/useCampaigns';
@@ -59,11 +59,12 @@ function CreateCampaignForm() {
   const mediaUpload = useUploadFile('CAMPAIGN', 'new');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [preset, setPreset] = useState<'FESTIVAL' | 'INDEPENDENCE_DAY'>('FESTIVAL');
   const { data: templates } = useNotificationTemplates();
   const { data: customerTypes } = useMasters(['CUSTOMER_TYPE']);
   const { data: branches } = useBranches();
   const { data: vendors } = useVendors();
-  const { register, handleSubmit, control, reset } = useForm<CampaignFormValues>({
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<CampaignFormValues>({
     defaultValues: {
       channel: 'WHATSAPP', tags: '', segments: '', customerType: '', scheduledAt: '',
       providerCampaignName: 'citycalls_festival_greeting_api', templateParams: '{{firstName}}, {{firstName}}',
@@ -74,6 +75,10 @@ function CreateCampaignForm() {
   const channel = useWatch({ control, name: 'channel' });
   const eligibleTemplates = (templates || []).filter((t) => t.channel === channel);
   const onSubmit = async (values: CampaignFormValues) => {
+    if (!preset || values.recipientTypes.length === 0) {
+      toast.error('Pick at least one "Send message to" option.');
+      return;
+    }
     try {
       const campaign = await createCampaign.mutateAsync(
         showAdvanced
@@ -98,7 +103,8 @@ function CreateCampaignForm() {
           : {
             name: values.name,
             channel: 'WHATSAPP',
-            templateParams: ['{{firstName}}', values.festivalMessage],
+            campaignPreset: preset,
+            templateParams: preset === 'FESTIVAL' ? ['{{firstName}}', values.festivalMessage] : [],
             audienceFilter: {
               recipientTypes: values.recipientTypes,
               manualMobiles: values.manualMobiles ? values.manualMobiles.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean) : [],
@@ -112,23 +118,51 @@ function CreateCampaignForm() {
       await sendCampaign.mutateAsync(campaign._id);
       toast.success('Campaign queued for sending.');
       reset(); setMediaFile(null);
-    } catch { toast.error('Could not create campaign'); }
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message ?? (e instanceof Error ? e.message : 'Could not create campaign'));
+    }
   };
   return (
     <Card className="animate-in slide-in-from-right-4 fade-in duration-500 mt-2">
       <form onSubmit={handleSubmit(onSubmit)}>
         {!showAdvanced && (
           <CardContent className="space-y-5 pt-5">
-            <AppFormField label="Festival campaign name" placeholder="e.g. Diwali Greeting" {...register('name', { required: true })} />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Which template?</label>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant={preset === 'FESTIVAL' ? 'default' : 'outline'} onClick={() => setPreset('FESTIVAL')}>
+                  Festival Greeting
+                </Button>
+                <Button type="button" size="sm" variant={preset === 'INDEPENDENCE_DAY' ? 'default' : 'outline'} onClick={() => setPreset('INDEPENDENCE_DAY')}>
+                  Independence Day
+                </Button>
+              </div>
+            </div>
             <AppFormField
-              label="Occasion / Festival name"
-              placeholder="e.g. Independence Day, Diwali, Raksha Bandhan"
-              {...register('festivalMessage', { required: true })}
+              label="Campaign name"
+              placeholder="e.g. Diwali Greeting"
+              error={errors.name ? 'Campaign name is required' : undefined}
+              {...register('name', { required: true })}
             />
-            <p className="text-xs text-muted-foreground -mt-3">
-              {'The approved message reads: "Hello '}<strong>{'{{1}}'}</strong>{', wishing you and your family a very Happy '}<strong>{'{{2}}'}</strong>
-              {' from City Calls." {{1}} is filled in automatically with each recipient’s first name — this field is just the occasion name for {{2}}, not a full message or offer text.'}
-            </p>
+            {preset === 'FESTIVAL' ? (
+              <>
+                <AppFormField
+                  label="Occasion / Festival name"
+                  placeholder="e.g. Independence Day, Diwali, Raksha Bandhan"
+                  error={errors.festivalMessage ? 'Occasion name is required' : undefined}
+                  {...register('festivalMessage', { required: preset === 'FESTIVAL' })}
+                />
+                <p className="text-xs text-muted-foreground -mt-3">
+                  {'The approved message reads: "Hello '}<strong>{'{{1}}'}</strong>{', wishing you and your family a very Happy '}<strong>{'{{2}}'}</strong>
+                  {' from City Calls." {{1}} is filled in automatically with each recipient’s first name — this field is just the occasion name for {{2}}, not a full message or offer text.'}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground -mt-3">
+                This approved template has no text placeholders — just the image below and its own fixed caption. No message field needed.
+              </p>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Send message to</label>
               <div className="flex flex-wrap gap-3 rounded-md border p-3">
@@ -139,7 +173,7 @@ function CreateCampaignForm() {
             </div>
             <AppFormField label="Other WhatsApp numbers (comma separated)" placeholder="8448245145, 9876543210" {...register('manualMobiles')} />
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Festival image</label>
+              <label className="text-sm font-medium">{preset === 'INDEPENDENCE_DAY' ? 'Independence Day image' : 'Festival image'}</label>
               <Input type="file" accept="image/*" required onChange={(event) => setMediaFile(event.target.files?.[0] || null)} />
               <p className="text-xs text-muted-foreground">Image automatically Cloudinary par upload hokar approved AiSensy template ke saath jayegi.</p>
             </div>
@@ -152,16 +186,15 @@ function CreateCampaignForm() {
             </button>
           </CardContent>
         )}
-        <CardContent className={showAdvanced ? '' : 'hidden'}>
-          {showAdvanced && (
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(false)}
-              className="text-xs text-indigo-600 hover:underline mb-3"
-            >
-              ← Back to simple festival-message mode
-            </button>
-          )}
+        {showAdvanced && (
+        <CardContent>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(false)}
+            className="text-xs text-indigo-600 hover:underline mb-3"
+          >
+            ← Back to simple festival-message mode
+          </button>
           <div className="space-y-3">
             <div className="space-y-1 border-b border-border/50 pb-1 mb-2">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -223,7 +256,12 @@ function CreateCampaignForm() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <AppFormField label="Campaign Name" placeholder="e.g., Summer Discount Push" {...register('name', { required: true })} />
+              <AppFormField
+                label="Campaign Name"
+                placeholder="e.g., Summer Discount Push"
+                error={errors.name ? 'Campaign name is required' : undefined}
+                {...register('name', { required: true })}
+              />
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>
@@ -261,13 +299,16 @@ function CreateCampaignForm() {
           )}
           {createCampaign.isSuccess && <p className="text-sm text-green-600">Campaign created. Send it from the campaign list.</p>}
         </CardContent>
+        )}
         <div className="flex justify-end gap-2 bg-muted/30 p-4 border-t border-border/50">
           <Button type="button" variant="ghost" onClick={() => reset()}>Reset</Button>
           <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending || mediaUpload.isPending || updateCampaign.isPending || sendCampaign.isPending}>
-            <Send className="w-4 h-4" />
             {(createCampaign.isPending || mediaUpload.isPending || sendCampaign.isPending)
-              ? 'Sending...'
-              : showAdvanced ? 'Send Campaign' : 'Send Festival WhatsApp'}
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <Send className="w-4 h-4" />}
+            {(createCampaign.isPending || mediaUpload.isPending || sendCampaign.isPending)
+              ? (mediaUpload.isPending ? 'Uploading image...' : 'Sending...')
+              : showAdvanced ? 'Send Campaign' : preset === 'INDEPENDENCE_DAY' ? 'Send Independence Day WhatsApp' : 'Send Festival WhatsApp'}
           </Button>
         </div>
       </form>
