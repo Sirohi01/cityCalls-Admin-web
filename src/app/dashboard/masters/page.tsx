@@ -14,12 +14,13 @@ import { Pencil } from 'lucide-react';
 
 import { useMasters, useCreateMaster, useUpdateMaster, Master } from '@/lib/hooks/useMasters';
 
-const MASTER_TYPES = ['SERVICE_CATEGORY', 'BRAND', 'PRODUCT_TYPE', 'SYMPTOM', 'DEFECT', 'SOLUTION', 'PART', 'UNIT', 'TAX_RATE', 'PRIORITY', 'LEAD_SOURCE', 'CALL_TYPE', 'APPOINTMENT_SLOT', 'PAYMENT_METHOD', 'CUSTOMER_TYPE'];
+const MASTER_TYPES = ['SERVICE_CATEGORY', 'BRAND', 'PRODUCT_TYPE', 'COMPLAINT_TYPE', 'SYMPTOM', 'DEFECT', 'SOLUTION', 'PART', 'UNIT', 'TAX_RATE', 'PRIORITY', 'LEAD_SOURCE', 'CALL_TYPE', 'APPOINTMENT_SLOT', 'PAYMENT_METHOD', 'CUSTOMER_TYPE'];
 
 const MASTER_TYPE_LABELS: Record<string, string> = {
   SERVICE_CATEGORY: 'Service Categories',
   BRAND: 'Brands',
   PRODUCT_TYPE: 'Product Types',
+  COMPLAINT_TYPE: 'Complaint Types',
   SYMPTOM: 'Symptoms',
   DEFECT: 'Defects',
   SOLUTION: 'Solutions',
