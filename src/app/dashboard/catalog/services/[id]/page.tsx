@@ -14,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { useCatalogService, useUpdateCatalogService } from '@/lib/hooks/useCatalogServices';
-import { useMasters } from '@/lib/hooks/useMasters';
+import { useMasters, Master } from '@/lib/hooks/useMasters';
 
 const updateServiceSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -32,9 +32,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const { data: service, isLoading, isError } = useCatalogService(id);
   const { data: categories } = useMasters(['SERVICE_CATEGORY']);
+  const { data: complaintTypes } = useMasters(['COMPLAINT_TYPE']);
   const { data: symptoms } = useMasters(['SYMPTOM']);
+  const { data: defects } = useMasters(['DEFECT']);
+  const { data: solutions } = useMasters(['SOLUTION']);
   const updateService = useUpdateCatalogService(id);
-  const [addingSymptom, setAddingSymptom] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<UpdateServiceValues>({
@@ -45,17 +47,6 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
   if (isError || !service) return <div className="p-8 text-center text-destructive">Failed to load service.</div>;
 
   const categoryLabel = categories?.find((c) => c._id === service.categoryId)?.label ?? 'N/A';
-  const linkedSymptoms = symptoms?.filter((s) => service.symptomIds?.includes(s._id)) ?? [];
-  const unlinkedSymptoms = symptoms?.filter((s) => !service.symptomIds?.includes(s._id)) ?? [];
-
-  const removeSymptom = (symptomId: string) => {
-    updateService.mutate({ symptomIds: (service.symptomIds ?? []).filter((sid) => sid !== symptomId) });
-  };
-
-  const addSymptom = () => {
-    if (!addingSymptom) return;
-    updateService.mutate({ symptomIds: [...(service.symptomIds ?? []), addingSymptom] }, { onSuccess: () => setAddingSymptom('') });
-  };
 
   const handleEditClick = () => {
     reset({
@@ -176,34 +167,101 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ id: st
           )}
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Linked Symptoms</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              {linkedSymptoms.map((s) => (
-                <li key={s._id} className="flex items-center justify-between border-b pb-2">
-                  <span>{s.label}</span>
-                  <Button variant="ghost" size="sm" className="text-destructive h-6" onClick={() => removeSymptom(s._id)} disabled={updateService.isPending}>
-                    Remove
-                  </Button>
-                </li>
-              ))}
-              {linkedSymptoms.length === 0 && <p className="text-muted-foreground text-sm">No symptoms linked yet.</p>}
-            </ul>
-            <div className="pt-4 flex gap-2">
-              <select className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={addingSymptom} onChange={(e) => setAddingSymptom(e.target.value)}>
-                <option value="">Select a symptom...</option>
-                {unlinkedSymptoms.map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
-              </select>
-              <Button variant="outline" onClick={addSymptom} disabled={!addingSymptom || updateService.isPending}>Link</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <LinkedMastersCard
+            title="Linked Complaint Types"
+            field="complaintTypeIds"
+            allMasters={complaintTypes}
+            linkedIds={service.complaintTypeIds}
+            updateService={updateService}
+          />
+          <LinkedMastersCard
+            title="Linked Symptoms"
+            field="symptomIds"
+            allMasters={symptoms}
+            linkedIds={service.symptomIds}
+            updateService={updateService}
+          />
+          <LinkedMastersCard
+            title="Linked Defects"
+            field="defectIds"
+            allMasters={defects}
+            linkedIds={service.defectIds}
+            updateService={updateService}
+          />
+          <LinkedMastersCard
+            title="Linked Solutions"
+            field="solutionTypeIds"
+            allMasters={solutions}
+            linkedIds={service.solutionTypeIds}
+            updateService={updateService}
+          />
+        </div>
       </div>
 
       <MediaGallery entityType="SERVICE" entityId={id} />
     </div>
+  );
+}
+
+type LinkableField = 'complaintTypeIds' | 'symptomIds' | 'defectIds' | 'solutionTypeIds';
+
+// Shared shape behind the four "Linked X" cards — each one only ever shows
+// two slices of the same master list: what's already in Service.<field> (the
+// linked set customer/vendor apps will actually offer as pickers) and what
+// isn't yet (candidates to add). Nothing outside the current service's own
+// links is ever presented as "linked".
+function LinkedMastersCard({
+  title,
+  field,
+  allMasters,
+  linkedIds,
+  updateService,
+}: {
+  title: string;
+  field: LinkableField;
+  allMasters?: Master[];
+  linkedIds?: string[];
+  updateService: ReturnType<typeof useUpdateCatalogService>;
+}) {
+  const [adding, setAdding] = useState('');
+  const linked = allMasters?.filter((m) => linkedIds?.includes(m._id)) ?? [];
+  const unlinked = allMasters?.filter((m) => !linkedIds?.includes(m._id)) ?? [];
+
+  const remove = (masterId: string) => {
+    updateService.mutate({ [field]: (linkedIds ?? []).filter((mid) => mid !== masterId) });
+  };
+
+  const add = () => {
+    if (!adding) return;
+    updateService.mutate({ [field]: [...(linkedIds ?? []), adding] }, { onSuccess: () => setAdding('') });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 text-sm">
+          {linked.map((m) => (
+            <li key={m._id} className="flex items-center justify-between border-b pb-2">
+              <span>{m.label}</span>
+              <Button variant="ghost" size="sm" className="text-destructive h-6" onClick={() => remove(m._id)} disabled={updateService.isPending}>
+                Remove
+              </Button>
+            </li>
+          ))}
+          {linked.length === 0 && <p className="text-muted-foreground text-sm">None linked yet — the app pickers for this service will show nothing here until you link some.</p>}
+        </ul>
+        <div className="pt-4 flex gap-2">
+          <select className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm" value={adding} onChange={(e) => setAdding(e.target.value)}>
+            <option value="">Select...</option>
+            {unlinked.map((m) => <option key={m._id} value={m._id}>{m.label}</option>)}
+          </select>
+          <Button variant="outline" onClick={add} disabled={!adding || updateService.isPending}>Link</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
