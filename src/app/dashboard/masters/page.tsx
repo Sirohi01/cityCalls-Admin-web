@@ -11,6 +11,8 @@ import { AppFormField } from '@/components/ui/AppFormField';
 import { FormSheet } from '@/components/ui/FormSheet';
 import { Separator } from '@/components/ui/separator';
 import { Pencil } from 'lucide-react';
+import { MediaGallery } from '@/components/media/MediaGallery';
+import { useUploadFile, resolveFileUrl, useFileList } from '@/lib/hooks/useFiles';
 
 import { useMasters, useCreateMaster, useUpdateMaster, Master } from '@/lib/hooks/useMasters';
 
@@ -47,6 +49,9 @@ type CreateMasterValues = z.infer<typeof createMasterSchema>;
 
 function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string; siblings: Master[]; onClose: () => void }) {
   const createMaster = useCreateMaster();
+  const { upload, isPending: isUploading } = useUploadFile('MASTER', 'dummy');
+  const [file, setFile] = useState<File | null>(null);
+  
   const { register, handleSubmit, control, formState: { errors } } = useForm<CreateMasterValues>({
     resolver: zodResolver(createMasterSchema),
     defaultValues: { masterType: defaultType, sortOrder: 0 },
@@ -61,7 +66,18 @@ function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string
         parentId: values.parentId || undefined,
         meta: masterType === 'SERVICE_CATEGORY' && vertical ? { vertical } : undefined,
       },
-      { onSuccess: onClose }
+      { 
+        onSuccess: async (newMaster) => {
+          if (file) {
+            try {
+              await upload(file, 'CATALOG_IMAGE', newMaster._id);
+            } catch (error) {
+              console.error('Failed to upload image:', error);
+            }
+          }
+          onClose();
+        }
+      }
     );
   };
 
@@ -91,9 +107,18 @@ function AddMasterForm({ defaultType, siblings, onClose }: { defaultType: string
           {...register('vertical')}
         />
       )}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Icon / Image (Optional)</label>
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full text-sm border border-input rounded-md p-1.5 bg-transparent"
+        />
+      </div>
       {createMaster.isError && <p className="text-sm text-destructive">{createMaster.error.response?.data?.message ?? 'Failed to create master.'}</p>}
-      <Button type="submit" className="w-full" disabled={createMaster.isPending}>
-        {createMaster.isPending ? 'Creating...' : 'Add Master'}
+      <Button type="submit" className="w-full" disabled={createMaster.isPending || isUploading}>
+        {createMaster.isPending || isUploading ? 'Creating & Uploading...' : 'Add Master'}
       </Button>
     </form>
   );
@@ -134,29 +159,51 @@ function EditMasterForm({ master, siblings, onClose }: { master: Master; sibling
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <AppFormField label="System Key" value={master.key} disabled readOnly />
-      <AppFormField label="Display Label" error={errors.label?.message} {...register('label')} />
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium">Parent Entry (Optional)</label>
-        <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('parentId')}>
-          <option value="">None</option>
-          {siblings.filter((s) => s._id !== master._id).map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
-        </select>
-      </div>
-      <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
-      {master.masterType === 'SERVICE_CATEGORY' && (
-        <AppFormField
-          label="Vertical (Optional)"
-          placeholder="e.g. BEAUTY"
-          {...register('vertical')}
-        />
-      )}
-      {updateMaster.isError && <p className="text-sm text-destructive">{updateMaster.error.response?.data?.message ?? 'Failed to update master.'}</p>}
-      <Button type="submit" className="w-full" disabled={updateMaster.isPending}>
-        {updateMaster.isPending ? 'Saving...' : 'Save Changes'}
-      </Button>
-    </form>
+    <div className="space-y-6 pb-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <AppFormField label="System Key" value={master.key} disabled readOnly />
+        <AppFormField label="Display Label" error={errors.label?.message} {...register('label')} />
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Parent Entry (Optional)</label>
+          <select className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm" {...register('parentId')}>
+            <option value="">None</option>
+            {siblings.filter((s) => s._id !== master._id).map((s) => <option key={s._id} value={s._id}>{s.label}</option>)}
+          </select>
+        </div>
+        <AppFormField label="Sort Order" type="number" {...register('sortOrder', { valueAsNumber: true })} />
+        {master.masterType === 'SERVICE_CATEGORY' && (
+          <AppFormField
+            label="Vertical (Optional)"
+            placeholder="e.g. BEAUTY"
+            {...register('vertical')}
+          />
+        )}
+        {updateMaster.isError && <p className="text-sm text-destructive">{updateMaster.error.response?.data?.message ?? 'Failed to update master.'}</p>}
+        <Button type="submit" className="w-full" disabled={updateMaster.isPending}>
+          {updateMaster.isPending ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </form>
+      
+      <Separator />
+      
+      <MediaGallery entityType="MASTER" entityId={master._id} title="Master Media (Icon/Image)" />
+    </div>
+  );
+}
+
+function MasterImageCell({ masterId }: { masterId: string }) {
+  const { data: files } = useFileList('MASTER', masterId);
+  const image = files?.find((f) => f.category === 'CATALOG_IMAGE' || !f.category.includes('VIDEO'));
+  
+  if (!image) return <div className="w-10 h-10 bg-slate-100 rounded-md border flex items-center justify-center text-slate-400 text-xs">No img</div>;
+  
+  let url = resolveFileUrl(image);
+  if (url.startsWith('/')) {
+    url = `http://localhost:4000${url}`;
+  }
+
+  return (
+    <img src={url} alt="Master Icon" className="w-10 h-10 object-cover rounded-md border" onError={(e) => console.error('Image failed to load:', url)} />
   );
 }
 
@@ -214,6 +261,11 @@ export default function MastersPage() {
               pageSize={10}
               emptyMessage={`No ${MASTER_TYPE_LABELS[selectedType].toLowerCase()} yet.`}
               columns={[
+                {
+                  key: 'image',
+                  header: 'Icon',
+                  render: (item) => <MasterImageCell masterId={item._id} />,
+                },
                 { key: 'label', header: 'Name' },
                 { key: 'key', header: 'System Key' },
                 ...(selectedType === 'SERVICE_CATEGORY'

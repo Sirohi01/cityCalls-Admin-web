@@ -25,7 +25,16 @@ export interface UploadedFile {
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1').replace(/\/api\/v1\/?$/, '');
 
 export function resolveFileUrl(file: UploadedFile): string {
-  return file.provider === 'LOCAL' ? `${API_ORIGIN}${file.url}` : file.url;
+  if (file.provider !== 'LOCAL') return file.url;
+  
+  let origin = API_ORIGIN;
+  // If the env variable was a relative path like '/api/v1', origin becomes empty
+  if (!origin || origin.startsWith('/')) {
+    origin = typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
+      ? window.location.origin 
+      : 'http://localhost:4000';
+  }
+  return `${origin}${file.url}`;
 }
 
 export function useFileList(entityType: string, entityId: string) {
