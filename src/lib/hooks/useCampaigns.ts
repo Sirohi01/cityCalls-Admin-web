@@ -25,6 +25,7 @@ export interface Campaign {
   providerCampaignName?: string;
   templateParams: string[];
   media?: { fileId?: string; url: string; filename: string };
+  carouselCards?: Array<{ cardIndex: number; imageUrl: string }>;
   audienceFilter: CampaignAudienceFilter;
   scheduledAt?: string;
   status: CampaignStatus;
@@ -50,6 +51,7 @@ export interface CreateCampaignInput {
   campaignPreset?: 'FESTIVAL' | 'INDEPENDENCE_DAY';
   templateParams?: string[];
   media?: { fileId?: string; url: string; filename: string };
+  carouselCards?: Array<{ cardIndex: number; imageUrl: string }>;
   audienceFilter: CampaignAudienceFilter;
   scheduledAt?: string;
 }

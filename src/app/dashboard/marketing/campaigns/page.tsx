@@ -54,7 +54,6 @@ function audienceSummary(campaign: Campaign, customerTypes?: Master[]) {
 
 function CreateCampaignForm() {
   const createCampaign = useCreateCampaign();
-  const sendCampaign = useSendCampaign();
   const updateCampaign = useUpdateCampaign();
   const mediaUpload = useUploadFile('CAMPAIGN', 'new');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -115,8 +114,7 @@ function CreateCampaignForm() {
         const uploaded = await mediaUpload.upload(mediaFile, 'MARKETING_MEDIA', campaign._id);
         await updateCampaign.mutateAsync({ id: campaign._id, media: { fileId: uploaded._id, url: uploaded.url, filename: mediaFile.name } });
       }
-      await sendCampaign.mutateAsync(campaign._id);
-      toast.success('Campaign queued for sending.');
+      toast.success('Campaign saved as draft. Send it from the campaign list when ready.');
       reset(); setMediaFile(null);
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } } };
@@ -302,13 +300,13 @@ function CreateCampaignForm() {
         )}
         <div className="flex justify-end gap-2 bg-muted/30 p-4 border-t border-border/50">
           <Button type="button" variant="ghost" onClick={() => reset()}>Reset</Button>
-          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending || mediaUpload.isPending || updateCampaign.isPending || sendCampaign.isPending}>
-            {(createCampaign.isPending || mediaUpload.isPending || sendCampaign.isPending)
+          <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 gap-2" disabled={createCampaign.isPending || mediaUpload.isPending || updateCampaign.isPending}>
+            {(createCampaign.isPending || mediaUpload.isPending)
               ? <Loader2 className="w-4 h-4 animate-spin" />
               : <Send className="w-4 h-4" />}
-            {(createCampaign.isPending || mediaUpload.isPending || sendCampaign.isPending)
-              ? (mediaUpload.isPending ? 'Uploading image...' : 'Sending...')
-              : showAdvanced ? 'Send Campaign' : preset === 'INDEPENDENCE_DAY' ? 'Send Independence Day WhatsApp' : 'Send Festival WhatsApp'}
+            {(createCampaign.isPending || mediaUpload.isPending)
+              ? (mediaUpload.isPending ? 'Uploading image...' : 'Saving...')
+              : 'Save Draft'}
           </Button>
         </div>
       </form>
@@ -475,7 +473,7 @@ export default function CampaignsPage() {
         <div className="flex items-center justify-between mb-4">
           <TabsList>
             <TabsTrigger value="list">All Campaigns</TabsTrigger>
-            <TabsTrigger value="create">Send Festival WhatsApp</TabsTrigger>
+            <TabsTrigger value="create">Create Campaign</TabsTrigger>
           </TabsList>
 
           <div className="relative">
